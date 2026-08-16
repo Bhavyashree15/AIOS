@@ -135,16 +135,18 @@ export default function DashboardPage() {
   }
 
   const addFunds = async () => {
-    const amount = prompt('Enter amount to add (₹):', '100')
-    if (amount) {
-      const num = parseFloat(amount)
-      if (num > 0) {
-        await fetch('/api/wallet', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: num, type: 'credit_topup', description: 'Manual top-up' })
-        })
-        fetchWallet()
+    if (typeof window !== 'undefined') {
+      const amount = window.prompt('Enter amount to add (₹):', '100')
+      if (amount) {
+        const num = parseFloat(amount)
+        if (num > 0) {
+          await fetch('/api/wallet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: num, type: 'credit_topup', description: 'Manual top-up' })
+          })
+          fetchWallet()
+        }
       }
     }
   }
@@ -358,4 +360,4 @@ export default function DashboardPage() {
       `}</style>
     </div>
   )
-}
+          
