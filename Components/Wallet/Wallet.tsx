@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Wallet as WalletIcon, Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/Components/ui/button'
 import { useWallet } from '@/hooks/useWallet'
 
 export function Wallet() {
