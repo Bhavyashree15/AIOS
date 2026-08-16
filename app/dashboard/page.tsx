@@ -60,7 +60,6 @@ export default function DashboardPage() {
   const [likedModels, setLikedModels] = useState<Record<string, boolean>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Fetch wallet balance
   const fetchWallet = async () => {
     try {
       const res = await fetch('/api/wallet')
@@ -343,21 +342,46 @@ export default function DashboardPage() {
           )}
 
           <div className="relative">
-            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ask me anything..." className="w-full min-h-[60px] max-h-[200px] bg-white/5 border border-white/10 rounded-2xl p-4 pr-28 text-white placeholder:text-gray-500 outline-none focus:border-emerald-500/50 transition-all resize-none" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} />
+            <textarea 
+              value={prompt} 
+              onChange={(e) => setPrompt(e.target.value)} 
+              placeholder="Ask me anything..." 
+              className="w-full min-h-[60px] max-h-[200px] bg-white/5 border border-white/10 rounded-2xl p-4 pr-28 text-white placeholder:text-gray-500 outline-none focus:border-emerald-500/50 transition-all resize-none" 
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
+            />
             <div className="absolute right-3 bottom-3 flex items-center gap-2">
-              <button className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"><Sparkles className="h-5 w-5" /></button>
-              <button onClick={handleSubmit} disabled={isLoading || !prompt.trim()} className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white p-2.5 rounded-xl disabled:opacity-50 hover:shadow-lg hover:shadow-emerald-500/20 transition-all">{isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}</button>
+              <button className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10">
+                <Sparkles className="h-5 w-5" />
+              </button>
+              <button 
+                onClick={handleSubmit} 
+                disabled={isLoading || !prompt.trim()} 
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white p-2.5 rounded-xl disabled:opacity-50 hover:shadow-lg hover:shadow-emerald-500/20 transition-all"
+              >
+                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       <style>{`
-        .typing-dot { width: 8px; height: 8px; border-radius: 50%; background: #10B981; display: inline-block; animation: typing 1.4s infinite both; margin: 0 2px; }
+        .typing-dot { 
+          width: 8px; 
+          height: 8px; 
+          border-radius: 50%; 
+          background: #10B981; 
+          display: inline-block; 
+          animation: typing 1.4s infinite both; 
+          margin: 0 2px; 
+        }
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-8px); opacity: 1; } }
+        @keyframes typing { 
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 
+          30% { transform: translateY(-8px); opacity: 1; } 
+        }
       `}</style>
     </div>
-  )
-          
+  )  // <-- This closes the return
+}      // <-- This closes the function
