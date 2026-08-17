@@ -76,6 +76,16 @@ const NAV_ITEMS = [
   { icon: FolderOpen, label: 'Projects' },
 ]
 
+// ============================================
+// QUICK ACTIONS
+// ============================================
+const QUICK_ACTIONS = [
+  { icon: Image, label: 'Create an Image', prompt: 'Create an image of a futuristic city' },
+  { icon: GitBranch, label: 'Compare answers', prompt: 'Compare the following answers and give me the best one' },
+  { icon: Globe, label: 'Web Search', prompt: 'Search the web for the latest information on' },
+  { icon: FileText, label: 'Create Document', prompt: 'Create a document about' },
+]
+
 export default function DashboardPage() {
   const [prompt, setPrompt] = useState('')
   const [response, setResponse] = useState<any>(null)
@@ -88,7 +98,18 @@ export default function DashboardPage() {
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([])
   const [walletBalance, setWalletBalance] = useState(100)
   const [chatHistory, setChatHistory] = useState<{id: number, title: string}[]>([])
+  const [selectedModelNames, setSelectedModelNames] = useState<string[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Update selected model names when selection changes
+  useEffect(() => {
+    const allModels = getAllModels()
+    const names = selectedModels.map(id => {
+      const model = allModels.find(m => m.id === id)
+      return model ? model.name : id
+    })
+    setSelectedModelNames(names)
+  }, [selectedModels])
 
   const fetchWallet = async () => {
     try {
@@ -137,12 +158,15 @@ export default function DashboardPage() {
       const data = await res.json()
       if (res.status === 402) {
         setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Insufficient balance! Please add funds.' }])
-      } else {
+      } else if (data.consensus) {
         setResponse(data)
         setMessages(prev => [...prev, { role: 'assistant', content: data.consensus }])
         fetchWallet()
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ No response from AI. Please try again.' }])
       }
     } catch (error) {
+      console.error('Error:', error)
       setMessages(prev => [...prev, { role: 'assistant', content: '❌ Error: Please try again.' }])
     }
     setIsLoading(false)
@@ -171,6 +195,14 @@ export default function DashboardPage() {
         }
       }
     }
+  }
+
+  const handleQuickAction = (actionPrompt: string) => {
+    setPrompt(actionPrompt)
+    // Auto-submit after setting the prompt
+    setTimeout(() => {
+      handleSubmit()
+    }, 100)
   }
 
   return (
@@ -299,14 +331,10 @@ export default function DashboardPage() {
               </div>
               <h2 className="text-2xl font-bold text-white">Hi User, how can I help you today?</h2>
               <div className="flex flex-wrap gap-3 mt-6 justify-center">
-                {[
-                  { icon: Image, label: 'Create an Image' },
-                  { icon: GitBranch, label: 'Compare answers' },
-                  { icon: Globe, label: 'Web Search' },
-                  { icon: FileText, label: 'Create Document' },
-                ].map((action, i) => (
+                {QUICK_ACTIONS.map((action, i) => (
                   <button 
                     key={i} 
+                    onClick={() => handleQuickAction(action.prompt)}
                     className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all"
                   >
                     <action.icon className="h-4 w-4" />
@@ -341,20 +369,21 @@ export default function DashboardPage() {
         {/* ========== INPUT AREA ========== */}
         <div className="border-t border-white/5 p-4 bg-black/20 backdrop-blur-xl">
           
-          {/* Model Selector Button */}
+          {/* Model Selector Button - Shows selected model names */}
           <button 
             onClick={() => setShowModelPicker(!showModelPicker)} 
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors mb-3"
+            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors mb-3 flex-wrap"
           >
             <span className="flex items-center gap-1">
-              {selectedModels.slice(0, 3).map(id => {
-                const all = Object.values(ALL_MODELS).flat()
+              {selectedModels.slice(0, 2).map(id => {
+                const all = getAllModels()
                 const model = all.find(m => m.id === id)
                 return model ? <span key={id}>{model.icon}</span> : null
               })}
-              {selectedModels.length > 3 && <span className="text-emerald-400">+{selectedModels.length - 3}</span>}
             </span>
-            <span className="text-emerald-400 font-medium">Models selected</span>
+            <span className="text-emerald-400 font-medium truncate max-w-[200px]">
+              {selectedModelNames.slice(0, 2).join(', ')}{selectedModelNames.length > 2 ? ` +${selectedModelNames.length - 2}` : ''}
+            </span>
             <ChevronDown className={`h-4 w-4 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
           </button>
 
@@ -486,4 +515,4 @@ export default function DashboardPage() {
       `}</style>
     </div>
   )
-}
+                }
