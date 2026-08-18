@@ -7,7 +7,7 @@ import {
   Image, FolderOpen, Menu, Sparkles,
   MessageSquare, Settings, X, 
   Globe, FileText, GitBranch, Trash2,
-  Paperclip, Upload, File, CheckCircle, AlertCircle
+  Paperclip, File, Mic, MicOff, Volume2, VolumeX
 } from 'lucide-react'
 
 // ============================================
@@ -78,9 +78,6 @@ type ChatType = {
   model?: string
 }
 
-// ============================================
-// FILE UPLOAD TYPES
-// ============================================
 type UploadedFile = {
   name: string
   size: number
@@ -104,38 +101,107 @@ export default function DashboardPage() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([])
   
-  // ============================================
-  // FILE UPLOAD STATE
-  // ============================================
+  // File Upload State
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
+  // ============================================
+  // VOICE INPUT STATE
+  // ============================================
+  const [isListening, setIsListening] = useState(false)
+  const [isSpeechSupported, setIsSpeechSupported] = useState(true)
+  const [transcript, setTranscript] = useState('')
+  const recognitionRef = useRef<any>(null)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // ============================================
+  // VOICE INPUT SETUP
+  // ============================================
   useEffect(() => {
-    const stored = getStoredChats()
-    if (stored.length > 0) {
-      setChats(stored)
-      const mostRecent = stored[0]
-      setCurrentChatId(mostRecent.id)
-      setMessages(mostRecent.messages || [])
-    } else {
-      createNewChat()
+    // Check if browser supports speech recognition
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      setIsSpeechSupported(false)
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = false
+    recognition.interimResults = true
+    recognition.lang = 'en-US'
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = ''
+      let finalTranscript = ''
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript
+        } else {
+          interimTranscript += transcript
+        }
+      }
+
+      const fullText = finalTranscript || interimTranscript
+      setTranscript(fullText)
+      
+      // Update prompt with voice input
+      if (finalTranscript) {
+        setPrompt(prev => prev ? prev + ' ' + finalTranscript : finalTranscript)
+        setTranscript('')
+        // Auto-submit after voice input
+        setTimeout(() => {
+          if (finalTranscript.trim()) {
+            handleSubmit()
+          }
+        }, 500)
+      }
+    }
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error)
+      setIsListening(false)
+      if (event.error === 'not-allowed') {
+        alert('Please allow microphone access to use voice input.')
+      }
+    }
+
+    recognition.onend = () => {
+      setIsListening(false)
+    }
+
+    recognitionRef.current = recognition
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort()
+      }
     }
   }, [])
 
-  useEffect(() => {
-    if (chats.length > 0) {
-      saveChats(chats)
+  const toggleVoiceInput = () => {
+    if (!isSpeechSupported) {
+      alert('Voice input is not supported in this browser. Please use Chrome or Edge.')
+      return
     }
-  }, [chats])
 
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    if (isListening) {
+      recognitionRef.current?.stop()
+      setIsListening(false)
+    } else {
+      try {
+        recognitionRef.current?.start()
+        setIsListening(true)
+        setTranscript('Listening...')
+      } catch (error) {
+        console.error('Error starting speech recognition:', error)
+        alert('Could not start voice input. Please try again.')
+      }
     }
-  }, [messages])
+  }
 
   // ============================================
   // FILE UPLOAD HANDLERS
@@ -147,10 +213,8 @@ export default function DashboardPage() {
     setIsUploading(true)
 
     try {
-      // Read file content
       const content = await readFileContent(file)
       
-      // Create file object
       const uploadedFile: UploadedFile = {
         name: file.name,
         size: file.size,
@@ -158,7 +222,6 @@ export default function DashboardPage() {
         content: content,
       }
 
-      // If image, create preview
       if (file.type.startsWith('image/')) {
         const preview = URL.createObjectURL(file)
         uploadedFile.preview = preview
@@ -166,7 +229,6 @@ export default function DashboardPage() {
 
       setUploadedFiles(prev => [...prev, uploadedFile])
 
-      // Add file info to prompt
       const filePrompt = `📎 File attached: ${file.name}\n\nContent:\n${content.slice(0, 2000)}${content.length > 2000 ? '\n... (truncated)' : ''}\n\nPlease analyze this file and answer: `
       setPrompt(filePrompt)
 
@@ -184,12 +246,10 @@ export default function DashboardPage() {
   const readFileContent = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       if (file.type.startsWith('image/')) {
-        // For images, just return the file name
         resolve(`[Image: ${file.name} (${Math.round(file.size / 1024)}KB)]`)
       } else if (file.type === 'application/pdf') {
         resolve(`[PDF: ${file.name} (${Math.round(file.size / 1024)}KB) - OCR content extraction coming soon]`)
       } else {
-        // For text files, read as text
         const reader = new FileReader()
         reader.onload = (event) => {
           const text = event.target?.result as string
@@ -203,7 +263,6 @@ export default function DashboardPage() {
 
   const removeFile = (index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index))
-    // Remove file content from prompt
     setPrompt(prompt.replace(/📎 File attached: .*\n\nContent:\n.*\n\nPlease analyze this file and answer: /, ''))
   }
 
@@ -301,7 +360,7 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // SUBMIT QUERY WITH FILE CONTEXT
+  // SUBMIT QUERY
   // ============================================
   const handleSubmit = async () => {
     if (!prompt.trim() && uploadedFiles.length === 0) return
@@ -312,7 +371,6 @@ export default function DashboardPage() {
       return
     }
 
-    // Build full prompt with file context
     let fullPrompt = prompt
     if (uploadedFiles.length > 0) {
       const fileContext = uploadedFiles.map(f => 
@@ -515,13 +573,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Messages - WhatsApp chat background */}
+        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0" style={{ backgroundColor: '#ECE5DD' }}>
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
               <div className="w-16 h-16 rounded-full bg-[#25D366] flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-4">AI</div>
               <h2 className="text-xl font-semibold text-gray-800">Hi User, how can I help you today?</h2>
-              <p className="text-gray-500 text-sm mt-1">Ask me anything, or upload a file for analysis</p>
+              <p className="text-gray-500 text-sm mt-1">Ask me anything, upload a file, or use voice input 🎤</p>
               <div className="flex flex-wrap gap-2 mt-4 justify-center">
                 {QUICK_ACTIONS.map((action, i) => (
                   <button key={i} onClick={() => handleQuickAction(action.prompt)} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
@@ -533,7 +591,8 @@ export default function DashboardPage() {
               <div className="mt-6 flex items-center gap-4 text-xs text-gray-500">
                 <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {selectedModels.length} model</span>
                 <span className="flex items-center gap-1"><Wallet className="h-3 w-3" /> ₹{walletBalance.toFixed(2)}</span>
-                <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> Upload files</span>
+                <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> Upload</span>
+                <span className="flex items-center gap-1"><Mic className="h-3 w-3" /> Voice</span>
               </div>
             </div>
           ) : (
@@ -564,12 +623,10 @@ export default function DashboardPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input - with File Upload */}
+        {/* Input - with Voice & File Upload */}
         <div className="border-t border-gray-200 p-3 bg-[#f0f0f0] flex-shrink-0">
           
-          {/* ============================================ */}
-          {/* FILE UPLOAD - Uploaded Files Display */}
-          {/* ============================================ */}
+          {/* Uploaded Files */}
           {uploadedFiles.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-2">
               {uploadedFiles.map((file, index) => (
@@ -581,10 +638,7 @@ export default function DashboardPage() {
                   )}
                   <span className="text-gray-700 truncate max-w-[120px]">{file.name}</span>
                   <span className="text-[10px] text-gray-400">{formatFileSize(file.size)}</span>
-                  <button
-                    onClick={() => removeFile(index)}
-                    className="text-gray-400 hover:text-red-500 transition-colors"
-                  >
+                  <button onClick={() => removeFile(index)} className="text-gray-400 hover:text-red-500">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -592,9 +646,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* ============================================ */}
-          {/* MODEL SELECTOR */}
-          {/* ============================================ */}
+          {/* Model Selector */}
           <button onClick={() => setShowModelPicker(!showModelPicker)} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors mb-1.5">
             {selectedModels.map(id => {
               const model = getAllModels().find(m => m.id === id)
@@ -646,18 +698,44 @@ export default function DashboardPage() {
           )}
 
           {/* ============================================ */}
-          {/* TEXT INPUT WITH FILE UPLOAD BUTTON */}
+          {/* TEXT INPUT WITH VOICE & FILE UPLOAD */}
           {/* ============================================ */}
           <div className="relative">
             <textarea 
               value={prompt} 
               onChange={(e) => setPrompt(e.target.value)} 
-              placeholder="Type a message or upload a file..." 
-              className="w-full min-h-[44px] max-h-[100px] bg-white border border-gray-200 rounded-lg p-2.5 pr-24 text-gray-800 placeholder:text-gray-400 outline-none focus:border-emerald-500 resize-none text-sm" 
+              placeholder={isListening ? '🎤 Listening...' : 'Type, upload, or speak...'} 
+              className="w-full min-h-[44px] max-h-[100px] bg-white border border-gray-200 rounded-lg p-2.5 pr-32 text-gray-800 placeholder:text-gray-400 outline-none focus:border-emerald-500 resize-none text-sm" 
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
               rows={1}
             />
+            
+            {/* Voice Input Indicator */}
+            {isListening && (
+              <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-[10px] text-red-500 font-medium">REC</span>
+              </div>
+            )}
+
             <div className="absolute right-2 bottom-2 flex items-center gap-1">
+              {/* Voice Input Button */}
+              <button
+                onClick={toggleVoiceInput}
+                className={`p-1.5 rounded-lg transition-all ${
+                  isListening 
+                    ? 'bg-red-500 text-white hover:bg-red-600' 
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                }`}
+                title={isListening ? 'Stop recording' : 'Start voice input'}
+              >
+                {isListening ? (
+                  <MicOff className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </button>
+
               {/* File Upload Button */}
               <input
                 type="file"
@@ -666,7 +744,6 @@ export default function DashboardPage() {
                 accept=".txt,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.webp,.csv,.json,.xml,.md"
                 className="hidden"
                 id="file-upload"
-                multiple={false}
               />
               <label 
                 htmlFor="file-upload" 
@@ -679,6 +756,7 @@ export default function DashboardPage() {
                 )}
               </label>
               
+              {/* Send Button */}
               <button 
                 onClick={handleSubmit} 
                 disabled={isLoading || (!prompt.trim() && uploadedFiles.length === 0) || selectedModels.length === 0} 
@@ -689,13 +767,16 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-2 mt-1.5">
+          <div className="flex items-center flex-wrap gap-2 mt-1.5">
             {selectedModels.length === 0 && (
               <p className="text-[10px] text-amber-600">⚠️ Select a model</p>
             )}
             <p className="text-[9px] text-gray-400">
-              Supports: TXT, PDF, DOC, Images, CSV, JSON, XML, MD
+              {isListening ? '🎤 Speak now...' : 'Supports: TXT, PDF, Images, DOC, CSV, JSON, XML, MD'}
             </p>
+            {!isSpeechSupported && (
+              <p className="text-[9px] text-amber-500">⚠️ Voice not supported</p>
+            )}
           </div>
         </div>
       </div>
@@ -709,7 +790,14 @@ export default function DashboardPage() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .recording-pulse {
+          animation: pulse 1s ease-in-out infinite;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
       `}</style>
     </div>
   )
-    }
+      }
