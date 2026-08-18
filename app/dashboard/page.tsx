@@ -7,7 +7,7 @@ import {
   Image, FolderOpen, Menu, Sparkles,
   MessageSquare, Settings, X, 
   Globe, FileText, GitBranch, Trash2,
-  Paperclip, File, Mic, MicOff, Volume2, VolumeX
+  Paperclip, File, Mic, MicOff
 } from 'lucide-react'
 
 // ============================================
@@ -111,7 +111,6 @@ export default function DashboardPage() {
   // ============================================
   const [isListening, setIsListening] = useState(false)
   const [isSpeechSupported, setIsSpeechSupported] = useState(true)
-  const [transcript, setTranscript] = useState('')
   const recognitionRef = useRef<any>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -146,18 +145,18 @@ export default function DashboardPage() {
       }
 
       const fullText = finalTranscript || interimTranscript
-      setTranscript(fullText)
       
       // Update prompt with voice input
       if (finalTranscript) {
         setPrompt(prev => prev ? prev + ' ' + finalTranscript : finalTranscript)
-        setTranscript('')
         // Auto-submit after voice input
         setTimeout(() => {
           if (finalTranscript.trim()) {
             handleSubmit()
           }
         }, 500)
+      } else if (interimTranscript) {
+        setPrompt(interimTranscript)
       }
     }
 
@@ -195,7 +194,6 @@ export default function DashboardPage() {
       try {
         recognitionRef.current?.start()
         setIsListening(true)
-        setTranscript('Listening...')
       } catch (error) {
         console.error('Error starting speech recognition:', error)
         alert('Could not start voice input. Please try again.')
@@ -623,7 +621,9 @@ export default function DashboardPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input - with Voice & File Upload */}
+        {/* ============================================ */}
+        {/* INPUT AREA - WITH VOICE BUTTON */}
+        {/* ============================================ */}
         <div className="border-t border-gray-200 p-3 bg-[#f0f0f0] flex-shrink-0">
           
           {/* Uploaded Files */}
@@ -698,14 +698,14 @@ export default function DashboardPage() {
           )}
 
           {/* ============================================ */}
-          {/* TEXT INPUT WITH VOICE & FILE UPLOAD */}
+          {/* TEXT INPUT - WITH VOICE BUTTON VISIBLE */}
           {/* ============================================ */}
           <div className="relative">
             <textarea 
               value={prompt} 
               onChange={(e) => setPrompt(e.target.value)} 
               placeholder={isListening ? '🎤 Listening...' : 'Type, upload, or speak...'} 
-              className="w-full min-h-[44px] max-h-[100px] bg-white border border-gray-200 rounded-lg p-2.5 pr-32 text-gray-800 placeholder:text-gray-400 outline-none focus:border-emerald-500 resize-none text-sm" 
+              className="w-full min-h-[44px] max-h-[100px] bg-white border border-gray-200 rounded-lg p-2.5 pr-36 text-gray-800 placeholder:text-gray-400 outline-none focus:border-emerald-500 resize-none text-sm" 
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
               rows={1}
             />
@@ -719,7 +719,9 @@ export default function DashboardPage() {
             )}
 
             <div className="absolute right-2 bottom-2 flex items-center gap-1">
-              {/* Voice Input Button */}
+              {/* ============================================ */}
+              {/* VOICE INPUT BUTTON - VISIBLE HERE */}
+              {/* ============================================ */}
               <button
                 onClick={toggleVoiceInput}
                 className={`p-1.5 rounded-lg transition-all ${
@@ -790,14 +792,7 @@ export default function DashboardPage() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
-        .recording-pulse {
-          animation: pulse 1s ease-in-out infinite;
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
       `}</style>
     </div>
   )
-      }
+          }
