@@ -80,7 +80,6 @@ export default function DashboardPage() {
   const [prompt, setPrompt] = useState('')
   const [response, setResponse] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
-  // FIX: ONLY ONE model selected by default (GPT-5.4 mini)
   const [selectedModels, setSelectedModels] = useState(['gpt-5.4-mini'])
   const [showModelPicker, setShowModelPicker] = useState(false)
   const [modelTab, setModelTab] = useState('popular')
@@ -88,12 +87,12 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([])
   const [walletBalance, setWalletBalance] = useState(100)
-  // FIX: Chat history with unique IDs
   const [chatHistory, setChatHistory] = useState<{id: string, title: string, messages: any[], timestamp: string}[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [activePage, setActivePage] = useState('chat')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   // ============================================
   // FETCH WALLET
@@ -110,7 +109,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchWallet()
-    // Load chat history from localStorage
     const saved = localStorage.getItem('aios_chat_history')
     if (saved) {
       try {
@@ -133,7 +131,7 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // NEW CHAT - CLEARS EVERYTHING
+  // NEW CHAT
   // ============================================
   const createNewChat = () => {
     const newId = Date.now().toString()
@@ -149,7 +147,6 @@ export default function DashboardPage() {
     setResponse(null)
     setPrompt('')
     setActivePage('chat')
-    // Save to localStorage
     const updated = [newChat, ...chatHistory]
     localStorage.setItem('aios_chat_history', JSON.stringify(updated))
   }
@@ -171,7 +168,6 @@ export default function DashboardPage() {
   // MODEL FUNCTIONS
   // ============================================
   const toggleModel = (id: string) => {
-    // FIX: Only allow ONE model selection
     if (selectedModels.includes(id)) {
       setSelectedModels([])
     } else {
@@ -188,12 +184,10 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // SUBMIT QUERY - WITH WALLET DEDUCTION
+  // SUBMIT QUERY
   // ============================================
   const handleSubmit = async () => {
     if (!prompt.trim()) return
-    
-    // Check wallet balance before sending
     if (walletBalance < 0.01) {
       setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Insufficient balance. Please add funds to continue.' }])
       return
@@ -218,7 +212,6 @@ export default function DashboardPage() {
       } else if (data.consensus) {
         setResponse(data)
         setMessages(prev => [...prev, { role: 'assistant', content: data.consensus }])
-        // Update wallet balance from API response
         setWalletBalance(data.wallet_balance || 100)
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ No response. Please try again.' }])
@@ -267,7 +260,7 @@ export default function DashboardPage() {
   const handleNavClick = (id: string) => {
     setActivePage(id)
     if (id === 'chat') return
-    setMessages([{ role: 'assistant', content: `📌 ${id.charAt(0).toUpperCase() + id.slice(1)} coming soon! This feature is under development.` }])
+    setMessages([{ role: 'assistant', content: `📌 ${id.charAt(0).toUpperCase() + id.slice(1)} coming soon!` }])
   }
 
   // ============================================
@@ -289,10 +282,10 @@ export default function DashboardPage() {
   // RENDER
   // ============================================
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-white flex">
+    <div className="min-h-screen bg-[#0B0F17] text-white flex overflow-hidden">
       
       {/* ========== SIDEBAR ========== */}
-      <div className={`${sidebarOpen ? 'w-72' : 'w-20'} transition-all duration-300 border-r border-white/10 bg-black/30 backdrop-blur-xl flex flex-col h-screen sticky top-0`}>
+      <div className={`${sidebarOpen ? 'w-72' : 'w-20'} transition-all duration-300 border-r border-white/10 bg-black/30 backdrop-blur-xl flex flex-col h-screen sticky top-0 flex-shrink-0`}>
         
         {/* Logo */}
         <div className="flex items-center gap-3 p-4 border-b border-white/5">
@@ -392,21 +385,21 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ========== MAIN CHAT AREA ========== */}
-      <div className="flex-1 flex flex-col h-screen">
+      {/* ========== MAIN CHAT AREA - FIXED LAYOUT ========== */}
+      <div className="flex-1 flex flex-col h-screen min-w-0">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-black/20 backdrop-blur-xl">
-          <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-400 hover:text-white transition-colors">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-white/5 bg-black/20 backdrop-blur-xl flex-shrink-0">
+          <div className="flex items-center gap-4 min-w-0">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+            <h1 className="text-lg font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent truncate">
               {activePage === 'chat' ? 'AIOS Chat' : activePage.charAt(0).toUpperCase() + activePage.slice(1)}
             </h1>
             {response && (
-              <div className="flex items-center gap-2 text-xs">
-                <span className={`px-2 py-1 rounded-full ${getScoreColor(response.consensus_score)} bg-white/5`}>
+              <div className="flex items-center gap-2 text-xs flex-shrink-0">
+                <span className={`px-2 py-0.5 rounded-full ${getScoreColor(response.consensus_score)} bg-white/5`}>
                   Score: {response.consensus_score}%
                 </span>
                 <span className="text-gray-500">|</span>
@@ -416,7 +409,7 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-shrink-0">
             <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
               <Wallet className="h-4 w-4 text-emerald-400" />
               <span className="text-emerald-400 font-mono font-semibold text-sm">₹{walletBalance.toFixed(2)}</span>
@@ -430,8 +423,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {/* Messages Container - FIXED: takes available space, no extra padding */}
+        <div 
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
+        >
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-3xl font-bold text-white shadow-2xl shadow-emerald-500/20 mb-6">
@@ -484,13 +480,13 @@ export default function DashboardPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ========== INPUT AREA ========== */}
-        <div className="border-t border-white/5 p-4 bg-black/20 backdrop-blur-xl">
+        {/* ========== INPUT AREA - FIXED: sticks to bottom ========== */}
+        <div className="border-t border-white/5 p-4 bg-black/20 backdrop-blur-xl flex-shrink-0">
           
-          {/* Model Selector - Shows selected model name */}
+          {/* Model Selector */}
           <button 
             onClick={() => setShowModelPicker(!showModelPicker)} 
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors mb-3"
+            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors mb-2"
           >
             <span className="flex items-center gap-1">
               {selectedModels.map(id => {
@@ -508,41 +504,41 @@ export default function DashboardPage() {
                 (₹{getModelCost(selectedModels[0])?.toFixed(4) || '0.0000'}/query)
               </span>
             )}
-            <ChevronDown className={`h-4 w-4 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-3 w-3 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
           </button>
 
           {/* Model Picker */}
           {showModelPicker && (
-            <div className="mb-3 p-4 bg-[#1a1f2e] border border-white/10 rounded-2xl max-h-[500px] overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
+            <div className="mb-2 p-3 bg-[#1a1f2e] border border-white/10 rounded-2xl max-h-[400px] overflow-y-auto">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-white">Choose a model</h3>
                 <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-white">
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mb-3">Select one AI model for your task</p>
+              <p className="text-xs text-gray-500 mb-2">Select one AI model for your task</p>
 
-              <div className="relative mb-4">
+              <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                 <input 
                   type="text" 
                   placeholder="Search models..." 
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)} 
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-emerald-500/50 transition-all" 
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-emerald-500/50 transition-all" 
                 />
               </div>
 
-              <div className="flex gap-1 mb-4 bg-white/5 rounded-xl p-1 flex-wrap">
+              <div className="flex gap-1 mb-3 bg-white/5 rounded-xl p-1 flex-wrap">
                 {['popular', 'intelligence', 'latest', 'all'].map((tab) => (
                   <button 
                     key={tab} 
                     onClick={() => setModelTab(tab)} 
-                    className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-all ${
+                    className={`flex-1 px-2 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
                       modelTab === tab ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400 hover:text-white'
                     }`}
                   >
-                    {tab === 'all' ? 'All Models' : tab}
+                    {tab === 'all' ? 'All' : tab}
                   </button>
                 ))}
               </div>
@@ -552,50 +548,50 @@ export default function DashboardPage() {
                   setSelectedModels(['gpt-5.4-mini']); 
                   setShowModelPicker(false) 
                 }} 
-                className="w-full p-3 mb-3 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl text-left hover:bg-amber-500/20 transition-all"
+                className="w-full p-2 mb-2 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl text-left hover:bg-amber-500/20 transition-all"
               >
-                <div className="font-semibold text-sm text-amber-400">✨ Auto Mode (Super Fiesta)</div>
-                <div className="text-xs text-gray-400">picks the best model for your task</div>
+                <div className="font-semibold text-xs text-amber-400">✨ Auto Mode</div>
+                <div className="text-[10px] text-gray-400">picks the best model for your task</div>
               </button>
 
-              <div className="text-xs text-gray-500 mb-2">or pick your own</div>
+              <div className="text-[10px] text-gray-500 mb-2">or pick your own</div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-1.5">
                 {getCurrentModels().map((model) => (
                   <button
                     key={model.id}
                     onClick={() => toggleModel(model.id)}
-                    className={`flex items-center gap-2 p-2 rounded-xl text-left transition-all text-sm w-full ${
+                    className={`flex items-center gap-1.5 p-1.5 rounded-xl text-left transition-all text-xs w-full ${
                       selectedModels.includes(model.id)
                         ? 'bg-emerald-500/10 border border-emerald-500/30'
                         : 'bg-white/5 border border-transparent hover:bg-white/10'
                     }`}
                   >
-                    <span className="text-lg flex-shrink-0">{model.icon}</span>
+                    <span className="text-base flex-shrink-0">{model.icon}</span>
                     <div className="flex-1 min-w-0">
                       <span className={`truncate block ${selectedModels.includes(model.id) ? 'text-emerald-400' : 'text-white'}`}>
                         {model.name}
                       </span>
-                      <span className={`text-[10px] ${model.tier === 'pro' ? 'text-amber-400' : 'text-emerald-400'}`}>
-                        {model.tier === 'pro' ? '⭐ Pro' : 'Free'} · ₹{model.cost.toFixed(4)}/query
+                      <span className={`text-[9px] ${model.tier === 'pro' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {model.tier === 'pro' ? '⭐ Pro' : 'Free'} · ₹{model.cost.toFixed(4)}
                       </span>
                     </div>
                     {selectedModels.includes(model.id) && (
-                      <span className="ml-auto text-emerald-400 flex-shrink-0">✓</span>
+                      <span className="ml-auto text-emerald-400 flex-shrink-0 text-xs">✓</span>
                     )}
                   </button>
                 ))}
               </div>
 
-              <div className="text-xs text-gray-500 mt-3">
+              <div className="text-[10px] text-gray-500 mt-2">
                 {getCurrentModels().length} models available
               </div>
 
               <button 
                 onClick={() => setShowModelPicker(false)} 
-                className="w-full mt-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-2.5 rounded-xl font-semibold text-sm hover:shadow-lg transition-all"
+                className="w-full mt-2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-2 rounded-xl font-semibold text-xs hover:shadow-lg transition-all"
               >
-                Apply for this chat
+                Apply
               </button>
             </div>
           )}
@@ -606,32 +602,33 @@ export default function DashboardPage() {
               value={prompt} 
               onChange={(e) => setPrompt(e.target.value)} 
               placeholder="Ask me anything..." 
-              className="w-full min-h-[60px] max-h-[200px] bg-white/5 border border-white/10 rounded-2xl p-4 pr-28 text-white placeholder:text-gray-500 outline-none focus:border-emerald-500/50 transition-all resize-none" 
+              className="w-full min-h-[52px] max-h-[120px] bg-white/5 border border-white/10 rounded-2xl p-3 pr-24 text-white placeholder:text-gray-500 outline-none focus:border-emerald-500/50 transition-all resize-none text-sm" 
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
+              rows={1}
             />
-            <div className="absolute right-3 bottom-3 flex items-center gap-2">
-              <button className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10">
-                <Sparkles className="h-5 w-5" />
+            <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
+              <button className="p-1.5 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10">
+                <Sparkles className="h-4 w-4" />
               </button>
               <button 
                 onClick={handleSubmit} 
                 disabled={isLoading || !prompt.trim() || selectedModels.length === 0} 
-                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white p-2.5 rounded-xl disabled:opacity-50 hover:shadow-lg hover:shadow-emerald-500/20 transition-all"
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white p-2 rounded-xl disabled:opacity-50 hover:shadow-lg hover:shadow-emerald-500/20 transition-all"
               >
-                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </button>
             </div>
           </div>
           {selectedModels.length === 0 && (
-            <p className="text-xs text-amber-400 mt-2">⚠️ Please select a model to continue</p>
+            <p className="text-[10px] text-amber-400 mt-1">⚠️ Please select a model to continue</p>
           )}
         </div>
       </div>
 
       <style>{`
         .typing-dot { 
-          width: 8px; 
-          height: 8px; 
+          width: 6px; 
+          height: 6px; 
           border-radius: 50%; 
           background: #10B981; 
           display: inline-block; 
@@ -642,9 +639,22 @@ export default function DashboardPage() {
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
         @keyframes typing { 
           0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 
-          30% { transform: translateY(-8px); opacity: 1; } 
+          30% { transform: translateY(-6px); opacity: 1; } 
+        }
+        ::-webkit-scrollbar {
+          width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #1E293B;
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #334155;
         }
       `}</style>
     </div>
   )
-          }
+    }
