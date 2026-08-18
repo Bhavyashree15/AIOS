@@ -290,6 +290,7 @@ export default function DashboardPage() {
   }
 
   return (
+    // MAIN CONTAINER - WhatsApp background
     <div className="flex h-screen bg-[#ECE5DD] text-gray-800 overflow-hidden">
       
       {/* ===== OVERLAY ===== */}
@@ -300,7 +301,7 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* ===== SIDEBAR - WhatsApp Style ===== */}
+      {/* ===== SIDEBAR ===== */}
       <div className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ${sidebarOpen ? 'w-72' : '-translate-x-full'} bg-white border-r border-gray-200 flex flex-col overflow-hidden shadow-xl`}>
         
         <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0 bg-[#075E54] text-white">
@@ -368,9 +369,9 @@ export default function DashboardPage() {
       </div>
 
       {/* ===== MAIN CHAT AREA ===== */}
-      <div className="flex-1 flex flex-col h-full min-w-0 bg-[#ECE5DD]">
+      <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header - WhatsApp Style */}
+        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3 min-w-0">
             <button onClick={() => setSidebarOpen(true)} className="text-gray-600 hover:text-gray-800">
@@ -381,7 +382,7 @@ export default function DashboardPage() {
             </h1>
             {response && (
               <div className="flex items-center gap-1.5 text-[10px]">
-                <span className={`px-1.5 py-0.5 rounded-full ${getScoreColor(response.consensus_score || 0)} bg-white/5`}>
+                <span className={`px-1.5 py-0.5 rounded-full ${getScoreColor(response.consensus_score || 0)} bg-gray-100`}>
                   {response.consensus_score || 0}%
                 </span>
                 <span className="text-gray-400">|</span>
@@ -401,8 +402,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Messages - WhatsApp Style Chat Background */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0 bg-[#ECE5DD]">
+        {/* Messages - WhatsApp chat background */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0" style={{ backgroundColor: '#ECE5DD' }}>
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
               <div className="w-16 h-16 rounded-full bg-[#25D366] flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-4">AI</div>
@@ -449,7 +450,7 @@ export default function DashboardPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input - WhatsApp Style */}
+        {/* Input */}
         <div className="border-t border-gray-200 p-3 bg-[#f0f0f0] flex-shrink-0">
           
           <button onClick={() => setShowModelPicker(!showModelPicker)} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors mb-1.5">
@@ -542,4 +543,4 @@ export default function DashboardPage() {
       `}</style>
     </div>
   )
-}
+    }
