@@ -6,7 +6,8 @@ import {
   Bot, Zap, Search, Code, Users, Plus, 
   Image, FolderOpen, Menu, Sparkles,
   MessageSquare, Settings, X, 
-  Globe, FileText, GitBranch, Trash2
+  Globe, FileText, GitBranch, Trash2,
+  Paperclip, Upload, File, CheckCircle, AlertCircle
 } from 'lucide-react'
 
 // ============================================
@@ -77,6 +78,17 @@ type ChatType = {
   model?: string
 }
 
+// ============================================
+// FILE UPLOAD TYPES
+// ============================================
+type UploadedFile = {
+  name: string
+  size: number
+  type: string
+  content: string
+  preview?: string
+}
+
 export default function DashboardPage() {
   const [prompt, setPrompt] = useState('')
   const [response, setResponse] = useState<any>(null)
@@ -91,6 +103,13 @@ export default function DashboardPage() {
   const [chats, setChats] = useState<ChatType[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([])
+  
+  // ============================================
+  // FILE UPLOAD STATE
+  // ============================================
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -118,6 +137,85 @@ export default function DashboardPage() {
     }
   }, [messages])
 
+  // ============================================
+  // FILE UPLOAD HANDLERS
+  // ============================================
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+
+    try {
+      // Read file content
+      const content = await readFileContent(file)
+      
+      // Create file object
+      const uploadedFile: UploadedFile = {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        content: content,
+      }
+
+      // If image, create preview
+      if (file.type.startsWith('image/')) {
+        const preview = URL.createObjectURL(file)
+        uploadedFile.preview = preview
+      }
+
+      setUploadedFiles(prev => [...prev, uploadedFile])
+
+      // Add file info to prompt
+      const filePrompt = `📎 File attached: ${file.name}\n\nContent:\n${content.slice(0, 2000)}${content.length > 2000 ? '\n... (truncated)' : ''}\n\nPlease analyze this file and answer: `
+      setPrompt(filePrompt)
+
+    } catch (error) {
+      console.error('Error reading file:', error)
+      alert('Failed to read file. Please try again.')
+    } finally {
+      setIsUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const readFileContent = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (file.type.startsWith('image/')) {
+        // For images, just return the file name
+        resolve(`[Image: ${file.name} (${Math.round(file.size / 1024)}KB)]`)
+      } else if (file.type === 'application/pdf') {
+        resolve(`[PDF: ${file.name} (${Math.round(file.size / 1024)}KB) - OCR content extraction coming soon]`)
+      } else {
+        // For text files, read as text
+        const reader = new FileReader()
+        reader.onload = (event) => {
+          const text = event.target?.result as string
+          resolve(text)
+        }
+        reader.onerror = () => reject('Failed to read file')
+        reader.readAsText(file)
+      }
+    })
+  }
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index))
+    // Remove file content from prompt
+    setPrompt(prompt.replace(/📎 File attached: .*\n\nContent:\n.*\n\nPlease analyze this file and answer: /, ''))
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  }
+
+  // ============================================
+  // CHAT FUNCTIONS
+  // ============================================
   const createNewChat = () => {
     const newId = Date.now().toString()
     const newChat: ChatType = {
@@ -132,6 +230,7 @@ export default function DashboardPage() {
     setMessages([])
     setResponse(null)
     setPrompt('')
+    setUploadedFiles([])
     setSidebarOpen(false)
   }
 
@@ -142,6 +241,7 @@ export default function DashboardPage() {
       setMessages(chat.messages || [])
       setResponse(null)
       setPrompt('')
+      setUploadedFiles([])
       setSidebarOpen(false)
     }
   }
@@ -200,15 +300,28 @@ export default function DashboardPage() {
     return models
   }
 
+  // ============================================
+  // SUBMIT QUERY WITH FILE CONTEXT
+  // ============================================
   const handleSubmit = async () => {
-    if (!prompt.trim() || selectedModels.length === 0) return
+    if (!prompt.trim() && uploadedFiles.length === 0) return
+    if (selectedModels.length === 0) return
     
     if (walletBalance < 0.01) {
       setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Insufficient balance. Please add funds.' }])
       return
     }
 
-    const userMsg = { role: 'user' as const, content: prompt }
+    // Build full prompt with file context
+    let fullPrompt = prompt
+    if (uploadedFiles.length > 0) {
+      const fileContext = uploadedFiles.map(f => 
+        `📎 File: ${f.name}\nContent: ${f.content.slice(0, 1000)}`
+      ).join('\n\n')
+      fullPrompt = `Context from uploaded files:\n${fileContext}\n\nUser question: ${prompt || 'Please analyze these files'}`
+    }
+
+    const userMsg = { role: 'user' as const, content: fullPrompt }
     const updatedMessages = [...messages, userMsg]
     setMessages(updatedMessages)
     
@@ -218,12 +331,13 @@ export default function DashboardPage() {
     
     setIsLoading(true)
     setPrompt('')
+    setUploadedFiles([])
 
     try {
       const res = await fetch('/api/ai/consensus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, models: selectedModels })
+        body: JSON.stringify({ prompt: fullPrompt, models: selectedModels })
       })
       const data = await res.json()
       
@@ -290,7 +404,6 @@ export default function DashboardPage() {
   }
 
   return (
-    // MAIN CONTAINER - WhatsApp background
     <div className="flex h-screen bg-[#ECE5DD] text-gray-800 overflow-hidden">
       
       {/* ===== OVERLAY ===== */}
@@ -408,7 +521,7 @@ export default function DashboardPage() {
             <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
               <div className="w-16 h-16 rounded-full bg-[#25D366] flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-4">AI</div>
               <h2 className="text-xl font-semibold text-gray-800">Hi User, how can I help you today?</h2>
-              <p className="text-gray-500 text-sm mt-1">Ask me anything, and I'll get answers from AI models</p>
+              <p className="text-gray-500 text-sm mt-1">Ask me anything, or upload a file for analysis</p>
               <div className="flex flex-wrap gap-2 mt-4 justify-center">
                 {QUICK_ACTIONS.map((action, i) => (
                   <button key={i} onClick={() => handleQuickAction(action.prompt)} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
@@ -420,6 +533,7 @@ export default function DashboardPage() {
               <div className="mt-6 flex items-center gap-4 text-xs text-gray-500">
                 <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {selectedModels.length} model</span>
                 <span className="flex items-center gap-1"><Wallet className="h-3 w-3" /> ₹{walletBalance.toFixed(2)}</span>
+                <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> Upload files</span>
               </div>
             </div>
           ) : (
@@ -450,9 +564,37 @@ export default function DashboardPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
+        {/* Input - with File Upload */}
         <div className="border-t border-gray-200 p-3 bg-[#f0f0f0] flex-shrink-0">
           
+          {/* ============================================ */}
+          {/* FILE UPLOAD - Uploaded Files Display */}
+          {/* ============================================ */}
+          {uploadedFiles.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm shadow-sm">
+                  {file.type.startsWith('image/') && file.preview ? (
+                    <img src={file.preview} alt={file.name} className="w-8 h-8 rounded object-cover" />
+                  ) : (
+                    <File className="h-4 w-4 text-gray-500" />
+                  )}
+                  <span className="text-gray-700 truncate max-w-[120px]">{file.name}</span>
+                  <span className="text-[10px] text-gray-400">{formatFileSize(file.size)}</span>
+                  <button
+                    onClick={() => removeFile(index)}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ============================================ */}
+          {/* MODEL SELECTOR */}
+          {/* ============================================ */}
           <button onClick={() => setShowModelPicker(!showModelPicker)} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors mb-1.5">
             {selectedModels.map(id => {
               const model = getAllModels().find(m => m.id === id)
@@ -503,31 +645,58 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* ============================================ */}
+          {/* TEXT INPUT WITH FILE UPLOAD BUTTON */}
+          {/* ============================================ */}
           <div className="relative">
             <textarea 
               value={prompt} 
               onChange={(e) => setPrompt(e.target.value)} 
-              placeholder="Type a message..." 
-              className="w-full min-h-[44px] max-h-[100px] bg-white border border-gray-200 rounded-lg p-2.5 pr-16 text-gray-800 placeholder:text-gray-400 outline-none focus:border-emerald-500 resize-none text-sm" 
+              placeholder="Type a message or upload a file..." 
+              className="w-full min-h-[44px] max-h-[100px] bg-white border border-gray-200 rounded-lg p-2.5 pr-24 text-gray-800 placeholder:text-gray-400 outline-none focus:border-emerald-500 resize-none text-sm" 
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
               rows={1}
             />
             <div className="absolute right-2 bottom-2 flex items-center gap-1">
-              <button className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-                <Sparkles className="h-4 w-4" />
-              </button>
+              {/* File Upload Button */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".txt,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.webp,.csv,.json,.xml,.md"
+                className="hidden"
+                id="file-upload"
+                multiple={false}
+              />
+              <label 
+                htmlFor="file-upload" 
+                className={`p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer ${isUploading ? 'opacity-50' : ''}`}
+              >
+                {isUploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                ) : (
+                  <Paperclip className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                )}
+              </label>
+              
               <button 
                 onClick={handleSubmit} 
-                disabled={isLoading || !prompt.trim() || selectedModels.length === 0} 
+                disabled={isLoading || (!prompt.trim() && uploadedFiles.length === 0) || selectedModels.length === 0} 
                 className="bg-[#25D366] text-white p-2 rounded-lg disabled:opacity-50 hover:shadow-lg transition-all"
               >
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </button>
             </div>
           </div>
-          {selectedModels.length === 0 && (
-            <p className="text-[10px] text-amber-600 mt-1">⚠️ Select a model</p>
-          )}
+          
+          <div className="flex items-center gap-2 mt-1.5">
+            {selectedModels.length === 0 && (
+              <p className="text-[10px] text-amber-600">⚠️ Select a model</p>
+            )}
+            <p className="text-[9px] text-gray-400">
+              Supports: TXT, PDF, DOC, Images, CSV, JSON, XML, MD
+            </p>
+          </div>
         </div>
       </div>
 
