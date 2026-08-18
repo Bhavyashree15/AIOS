@@ -2,17 +2,18 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { 
-  Send, Loader2, Wallet, ChevronDown, ChevronUp, 
+  Send, Loader2, Wallet, ChevronDown, 
   Bot, Zap, Search, Code, Users, Plus, 
   Image, FolderOpen, Menu, Sparkles,
-  MessageSquare, Settings, X, Home, 
-  LayoutDashboard, FileText, BarChart,
-  Award, Star, TrendingUp, Clock, 
-  Feather, Globe, Layers, Cpu, GitBranch
+  MessageSquare, Settings, X, 
+  Globe, FileText, GitBranch, Copy, Check,
+  BarChart, TrendingUp, Clock, Award,
+  ChevronRight, Download, Share2, ThumbsUp, ThumbsDown,
+  Home, LayoutDashboard, File, User, LogOut
 } from 'lucide-react'
 
 // ============================================
-// 40+ MODELS DATABASE
+// COMPLETE MODEL DATABASE (40+ MODELS)
 // ============================================
 const ALL_MODELS = {
   popular: [
@@ -66,31 +67,22 @@ const getAllModels = () => {
   )
 }
 
-// ============================================
-// SIDEBAR NAVIGATION
-// ============================================
-const NAV_ITEMS = [
-  { icon: MessageSquare, label: 'Chat', active: true },
-  { icon: Image, label: 'Image Studio' },
-  { icon: Users, label: 'Experts' },
-  { icon: FolderOpen, label: 'Projects' },
-]
-
-// ============================================
-// QUICK ACTIONS
-// ============================================
+// Quick actions
 const QUICK_ACTIONS = [
-  { icon: Image, label: 'Create an Image', prompt: 'Create an image of a futuristic city' },
-  { icon: GitBranch, label: 'Compare answers', prompt: 'Compare the following answers and give me the best one' },
-  { icon: Globe, label: 'Web Search', prompt: 'Search the web for the latest information on' },
-  { icon: FileText, label: 'Create Document', prompt: 'Create a document about' },
+  { icon: Image, label: 'Create an Image', prompt: 'Create a detailed description of a futuristic city with neon lights, flying cars, and holographic billboards' },
+  { icon: GitBranch, label: 'Compare answers', prompt: 'Compare the following concepts and give me a detailed comparison:' },
+  { icon: Globe, label: 'Web Search', prompt: 'Search for the latest information about' },
+  { icon: FileText, label: 'Create Document', prompt: 'Write a professional document about' },
 ]
 
 export default function DashboardPage() {
+  // ============================================
+  // STATE
+  // ============================================
   const [prompt, setPrompt] = useState('')
   const [response, setResponse] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedModels, setSelectedModels] = useState(['gpt-5.4-mini', 'qwen-3.5-flash'])
+  const [selectedModels, setSelectedModels] = useState(['gpt-5.4-mini'])
   const [showModelPicker, setShowModelPicker] = useState(false)
   const [modelTab, setModelTab] = useState('popular')
   const [searchQuery, setSearchQuery] = useState('')
@@ -98,24 +90,18 @@ export default function DashboardPage() {
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([])
   const [walletBalance, setWalletBalance] = useState(100)
   const [chatHistory, setChatHistory] = useState<{id: number, title: string}[]>([])
-  const [selectedModelNames, setSelectedModelNames] = useState<string[]>([])
+  const [copied, setCopied] = useState(false)
+  const [activePage, setActivePage] = useState('chat')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Update selected model names when selection changes
-  useEffect(() => {
-    const allModels = getAllModels()
-    const names = selectedModels.map(id => {
-      const model = allModels.find(m => m.id === id)
-      return model ? model.name : id
-    })
-    setSelectedModelNames(names)
-  }, [selectedModels])
-
+  // ============================================
+  // FETCH WALLET
+  // ============================================
   const fetchWallet = async () => {
     try {
-      const res = await fetch('/api/wallet')
+      const res = await fetch('/api/ai/consensus')
       const data = await res.json()
-      setWalletBalance(data.balance)
+      setWalletBalance(data.balance || 100)
     } catch (error) {
       console.error('Error fetching wallet:', error)
     }
@@ -129,6 +115,9 @@ export default function DashboardPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // ============================================
+  // MODEL FUNCTIONS
+  // ============================================
   const toggleModel = (id: string) => {
     if (selectedModels.includes(id)) {
       setSelectedModels(selectedModels.filter(m => m !== id))
@@ -145,6 +134,9 @@ export default function DashboardPage() {
     return models
   }
 
+  // ============================================
+  // SUBMIT QUERY
+  // ============================================
   const handleSubmit = async () => {
     if (!prompt.trim()) return
     setMessages(prev => [...prev, { role: 'user', content: prompt }])
@@ -156,12 +148,15 @@ export default function DashboardPage() {
         body: JSON.stringify({ prompt, models: selectedModels })
       })
       const data = await res.json()
+      
       if (res.status === 402) {
-        setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Insufficient balance! Please add funds.' }])
+        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${data.error}` }])
+      } else if (data.error) {
+        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${data.error}` }])
       } else if (data.consensus) {
         setResponse(data)
         setMessages(prev => [...prev, { role: 'assistant', content: data.consensus }])
-        fetchWallet()
+        setWalletBalance(data.wallet_balance || 100)
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ No response from AI. Please try again.' }])
       }
@@ -173,38 +168,99 @@ export default function DashboardPage() {
     setPrompt('')
   }
 
+  // ============================================
+  // CHAT FUNCTIONS
+  // ============================================
   const createNewChat = () => {
     const newId = Date.now()
-    setChatHistory(prev => [{ id: newId, title: 'New Chat' }, ...prev])
+    const title = prompt ? prompt.slice(0, 30) + '...' : 'New Chat'
+    setChatHistory(prev => [{ id: newId, title }, ...prev])
     setMessages([])
     setResponse(null)
+    setActivePage('chat')
   }
 
+  const loadChat = (chatId: number) => {
+    // In production, this would load chat from database
+    setActivePage('chat')
+    // For demo, just create a new chat
+    const chat = chatHistory.find(c => c.id === chatId)
+    if (chat) {
+      setMessages([])
+      setResponse(null)
+    }
+  }
+
+  // ============================================
+  // SIDEBAR NAVIGATION
+  // ============================================
+  const navItems = [
+    { id: 'chat', icon: MessageSquare, label: 'Chat' },
+    { id: 'image', icon: Image, label: 'Image Studio' },
+    { id: 'experts', icon: Users, label: 'Experts' },
+    { id: 'projects', icon: FolderOpen, label: 'Projects' },
+  ]
+
+  const handleNavClick = (id: string) => {
+    setActivePage(id)
+    if (id === 'chat') {
+      // Stay on chat
+    } else if (id === 'image') {
+      setMessages([{ role: 'assistant', content: '🎨 Image Studio coming soon! Create and edit images with AI.' }])
+    } else if (id === 'experts') {
+      setMessages([{ role: 'assistant', content: '👨‍💻 Experts coming soon! Connect with AI experts for specialized tasks.' }])
+    } else if (id === 'projects') {
+      setMessages([{ role: 'assistant', content: '📁 Projects coming soon! Manage your AI projects in one place.' }])
+    }
+  }
+
+  // ============================================
+  // ADD FUNDS
+  // ============================================
   const addFunds = async () => {
     if (typeof window !== 'undefined') {
       const amount = window.prompt('Enter amount to add (₹):', '100')
       if (amount) {
         const num = parseFloat(amount)
         if (num > 0) {
-          await fetch('/api/wallet', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: num, type: 'credit_topup', description: 'Manual top-up' })
-          })
-          fetchWallet()
+          setWalletBalance(prev => prev + num)
+          alert(`₹${num} added successfully! New balance: ₹${walletBalance + num}`)
         }
       }
     }
   }
 
+  // ============================================
+  // QUICK ACTION
+  // ============================================
   const handleQuickAction = (actionPrompt: string) => {
     setPrompt(actionPrompt)
-    // Auto-submit after setting the prompt
-    setTimeout(() => {
-      handleSubmit()
-    }, 100)
+    setTimeout(() => handleSubmit(), 300)
   }
 
+  // ============================================
+  // COPY RESPONSE
+  // ============================================
+  const handleCopy = () => {
+    if (response?.consensus) {
+      navigator.clipboard.writeText(response.consensus)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  // ============================================
+  // UI HELPERS
+  // ============================================
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-emerald-400'
+    if (score >= 60) return 'text-amber-400'
+    return 'text-red-400'
+  }
+
+  // ============================================
+  // RENDER
+  // ============================================
   return (
     <div className="min-h-screen bg-[#0B0F17] text-white flex">
       
@@ -213,12 +269,12 @@ export default function DashboardPage() {
         
         {/* Logo */}
         <div className="flex items-center gap-3 p-4 border-b border-white/5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-emerald-500/20">
-            A
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-emerald-500/20">
+            AI
           </div>
           {sidebarOpen && (
             <div>
-              <div className="font-bold text-lg bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">AIOS</div>
+              <div className="font-bold text-xl bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">AIOS</div>
               <div className="text-[10px] text-gray-500 tracking-wider">OPERATING SYSTEM</div>
             </div>
           )}
@@ -226,7 +282,10 @@ export default function DashboardPage() {
 
         {/* New Chat Button */}
         <div className="p-4">
-          <button onClick={createNewChat} className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/20 transition-all text-sm">
+          <button 
+            onClick={createNewChat} 
+            className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/20 transition-all text-sm"
+          >
             <Plus className="h-5 w-5" />
             {sidebarOpen && 'New Chat'}
           </button>
@@ -235,11 +294,12 @@ export default function DashboardPage() {
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto px-3">
           <div className="space-y-1">
-            {NAV_ITEMS.map((item, i) => (
+            {navItems.map((item) => (
               <button 
-                key={i} 
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${
-                  item.active 
+                  activePage === item.id 
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
                     : 'text-gray-400 hover:bg-white/5 hover:text-white'
                 }`}
@@ -250,12 +310,18 @@ export default function DashboardPage() {
             ))}
           </div>
 
+          {/* Chat History */}
           {sidebarOpen && chatHistory.length > 0 && (
             <div className="mt-6">
               <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 px-2">Recent Chats</div>
               <div className="space-y-1">
                 {chatHistory.slice(0, 5).map(chat => (
-                  <button key={chat.id} className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all truncate">
+                  <button 
+                    key={chat.id} 
+                    onClick={() => loadChat(chat.id)}
+                    className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all truncate flex items-center gap-2"
+                  >
+                    <MessageSquare className="h-3 w-3 text-gray-500" />
                     {chat.title}
                   </button>
                 ))}
@@ -305,8 +371,19 @@ export default function DashboardPage() {
               <Menu className="h-5 w-5" />
             </button>
             <h1 className="text-lg font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-              AIOS Chat
+              {activePage === 'chat' ? 'AIOS Chat' : activePage.charAt(0).toUpperCase() + activePage.slice(1)}
             </h1>
+            {response && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className={`px-2 py-1 rounded-full ${getScoreColor(response.consensus_score)} bg-white/5`}>
+                  Score: {response.consensus_score}%
+                </span>
+                <span className="text-gray-500">|</span>
+                <span className="text-cyan-400">{response.total_models || selectedModels.length} models</span>
+                <span className="text-gray-500">|</span>
+                <span className="text-emerald-400">₹{response.cost_inr?.toFixed(4) || '0.00'}</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
@@ -326,10 +403,11 @@ export default function DashboardPage() {
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-4xl shadow-2xl shadow-emerald-500/20 mb-6">
-                🤖
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-3xl font-bold text-white shadow-2xl shadow-emerald-500/20 mb-6">
+                AI
               </div>
               <h2 className="text-2xl font-bold text-white">Hi User, how can I help you today?</h2>
+              <p className="text-gray-400 text-sm mt-2">Ask me anything, and I'll get answers from multiple AI models</p>
               <div className="flex flex-wrap gap-3 mt-6 justify-center">
                 {QUICK_ACTIONS.map((action, i) => (
                   <button 
@@ -342,11 +420,19 @@ export default function DashboardPage() {
                   </button>
                 ))}
               </div>
+              <div className="mt-8 flex items-center gap-6 text-xs text-gray-500">
+                <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {selectedModels.length} model{selectedModels.length > 1 ? 's' : ''} selected</span>
+                <span className="flex items-center gap-1"><Wallet className="h-3 w-3" /> ₹{walletBalance.toFixed(2)} balance</span>
+              </div>
             </div>
           ) : (
             messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] p-4 rounded-2xl ${msg.role === 'user' ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white' : 'bg-white/5 border border-white/10 text-gray-200'}`}>
+                <div className={`max-w-[80%] p-4 rounded-2xl ${
+                  msg.role === 'user' 
+                    ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white' 
+                    : 'bg-white/5 border border-white/10 text-gray-200'
+                }`}>
                   <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>
                 </div>
               </div>
@@ -359,6 +445,7 @@ export default function DashboardPage() {
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
+                  <span className="text-sm text-gray-400 ml-2">Getting response from {selectedModels.length} model{selectedModels.length > 1 ? 's' : ''}...</span>
                 </div>
               </div>
             </div>
@@ -369,20 +456,21 @@ export default function DashboardPage() {
         {/* ========== INPUT AREA ========== */}
         <div className="border-t border-white/5 p-4 bg-black/20 backdrop-blur-xl">
           
-          {/* Model Selector Button - Shows selected model names */}
+          {/* Model Selector */}
           <button 
             onClick={() => setShowModelPicker(!showModelPicker)} 
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors mb-3 flex-wrap"
+            className="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors mb-3"
           >
             <span className="flex items-center gap-1">
-              {selectedModels.slice(0, 2).map(id => {
+              {selectedModels.slice(0, 3).map(id => {
                 const all = getAllModels()
                 const model = all.find(m => m.id === id)
                 return model ? <span key={id}>{model.icon}</span> : null
               })}
+              {selectedModels.length > 3 && <span className="text-emerald-400">+{selectedModels.length - 3}</span>}
             </span>
-            <span className="text-emerald-400 font-medium truncate max-w-[200px]">
-              {selectedModelNames.slice(0, 2).join(', ')}{selectedModelNames.length > 2 ? ` +${selectedModelNames.length - 2}` : ''}
+            <span className="text-emerald-400 font-medium">
+              {selectedModels.length} model{selectedModels.length > 1 ? 's' : ''} selected
             </span>
             <ChevronDown className={`h-4 w-4 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
           </button>
@@ -425,7 +513,7 @@ export default function DashboardPage() {
 
               <button 
                 onClick={() => { 
-                  setSelectedModels(['gpt-5.4-mini', 'qwen-3.5-flash', 'ministral-3-8b', 'mistral-small-4', 'command-a']); 
+                  setSelectedModels(['gpt-5.4-mini']); 
                   setShowModelPicker(false) 
                 }} 
                 className="w-full p-3 mb-3 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl text-left hover:bg-amber-500/20 transition-all"
@@ -515,4 +603,4 @@ export default function DashboardPage() {
       `}</style>
     </div>
   )
-                }
+          }
