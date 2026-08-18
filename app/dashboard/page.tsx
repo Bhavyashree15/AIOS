@@ -51,6 +51,9 @@ const QUICK_ACTIONS = [
   { icon: FileText, label: 'Create Document', prompt: 'Write a professional document about' },
 ]
 
+// ============================================
+// CHAT STORAGE
+// ============================================
 const STORAGE_KEY = 'aios_chats'
 
 const getStoredChats = (): ChatType[] => {
@@ -97,6 +100,10 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [walletBalance, setWalletBalance] = useState(100)
   const [activePage, setActivePage] = useState('chat')
+  
+  // ============================================
+  // CHAT STATE - WITH STORAGE
+  // ============================================
   const [chats, setChats] = useState<ChatType[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([])
@@ -106,9 +113,7 @@ export default function DashboardPage() {
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  // ============================================
-  // VOICE INPUT STATE
-  // ============================================
+  // Voice Input State
   const [isListening, setIsListening] = useState(false)
   const [isSpeechSupported, setIsSpeechSupported] = useState(true)
   const recognitionRef = useRef<any>(null)
@@ -116,10 +121,39 @@ export default function DashboardPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // ============================================
+  // LOAD CHATS FROM STORAGE
+  // ============================================
+  useEffect(() => {
+    const stored = getStoredChats()
+    if (stored.length > 0) {
+      setChats(stored)
+      const mostRecent = stored[0]
+      setCurrentChatId(mostRecent.id)
+      setMessages(mostRecent.messages || [])
+    } else {
+      createNewChat()
+    }
+  }, [])
+
+  // ============================================
+  // SAVE CHATS TO STORAGE
+  // ============================================
+  useEffect(() => {
+    if (chats.length > 0) {
+      saveChats(chats)
+    }
+  }, [chats])
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }
+  }, [messages])
+
+  // ============================================
   // VOICE INPUT SETUP
   // ============================================
   useEffect(() => {
-    // Check if browser supports speech recognition
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) {
       setIsSpeechSupported(false)
@@ -146,10 +180,8 @@ export default function DashboardPage() {
 
       const fullText = finalTranscript || interimTranscript
       
-      // Update prompt with voice input
       if (finalTranscript) {
         setPrompt(prev => prev ? prev + ' ' + finalTranscript : finalTranscript)
-        // Auto-submit after voice input
         setTimeout(() => {
           if (finalTranscript.trim()) {
             handleSubmit()
@@ -271,7 +303,7 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // CHAT FUNCTIONS
+  // CHAT FUNCTIONS - WITH STORAGE
   // ============================================
   const createNewChat = () => {
     const newId = Date.now().toString()
@@ -289,6 +321,7 @@ export default function DashboardPage() {
     setPrompt('')
     setUploadedFiles([])
     setSidebarOpen(false)
+    saveChats([newChat, ...chats])
   }
 
   const loadChat = (chatId: string) => {
@@ -307,6 +340,7 @@ export default function DashboardPage() {
     e.stopPropagation()
     const updated = chats.filter(c => c.id !== chatId)
     setChats(updated)
+    saveChats(updated)
     if (currentChatId === chatId) {
       if (updated.length > 0) {
         loadChat(updated[0].id)
@@ -327,6 +361,19 @@ export default function DashboardPage() {
       }
       return c
     }))
+    // Save after update
+    setTimeout(() => {
+      saveChats(chats.map(c => {
+        if (c.id === chatId) {
+          let title = c.title
+          if (newMessages.length === 1 && newMessages[0].role === 'user') {
+            title = newMessages[0].content.slice(0, 30) + (newMessages[0].content.length > 30 ? '...' : '')
+          }
+          return { ...c, messages: newMessages, title }
+        }
+        return c
+      }))
+    }, 100)
   }
 
   const fetchWallet = async () => {
@@ -358,7 +405,7 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // SUBMIT QUERY
+  // SUBMIT QUERY - WITH CHAT STORAGE
   // ============================================
   const handleSubmit = async () => {
     if (!prompt.trim() && uploadedFiles.length === 0) return
@@ -501,17 +548,30 @@ export default function DashboardPage() {
             </button>
           ))}
           
+          {/* ============================================ */}
+          {/* CHAT HISTORY - STORED AND DISPLAYED */}
+          {/* ============================================ */}
           {chats.length > 0 && (
             <div className="mt-4">
               <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 px-2">Recent</div>
               <div className="space-y-0.5">
-                {chats.slice(0, 10).map(chat => (
+                {chats.slice(0, 20).map(chat => (
                   <div key={chat.id} className="group relative flex items-center">
-                    <button onClick={() => loadChat(chat.id)} className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all truncate flex items-center gap-2 ${currentChatId === chat.id ? 'bg-[#E8F5E9] text-[#075E54]' : 'text-gray-700 hover:bg-gray-100'}`}>
+                    <button 
+                      onClick={() => loadChat(chat.id)}
+                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all truncate flex items-center gap-2 ${
+                        currentChatId === chat.id 
+                          ? 'bg-[#E8F5E9] text-[#075E54]' 
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
                       <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
                       <span className="truncate">{chat.title}</span>
                     </button>
-                    <button onClick={(e) => deleteChat(chat.id, e)} className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500">
+                    <button 
+                      onClick={(e) => deleteChat(chat.id, e)}
+                      className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -622,7 +682,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ============================================ */}
-        {/* INPUT AREA - WITH VOICE BUTTON */}
+        {/* INPUT AREA */}
         {/* ============================================ */}
         <div className="border-t border-gray-200 p-3 bg-[#f0f0f0] flex-shrink-0">
           
@@ -698,7 +758,7 @@ export default function DashboardPage() {
           )}
 
           {/* ============================================ */}
-          {/* TEXT INPUT - WITH VOICE BUTTON VISIBLE */}
+          {/* TEXT INPUT - WITH VOICE BUTTON */}
           {/* ============================================ */}
           <div className="relative">
             <textarea 
@@ -719,9 +779,7 @@ export default function DashboardPage() {
             )}
 
             <div className="absolute right-2 bottom-2 flex items-center gap-1">
-              {/* ============================================ */}
-              {/* VOICE INPUT BUTTON - VISIBLE HERE */}
-              {/* ============================================ */}
+              {/* Voice Input Button */}
               <button
                 onClick={toggleVoiceInput}
                 className={`p-1.5 rounded-lg transition-all ${
@@ -795,4 +853,4 @@ export default function DashboardPage() {
       `}</style>
     </div>
   )
-          }
+    }
