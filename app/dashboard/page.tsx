@@ -7,56 +7,54 @@ import {
   Image, FolderOpen, Menu, Sparkles,
   MessageSquare, Settings, X, 
   Globe, FileText, GitBranch, Copy, Check,
-  BarChart, TrendingUp, Clock, Award,
-  ChevronRight, Download, Share2, ThumbsUp, ThumbsDown,
-  Home, LayoutDashboard, File, User, LogOut
+  Star, Crown, TrendingUp, Clock
 } from 'lucide-react'
 
 // ============================================
-// COMPLETE MODEL DATABASE (40+ MODELS)
+// COMPLETE MODEL DATABASE WITH PRICING
 // ============================================
 const ALL_MODELS = {
   popular: [
-    { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', icon: '🤖' },
-    { id: 'qwen-3.5-flash', name: 'Qwen3.5 Flash', icon: '🐉' },
-    { id: 'ministral-3-8b', name: 'Ministral 3 8B', icon: '🧠' },
-    { id: 'mistral-small-4', name: 'Mistral Small 4', icon: '🌊' },
-    { id: 'command-a', name: 'Command A', icon: '⚡' },
-    { id: 'gpt-4.1', name: 'GPT-4.1', icon: '🤖' },
-    { id: 'nova-pro', name: 'Nova Pro', icon: '✨' },
-    { id: 'qwen-3.7-max', name: 'Qwen3.7 Max', icon: '🐉' },
-    { id: 'nova-lite', name: 'Nova Lite', icon: '✨' },
-    { id: 'kimi-k3', name: 'Kimi K3', icon: '🔥' },
+    { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', icon: '🤖', tier: 'free', cost: 0.0005 },
+    { id: 'qwen-3.5-flash', name: 'Qwen3.5 Flash', icon: '🐉', tier: 'free', cost: 0.0008 },
+    { id: 'ministral-3-8b', name: 'Ministral 3 8B', icon: '🧠', tier: 'free', cost: 0.001 },
+    { id: 'mistral-small-4', name: 'Mistral Small 4', icon: '🌊', tier: 'free', cost: 0.001 },
+    { id: 'command-a', name: 'Command A', icon: '⚡', tier: 'pro', cost: 0.0012 },
+    { id: 'gpt-4.1', name: 'GPT-4.1', icon: '🤖', tier: 'pro', cost: 0.005 },
+    { id: 'nova-pro', name: 'Nova Pro', icon: '✨', tier: 'pro', cost: 0.0025 },
+    { id: 'qwen-3.7-max', name: 'Qwen3.7 Max', icon: '🐉', tier: 'pro', cost: 0.0008 },
+    { id: 'nova-lite', name: 'Nova Lite', icon: '✨', tier: 'free', cost: 0.0005 },
+    { id: 'kimi-k3', name: 'Kimi K3', icon: '🔥', tier: 'pro', cost: 0.001 },
   ],
   intelligence: [
-    { id: 'mistral-small', name: 'Mistral Small', icon: '🌊' },
-    { id: 'grok-3-mini', name: 'Grok 3 Mini', icon: '🦍' },
-    { id: 'gpt-4o-mini', name: 'GPT-4o mini', icon: '🤖' },
-    { id: 'gpt-4.1-nano', name: 'GPT-4.1 nano', icon: '🤖' },
-    { id: 'codestral', name: 'Codestral', icon: '💻' },
-    { id: 'claude-sonnet-4.0', name: 'Claude Sonnet 4.0', icon: '🎯' },
-    { id: 'seed-2.0-lite', name: 'Seed 2.0 Lite', icon: '🌱' },
-    { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', icon: '🧠' },
-    { id: 'gemini-3-flash', name: 'Gemini 3 Flash', icon: '⚡' },
-    { id: 'claude-sonnet-4.6', name: 'Claude Sonnet 4.6', icon: '🎯' },
-    { id: 'gpt-5.4', name: 'GPT-5.4', icon: '🤖' },
-    { id: 'kimi-k2.5', name: 'Kimi-k2.5', icon: '🔥' },
+    { id: 'mistral-small', name: 'Mistral Small', icon: '🌊', tier: 'free', cost: 0.001 },
+    { id: 'grok-3-mini', name: 'Grok 3 Mini', icon: '🦍', tier: 'pro', cost: 0.002 },
+    { id: 'gpt-4o-mini', name: 'GPT-4o mini', icon: '🤖', tier: 'free', cost: 0.0005 },
+    { id: 'gpt-4.1-nano', name: 'GPT-4.1 nano', icon: '🤖', tier: 'free', cost: 0.0005 },
+    { id: 'codestral', name: 'Codestral', icon: '💻', tier: 'pro', cost: 0.001 },
+    { id: 'claude-sonnet-4.0', name: 'Claude Sonnet 4.0', icon: '🎯', tier: 'pro', cost: 0.003 },
+    { id: 'seed-2.0-lite', name: 'Seed 2.0 Lite', icon: '🌱', tier: 'free', cost: 0.0004 },
+    { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', icon: '🧠', tier: 'pro', cost: 0.0025 },
+    { id: 'gemini-3-flash', name: 'Gemini 3 Flash', icon: '⚡', tier: 'free', cost: 0.0005 },
+    { id: 'claude-sonnet-4.6', name: 'Claude Sonnet 4.6', icon: '🎯', tier: 'pro', cost: 0.003 },
+    { id: 'gpt-5.4', name: 'GPT-5.4', icon: '🤖', tier: 'pro', cost: 0.005 },
+    { id: 'kimi-k2.5', name: 'Kimi-k2.5', icon: '🔥', tier: 'pro', cost: 0.001 },
   ],
   latest: [
-    { id: 'nova-micro', name: 'Nova Micro', icon: '✨' },
-    { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', icon: '🌍' },
-    { id: 'grok-4.5', name: 'Grok 4.5', icon: '🦍' },
-    { id: 'nova-premier-1.0', name: 'Nova Premier 1.0', icon: '✨' },
-    { id: 'perplexity-sonar', name: 'Perplexity Sonar', icon: '🔍' },
-    { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', icon: '🌙' },
-    { id: 'qwen-3-coder-flash', name: 'Qwen 3 Coder Flash', icon: '💻' },
-    { id: 'claude-haiku-4.5', name: 'Claude Haiku 4.5', icon: '🎯' },
-    { id: 'deepseek-chat', name: 'DeepSeek Chat', icon: '🔮' },
-    { id: 'gpt-5.4-nano', name: 'GPT-5.4 nano', icon: '🤖' },
-    { id: 'qwen-flash', name: 'Qwen Flash', icon: '⚡' },
-    { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', icon: '🧠' },
-    { id: 'gpt-5-mini', name: 'GPT-5 mini', icon: '🤖' },
-    { id: 'gpt-5', name: 'GPT-5', icon: '🤖' },
+    { id: 'nova-micro', name: 'Nova Micro', icon: '✨', tier: 'free', cost: 0.0005 },
+    { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', icon: '🌍', tier: 'pro', cost: 0.005 },
+    { id: 'grok-4.5', name: 'Grok 4.5', icon: '🦍', tier: 'pro', cost: 0.002 },
+    { id: 'nova-premier-1.0', name: 'Nova Premier 1.0', icon: '✨', tier: 'pro', cost: 0.0025 },
+    { id: 'perplexity-sonar', name: 'Perplexity Sonar', icon: '🔍', tier: 'pro', cost: 0.0006 },
+    { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', icon: '🌙', tier: 'pro', cost: 0.005 },
+    { id: 'qwen-3-coder-flash', name: 'Qwen 3 Coder Flash', icon: '💻', tier: 'free', cost: 0.0007 },
+    { id: 'claude-haiku-4.5', name: 'Claude Haiku 4.5', icon: '🎯', tier: 'free', cost: 0.0008 },
+    { id: 'deepseek-chat', name: 'DeepSeek Chat', icon: '🔮', tier: 'free', cost: 0.0015 },
+    { id: 'gpt-5.4-nano', name: 'GPT-5.4 nano', icon: '🤖', tier: 'free', cost: 0.0005 },
+    { id: 'qwen-flash', name: 'Qwen Flash', icon: '⚡', tier: 'free', cost: 0.0008 },
+    { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', icon: '🧠', tier: 'pro', cost: 0.0015 },
+    { id: 'gpt-5-mini', name: 'GPT-5 mini', icon: '🤖', tier: 'free', cost: 0.0005 },
+    { id: 'gpt-5', name: 'GPT-5', icon: '🤖', tier: 'pro', cost: 0.005 },
   ]
 }
 
@@ -69,8 +67,8 @@ const getAllModels = () => {
 
 // Quick actions
 const QUICK_ACTIONS = [
-  { icon: Image, label: 'Create an Image', prompt: 'Create a detailed description of a futuristic city with neon lights, flying cars, and holographic billboards' },
-  { icon: GitBranch, label: 'Compare answers', prompt: 'Compare the following concepts and give me a detailed comparison:' },
+  { icon: Image, label: 'Create an Image', prompt: 'Create a detailed description of a futuristic city with neon lights' },
+  { icon: GitBranch, label: 'Compare answers', prompt: 'Compare these concepts and give me a detailed comparison:' },
   { icon: Globe, label: 'Web Search', prompt: 'Search for the latest information about' },
   { icon: FileText, label: 'Create Document', prompt: 'Write a professional document about' },
 ]
@@ -82,6 +80,7 @@ export default function DashboardPage() {
   const [prompt, setPrompt] = useState('')
   const [response, setResponse] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
+  // FIX: ONLY ONE model selected by default (GPT-5.4 mini)
   const [selectedModels, setSelectedModels] = useState(['gpt-5.4-mini'])
   const [showModelPicker, setShowModelPicker] = useState(false)
   const [modelTab, setModelTab] = useState('popular')
@@ -89,7 +88,9 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([])
   const [walletBalance, setWalletBalance] = useState(100)
-  const [chatHistory, setChatHistory] = useState<{id: number, title: string}[]>([])
+  // FIX: Chat history with unique IDs
+  const [chatHistory, setChatHistory] = useState<{id: string, title: string, messages: any[], timestamp: string}[]>([])
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [activePage, setActivePage] = useState('chat')
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -109,6 +110,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchWallet()
+    // Load chat history from localStorage
+    const saved = localStorage.getItem('aios_chat_history')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        setChatHistory(parsed)
+      } catch (e) {}
+    }
   }, [])
 
   useEffect(() => {
@@ -116,13 +125,57 @@ export default function DashboardPage() {
   }, [messages])
 
   // ============================================
+  // SAVE CHAT HISTORY
+  // ============================================
+  const saveChatHistory = (history: any[]) => {
+    setChatHistory(history)
+    localStorage.setItem('aios_chat_history', JSON.stringify(history))
+  }
+
+  // ============================================
+  // NEW CHAT - CLEARS EVERYTHING
+  // ============================================
+  const createNewChat = () => {
+    const newId = Date.now().toString()
+    const newChat = {
+      id: newId,
+      title: 'New Chat',
+      messages: [],
+      timestamp: new Date().toISOString()
+    }
+    setChatHistory(prev => [newChat, ...prev])
+    setCurrentChatId(newId)
+    setMessages([])
+    setResponse(null)
+    setPrompt('')
+    setActivePage('chat')
+    // Save to localStorage
+    const updated = [newChat, ...chatHistory]
+    localStorage.setItem('aios_chat_history', JSON.stringify(updated))
+  }
+
+  // ============================================
+  // LOAD CHAT
+  // ============================================
+  const loadChat = (chatId: string) => {
+    const chat = chatHistory.find(c => c.id === chatId)
+    if (chat) {
+      setCurrentChatId(chatId)
+      setMessages(chat.messages || [])
+      setResponse(null)
+      setActivePage('chat')
+    }
+  }
+
+  // ============================================
   // MODEL FUNCTIONS
   // ============================================
   const toggleModel = (id: string) => {
+    // FIX: Only allow ONE model selection
     if (selectedModels.includes(id)) {
-      setSelectedModels(selectedModels.filter(m => m !== id))
+      setSelectedModels([])
     } else {
-      setSelectedModels([...selectedModels, id])
+      setSelectedModels([id])
     }
   }
 
@@ -135,12 +188,21 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // SUBMIT QUERY
+  // SUBMIT QUERY - WITH WALLET DEDUCTION
   // ============================================
   const handleSubmit = async () => {
     if (!prompt.trim()) return
-    setMessages(prev => [...prev, { role: 'user', content: prompt }])
+    
+    // Check wallet balance before sending
+    if (walletBalance < 0.01) {
+      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Insufficient balance. Please add funds to continue.' }])
+      return
+    }
+
+    const userMessage = { role: 'user' as const, content: prompt }
+    setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
+
     try {
       const res = await fetch('/api/ai/consensus', {
         method: 'POST',
@@ -156,62 +218,16 @@ export default function DashboardPage() {
       } else if (data.consensus) {
         setResponse(data)
         setMessages(prev => [...prev, { role: 'assistant', content: data.consensus }])
+        // Update wallet balance from API response
         setWalletBalance(data.wallet_balance || 100)
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ No response from AI. Please try again.' }])
+        setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ No response. Please try again.' }])
       }
     } catch (error) {
-      console.error('Error:', error)
       setMessages(prev => [...prev, { role: 'assistant', content: '❌ Error: Please try again.' }])
     }
     setIsLoading(false)
     setPrompt('')
-  }
-
-  // ============================================
-  // CHAT FUNCTIONS
-  // ============================================
-  const createNewChat = () => {
-    const newId = Date.now()
-    const title = prompt ? prompt.slice(0, 30) + '...' : 'New Chat'
-    setChatHistory(prev => [{ id: newId, title }, ...prev])
-    setMessages([])
-    setResponse(null)
-    setActivePage('chat')
-  }
-
-  const loadChat = (chatId: number) => {
-    // In production, this would load chat from database
-    setActivePage('chat')
-    // For demo, just create a new chat
-    const chat = chatHistory.find(c => c.id === chatId)
-    if (chat) {
-      setMessages([])
-      setResponse(null)
-    }
-  }
-
-  // ============================================
-  // SIDEBAR NAVIGATION
-  // ============================================
-  const navItems = [
-    { id: 'chat', icon: MessageSquare, label: 'Chat' },
-    { id: 'image', icon: Image, label: 'Image Studio' },
-    { id: 'experts', icon: Users, label: 'Experts' },
-    { id: 'projects', icon: FolderOpen, label: 'Projects' },
-  ]
-
-  const handleNavClick = (id: string) => {
-    setActivePage(id)
-    if (id === 'chat') {
-      // Stay on chat
-    } else if (id === 'image') {
-      setMessages([{ role: 'assistant', content: '🎨 Image Studio coming soon! Create and edit images with AI.' }])
-    } else if (id === 'experts') {
-      setMessages([{ role: 'assistant', content: '👨‍💻 Experts coming soon! Connect with AI experts for specialized tasks.' }])
-    } else if (id === 'projects') {
-      setMessages([{ role: 'assistant', content: '📁 Projects coming soon! Manage your AI projects in one place.' }])
-    }
   }
 
   // ============================================
@@ -239,14 +255,19 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // COPY RESPONSE
+  // SIDEBAR NAVIGATION
   // ============================================
-  const handleCopy = () => {
-    if (response?.consensus) {
-      navigator.clipboard.writeText(response.consensus)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
+  const navItems = [
+    { id: 'chat', icon: MessageSquare, label: 'Chat' },
+    { id: 'image', icon: Image, label: 'Image Studio' },
+    { id: 'experts', icon: Users, label: 'Experts' },
+    { id: 'projects', icon: FolderOpen, label: 'Projects' },
+  ]
+
+  const handleNavClick = (id: string) => {
+    setActivePage(id)
+    if (id === 'chat') return
+    setMessages([{ role: 'assistant', content: `📌 ${id.charAt(0).toUpperCase() + id.slice(1)} coming soon! This feature is under development.` }])
   }
 
   // ============================================
@@ -256,6 +277,12 @@ export default function DashboardPage() {
     if (score >= 80) return 'text-emerald-400'
     if (score >= 60) return 'text-amber-400'
     return 'text-red-400'
+  }
+
+  const getModelCost = (id: string) => {
+    const all = getAllModels()
+    const model = all.find(m => m.id === id)
+    return model ? model.cost : 0
   }
 
   // ============================================
@@ -315,14 +342,18 @@ export default function DashboardPage() {
             <div className="mt-6">
               <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 px-2">Recent Chats</div>
               <div className="space-y-1">
-                {chatHistory.slice(0, 5).map(chat => (
+                {chatHistory.slice(0, 10).map(chat => (
                   <button 
                     key={chat.id} 
                     onClick={() => loadChat(chat.id)}
-                    className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-all truncate flex items-center gap-2"
+                    className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-all truncate flex items-center gap-2 ${
+                      currentChatId === chat.id 
+                        ? 'bg-emerald-500/10 text-emerald-400' 
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                    }`}
                   >
-                    <MessageSquare className="h-3 w-3 text-gray-500" />
-                    {chat.title}
+                    <MessageSquare className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{chat.title}</span>
                   </button>
                 ))}
               </div>
@@ -407,7 +438,7 @@ export default function DashboardPage() {
                 AI
               </div>
               <h2 className="text-2xl font-bold text-white">Hi User, how can I help you today?</h2>
-              <p className="text-gray-400 text-sm mt-2">Ask me anything, and I'll get answers from multiple AI models</p>
+              <p className="text-gray-400 text-sm mt-2">Ask me anything, and I'll get answers from AI models</p>
               <div className="flex flex-wrap gap-3 mt-6 justify-center">
                 {QUICK_ACTIONS.map((action, i) => (
                   <button 
@@ -421,7 +452,7 @@ export default function DashboardPage() {
                 ))}
               </div>
               <div className="mt-8 flex items-center gap-6 text-xs text-gray-500">
-                <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {selectedModels.length} model{selectedModels.length > 1 ? 's' : ''} selected</span>
+                <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {selectedModels.length} model selected</span>
                 <span className="flex items-center gap-1"><Wallet className="h-3 w-3" /> ₹{walletBalance.toFixed(2)} balance</span>
               </div>
             </div>
@@ -445,7 +476,7 @@ export default function DashboardPage() {
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
-                  <span className="text-sm text-gray-400 ml-2">Getting response from {selectedModels.length} model{selectedModels.length > 1 ? 's' : ''}...</span>
+                  <span className="text-sm text-gray-400 ml-2">Getting response...</span>
                 </div>
               </div>
             </div>
@@ -456,22 +487,27 @@ export default function DashboardPage() {
         {/* ========== INPUT AREA ========== */}
         <div className="border-t border-white/5 p-4 bg-black/20 backdrop-blur-xl">
           
-          {/* Model Selector */}
+          {/* Model Selector - Shows selected model name */}
           <button 
             onClick={() => setShowModelPicker(!showModelPicker)} 
             className="flex items-center gap-2 text-xs text-gray-400 hover:text-white transition-colors mb-3"
           >
             <span className="flex items-center gap-1">
-              {selectedModels.slice(0, 3).map(id => {
+              {selectedModels.map(id => {
                 const all = getAllModels()
                 const model = all.find(m => m.id === id)
                 return model ? <span key={id}>{model.icon}</span> : null
               })}
-              {selectedModels.length > 3 && <span className="text-emerald-400">+{selectedModels.length - 3}</span>}
             </span>
             <span className="text-emerald-400 font-medium">
-              {selectedModels.length} model{selectedModels.length > 1 ? 's' : ''} selected
+              {selectedModels.length === 0 ? 'No model selected' : 
+                getAllModels().find(m => m.id === selectedModels[0])?.name || 'Select model'}
             </span>
+            {selectedModels.length > 0 && (
+              <span className="text-[10px] text-gray-500">
+                (₹{getModelCost(selectedModels[0])?.toFixed(4) || '0.0000'}/query)
+              </span>
+            )}
             <ChevronDown className={`h-4 w-4 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
           </button>
 
@@ -484,7 +520,7 @@ export default function DashboardPage() {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mb-3">Select the AI model that best fits your task</p>
+              <p className="text-xs text-gray-500 mb-3">Select one AI model for your task</p>
 
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
@@ -536,9 +572,14 @@ export default function DashboardPage() {
                     }`}
                   >
                     <span className="text-lg flex-shrink-0">{model.icon}</span>
-                    <span className={`truncate ${selectedModels.includes(model.id) ? 'text-emerald-400' : 'text-white'}`}>
-                      {model.name}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span className={`truncate block ${selectedModels.includes(model.id) ? 'text-emerald-400' : 'text-white'}`}>
+                        {model.name}
+                      </span>
+                      <span className={`text-[10px] ${model.tier === 'pro' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {model.tier === 'pro' ? '⭐ Pro' : 'Free'} · ₹{model.cost.toFixed(4)}/query
+                      </span>
+                    </div>
                     {selectedModels.includes(model.id) && (
                       <span className="ml-auto text-emerald-400 flex-shrink-0">✓</span>
                     )}
@@ -574,13 +615,16 @@ export default function DashboardPage() {
               </button>
               <button 
                 onClick={handleSubmit} 
-                disabled={isLoading || !prompt.trim()} 
+                disabled={isLoading || !prompt.trim() || selectedModels.length === 0} 
                 className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white p-2.5 rounded-xl disabled:opacity-50 hover:shadow-lg hover:shadow-emerald-500/20 transition-all"
               >
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
               </button>
             </div>
           </div>
+          {selectedModels.length === 0 && (
+            <p className="text-xs text-amber-400 mt-2">⚠️ Please select a model to continue</p>
+          )}
         </div>
       </div>
 
