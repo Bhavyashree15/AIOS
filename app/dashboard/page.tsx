@@ -103,7 +103,6 @@ export default function DashboardPage() {
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([])
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   // ============================================
   // LOAD CHATS
@@ -447,10 +446,7 @@ export default function DashboardPage() {
         {/* ============================================ */}
         {/* MESSAGES - FIXED: Takes remaining space, scrolls */}
         {/* ============================================ */}
-        <div 
-          ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
-        >
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-3xl font-bold text-white shadow-2xl shadow-emerald-500/20 mb-6">AI</div>
@@ -588,4 +584,4 @@ export default function DashboardPage() {
       `}</style>
     </div>
   )
-}
+      }
