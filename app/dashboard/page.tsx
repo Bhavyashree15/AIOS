@@ -50,9 +50,6 @@ const QUICK_ACTIONS = [
   { icon: FileText, label: 'Create Document', prompt: 'Write a professional document about' },
 ]
 
-// ============================================
-// CHAT STORAGE
-// ============================================
 const STORAGE_KEY = 'aios_chats'
 
 const getStoredChats = (): ChatType[] => {
@@ -81,9 +78,6 @@ type ChatType = {
 }
 
 export default function DashboardPage() {
-  // ============================================
-  // STATE
-  // ============================================
   const [prompt, setPrompt] = useState('')
   const [response, setResponse] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -91,22 +85,15 @@ export default function DashboardPage() {
   const [showModelPicker, setShowModelPicker] = useState(false)
   const [modelTab, setModelTab] = useState('popular')
   const [searchQuery, setSearchQuery] = useState('')
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false) // ← HIDDEN BY DEFAULT
   const [walletBalance, setWalletBalance] = useState(100)
   const [activePage, setActivePage] = useState('chat')
-  
-  // ============================================
-  // CHAT STATE
-  // ============================================
   const [chats, setChats] = useState<ChatType[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([])
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // ============================================
-  // LOAD CHATS
-  // ============================================
   useEffect(() => {
     const stored = getStoredChats()
     if (stored.length > 0) {
@@ -131,9 +118,6 @@ export default function DashboardPage() {
     }
   }, [messages])
 
-  // ============================================
-  // CHAT FUNCTIONS
-  // ============================================
   const createNewChat = () => {
     const newId = Date.now().toString()
     const newChat: ChatType = {
@@ -148,6 +132,7 @@ export default function DashboardPage() {
     setMessages([])
     setResponse(null)
     setPrompt('')
+    setSidebarOpen(false) // Close sidebar after new chat
   }
 
   const loadChat = (chatId: string) => {
@@ -157,6 +142,7 @@ export default function DashboardPage() {
       setMessages(chat.messages || [])
       setResponse(null)
       setPrompt('')
+      setSidebarOpen(false) // Close sidebar after loading chat
     }
   }
 
@@ -186,9 +172,6 @@ export default function DashboardPage() {
     }))
   }
 
-  // ============================================
-  // FETCH WALLET
-  // ============================================
   const fetchWallet = async () => {
     try {
       const res = await fetch('/api/ai/consensus')
@@ -201,9 +184,6 @@ export default function DashboardPage() {
     fetchWallet()
   }, [])
 
-  // ============================================
-  // MODEL FUNCTIONS
-  // ============================================
   const toggleModel = (id: string) => {
     if (selectedModels.includes(id)) {
       setSelectedModels([])
@@ -220,9 +200,6 @@ export default function DashboardPage() {
     return models
   }
 
-  // ============================================
-  // SUBMIT QUERY
-  // ============================================
   const handleSubmit = async () => {
     if (!prompt.trim() || selectedModels.length === 0) return
     
@@ -281,9 +258,6 @@ export default function DashboardPage() {
     setIsLoading(false)
   }
 
-  // ============================================
-  // ADD FUNDS
-  // ============================================
   const addFunds = () => {
     if (typeof window !== 'undefined') {
       const amount = window.prompt('Enter amount to add (₹):', '100')
@@ -297,17 +271,11 @@ export default function DashboardPage() {
     }
   }
 
-  // ============================================
-  // QUICK ACTION
-  // ============================================
   const handleQuickAction = (actionPrompt: string) => {
     setPrompt(actionPrompt)
     setTimeout(() => handleSubmit(), 300)
   }
 
-  // ============================================
-  // NAVIGATION
-  // ============================================
   const navItems = [
     { id: 'chat', icon: MessageSquare, label: 'Chat' },
     { id: 'image', icon: Image, label: 'Image Studio' },
@@ -315,72 +283,66 @@ export default function DashboardPage() {
     { id: 'projects', icon: FolderOpen, label: 'Projects' },
   ]
 
-  // ============================================
-  // UI HELPERS
-  // ============================================
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-emerald-400'
     if (score >= 60) return 'text-amber-400'
     return 'text-red-400'
   }
 
-  // ============================================
-  // RENDER
-  // ============================================
   return (
-    <div className="h-screen bg-[#0B0F17] text-white flex overflow-hidden">
+    <div className="flex h-screen bg-[#0B0F17] text-white overflow-hidden">
       
-      {/* ========== SIDEBAR ========== */}
-      <div className={`${sidebarOpen ? 'w-56' : 'w-14'} transition-all duration-300 border-r border-white/10 bg-black/30 backdrop-blur-xl flex flex-col h-full flex-shrink-0 overflow-hidden`}>
+      {/* ===== OVERLAY - Close sidebar when clicking outside ===== */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ===== SIDEBAR - Hidden by default, slides in ===== */}
+      <div className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ${sidebarOpen ? 'w-64' : '-translate-x-full'} bg-[#0B0F17] border-r border-white/10 flex flex-col overflow-hidden`}>
         
-        <div className="flex items-center gap-2 p-3 border-b border-white/5 flex-shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">AI</div>
-          {sidebarOpen && (
+        <div className="flex items-center justify-between p-4 border-b border-white/5 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white font-bold text-sm">AI</div>
             <div>
               <div className="font-bold text-sm bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">AIOS</div>
               <div className="text-[8px] text-gray-500 tracking-wider">OS</div>
             </div>
-          )}
-        </div>
-
-        <div className="p-2 flex-shrink-0">
-          <button onClick={createNewChat} className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-2 py-2 rounded-lg font-semibold flex items-center justify-center gap-1 hover:shadow-lg hover:shadow-emerald-500/20 transition-all text-xs">
-            <Plus className="h-3.5 w-3.5" />
-            {sidebarOpen && 'New Chat'}
+          </div>
+          <button onClick={() => setSidebarOpen(false)} className="text-gray-400 hover:text-white">
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 py-1">
+        <div className="p-3 flex-shrink-0">
+          <button onClick={createNewChat} className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-3 py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-emerald-500/20 transition-all text-xs">
+            <Plus className="h-4 w-4" />
+            New Chat
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-2">
           {navItems.map((item) => (
-            <button key={item.id} onClick={() => { setActivePage(item.id); if (item.id !== 'chat') setMessages([{ role: 'assistant', content: `📌 ${item.label} coming soon!` }]) }} className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all text-xs ${activePage === item.id ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
-              <item.icon className="h-3.5 w-3.5" />
-              {sidebarOpen && <span>{item.label}</span>}
+            <button key={item.id} onClick={() => { setActivePage(item.id); if (item.id !== 'chat') setMessages([{ role: 'assistant', content: `📌 ${item.label} coming soon!` }]); setSidebarOpen(false) }} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-sm ${activePage === item.id ? 'bg-emerald-500/10 text-emerald-400' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+              <item.icon className="h-4 w-4" />
+              {item.label}
             </button>
           ))}
           
-          {/* Chat History */}
-          {sidebarOpen && chats.length > 0 && (
-            <div className="mt-3 pb-1">
-              <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1 px-1">Recent</div>
+          {chats.length > 0 && (
+            <div className="mt-4">
+              <div className="text-[9px] text-gray-500 uppercase tracking-wider mb-2 px-2">Recent</div>
               <div className="space-y-0.5">
-                {chats.slice(0, 5).map(chat => (
+                {chats.slice(0, 10).map(chat => (
                   <div key={chat.id} className="group relative flex items-center">
-                    <button 
-                      onClick={() => loadChat(chat.id)}
-                      className={`w-full text-left px-2 py-1 rounded-lg text-[10px] transition-all truncate flex items-center gap-1.5 ${
-                        currentChatId === chat.id 
-                          ? 'bg-emerald-500/10 text-emerald-400' 
-                          : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                      }`}
-                    >
-                      <MessageSquare className="h-2.5 w-2.5 flex-shrink-0" />
-                      <span className="truncate text-[10px]">{chat.title}</span>
+                    <button onClick={() => loadChat(chat.id)} className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all truncate flex items-center gap-2 ${currentChatId === chat.id ? 'bg-emerald-500/10 text-emerald-400' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+                      <MessageSquare className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{chat.title}</span>
                     </button>
-                    <button 
-                      onClick={(e) => deleteChat(chat.id, e)}
-                      className="absolute right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-red-500/20 text-gray-500 hover:text-red-400"
-                    >
-                      <Trash2 className="h-2.5 w-2.5" />
+                    <button onClick={(e) => deleteChat(chat.id, e)} className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-500/20 text-gray-500 hover:text-red-400">
+                      <Trash2 className="h-3 w-3" />
                     </button>
                   </div>
                 ))}
@@ -389,32 +351,30 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="p-2 border-t border-white/5 flex-shrink-0">
+        <div className="p-4 border-t border-white/5 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[8px] font-bold">U</div>
-              {sidebarOpen && <div><div className="text-[10px] font-medium">User</div><div className="text-[8px] text-gray-500">Free</div></div>}
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-[8px] font-bold">U</div>
+              <div><div className="text-sm font-medium">User</div><div className="text-[9px] text-gray-500">Free Plan</div></div>
             </div>
-            <button className="text-gray-400 hover:text-white"><Settings className="h-3.5 w-3.5" /></button>
+            <button className="text-gray-400 hover:text-white"><Settings className="h-4 w-4" /></button>
           </div>
-          {sidebarOpen && (
-            <div className="mt-1.5 p-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-              <div className="text-[8px] text-amber-400 font-medium uppercase">Free Plan</div>
-              <div className="text-[8px] text-gray-400">0 / 10 msgs</div>
-              <button className="mt-0.5 w-full text-[8px] bg-gradient-to-r from-amber-500 to-orange-500 text-white px-1.5 py-0.5 rounded-lg font-medium">Upgrade</button>
-            </div>
-          )}
+          <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <div className="text-[8px] text-amber-400 font-medium uppercase">Free Plan</div>
+            <div className="text-[10px] text-gray-400">0 / 10 messages used</div>
+            <button className="mt-1 w-full text-[9px] bg-gradient-to-r from-amber-500 to-orange-500 text-white py-1 rounded-lg font-medium">Upgrade Now</button>
+          </div>
         </div>
       </div>
 
-      {/* ========== MAIN CHAT AREA - CENTERED ========== */}
+      {/* ===== MAIN CHAT AREA ===== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-black/20 backdrop-blur-xl flex-shrink-0">
+        {/* Header - with hamburger menu */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-black/20 backdrop-blur-xl flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-400 hover:text-white">
-              <Menu className="h-4 w-4" />
+            <button onClick={() => setSidebarOpen(true)} className="text-gray-400 hover:text-white">
+              <Menu className="h-5 w-5" />
             </button>
             <h1 className="text-sm font-semibold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent truncate">
               {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'New Chat' : 'AIOS Chat'}
@@ -432,10 +392,10 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-white/5 px-2 py-1 rounded-full border border-white/5">
-              <Wallet className="h-3 w-3 text-emerald-400" />
+            <div className="flex items-center gap-1 bg-white/5 px-2 py-1.5 rounded-full border border-white/5">
+              <Wallet className="h-3.5 w-3.5 text-emerald-400" />
               <span className="text-emerald-400 font-mono font-semibold text-[10px]">₹{walletBalance.toFixed(2)}</span>
-              <button onClick={addFunds} className="text-[8px] text-gray-400 hover:text-white"><Plus className="h-2 w-2" /></button>
+              <button onClick={addFunds} className="text-[8px] text-gray-400 hover:text-white"><Plus className="h-2.5 w-2.5" /></button>
             </div>
             <button className="text-gray-400 hover:text-white"><Settings className="h-4 w-4" /></button>
           </div>
@@ -543,7 +503,7 @@ export default function DashboardPage() {
               value={prompt} 
               onChange={(e) => setPrompt(e.target.value)} 
               placeholder="Ask me anything..." 
-              className="w-full min-h-[38px] max-h-[80px] bg-white/5 border border-white/10 rounded-lg p-2 pr-16 text-white placeholder:text-gray-500 outline-none focus:border-emerald-500/50 resize-none text-xs" 
+              className="w-full min-h-[40px] max-h-[80px] bg-white/5 border border-white/10 rounded-lg p-2 pr-16 text-white placeholder:text-gray-500 outline-none focus:border-emerald-500/50 resize-none text-xs" 
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
               rows={1}
             />
@@ -561,7 +521,7 @@ export default function DashboardPage() {
             </div>
           </div>
           {selectedModels.length === 0 && (
-            <p className="text-[8px] text-amber-400 mt-0.5">⚠️ Please select a model</p>
+            <p className="text-[8px] text-amber-400 mt-0.5">⚠️ Select a model</p>
           )}
         </div>
       </div>
@@ -577,4 +537,4 @@ export default function DashboardPage() {
       `}</style>
     </div>
   )
-    }
+            }
