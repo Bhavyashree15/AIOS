@@ -10,7 +10,7 @@ import {
   Globe, FileText, GitBranch, Trash2,
   Paperclip, File, Mic, MicOff,
   Copy, Check, ThumbsUp, ThumbsDown, Heart,
-  Clock, Circle, CircleCheck, CircleDot
+  Clock
 } from 'lucide-react'
 
 // ============================================
@@ -141,7 +141,6 @@ export default function DashboardPage() {
       const mostRecent = stored[0]
       setCurrentChatId(mostRecent.id)
       setMessages(mostRecent.messages || [])
-      // Mark as read
       setUnreadCount(0)
     } else {
       createNewChat()
@@ -164,7 +163,7 @@ export default function DashboardPage() {
   }, [messages])
 
   // ============================================
-  // ONLINE STATUS - Simulate AI being online
+  // ONLINE STATUS
   // ============================================
   useEffect(() => {
     const interval = setInterval(() => {
@@ -326,7 +325,7 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // CHAT FUNCTIONS - WITH STORAGE
+  // CHAT FUNCTIONS
   // ============================================
   const createNewChat = () => {
     const newId = Date.now().toString()
@@ -358,7 +357,6 @@ export default function DashboardPage() {
       setPrompt('')
       setUploadedFiles([])
       setSidebarOpen(false)
-      // Mark as read
       setChats(prev => prev.map(c => 
         c.id === chatId ? { ...c, unread: false } : c
       ))
@@ -391,7 +389,6 @@ export default function DashboardPage() {
       }
       return c
     }))
-    // Save after update
     setTimeout(() => {
       saveChats(chats.map(c => {
         if (c.id === chatId) {
@@ -448,7 +445,6 @@ export default function DashboardPage() {
       return updated
     })
     
-    // Update chat storage
     if (currentChatId) {
       updateChatMessages(currentChatId, messages)
     }
@@ -483,7 +479,7 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // SUBMIT QUERY - WITH TYPING ANIMATION
+  // SUBMIT QUERY
   // ============================================
   const handleSubmit = async () => {
     if (!prompt.trim() && uploadedFiles.length === 0) return
@@ -537,7 +533,6 @@ export default function DashboardPage() {
         assistantContent = '⚠️ No response. Try again.'
       }
       
-      // Add assistant message with timestamp
       const assistantMsg = { 
         role: 'assistant' as const, 
         content: assistantContent, 
@@ -548,7 +543,6 @@ export default function DashboardPage() {
       const finalMessages = [...updatedMessages, assistantMsg]
       setMessages(finalMessages)
       
-      // Simulate typing animation
       simulateTyping(assistantContent)
       
       if (currentChatId) {
@@ -600,9 +594,6 @@ export default function DashboardPage() {
     return 'text-red-600'
   }
 
-  // ============================================
-  // RENDER
-  // ============================================
   return (
     <div className="flex h-screen bg-[#ECE5DD] text-gray-800 overflow-hidden">
       
@@ -624,7 +615,7 @@ export default function DashboardPage() {
         initial={false}
         animate={{ x: sidebarOpen ? 0 : -288 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className={`fixed left-0 top-0 h-full z-50 w-72 bg-white border-r border-gray-200 flex flex-col overflow-hidden shadow-xl`}
+        className="fixed left-0 top-0 h-full z-50 w-72 bg-white border-r border-gray-200 flex flex-col overflow-hidden shadow-xl"
       >
         
         <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0 bg-[#075E54] text-white">
@@ -655,9 +646,7 @@ export default function DashboardPage() {
             </button>
           ))}
           
-          {/* ============================================ */}
-          {/* CHAT HISTORY WITH UNREAD INDICATOR */}
-          {/* ============================================ */}
+          {/* CHAT HISTORY */}
           {chats.length > 0 && (
             <div className="mt-4">
               <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 px-2 flex items-center justify-between">
@@ -670,11 +659,9 @@ export default function DashboardPage() {
               </div>
               <div className="space-y-0.5">
                 {chats.slice(0, 20).map(chat => (
-                  <motion.div 
+                  <div 
                     key={chat.id} 
                     className="group relative flex items-center"
-                    whileHover={{ scale: 1.01 }}
-                    transition={{ duration: 0.2 }}
                   >
                     <button 
                       onClick={() => loadChat(chat.id)}
@@ -699,7 +686,7 @@ export default function DashboardPage() {
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -725,7 +712,7 @@ export default function DashboardPage() {
       {/* ===== MAIN CHAT AREA ===== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* ===== HEADER WITH ONLINE STATUS ===== */}
+        {/* HEADER WITH ONLINE STATUS */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3 min-w-0">
             <button onClick={() => setSidebarOpen(true)} className="text-gray-600 hover:text-gray-800">
@@ -765,22 +752,18 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES WITH TIMESTAMPS & REACTIONS ===== */}
+        {/* MESSAGES WITH TIMESTAMPS & REACTIONS */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0" style={{ backgroundColor: '#ECE5DD' }}>
           <AnimatePresence>
             {messages.length === 0 ? (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+              <div 
                 className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto"
               >
-                <motion.div 
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                <div 
                   className="w-16 h-16 rounded-full bg-[#25D366] flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-4"
                 >
                   AI
-                </motion.div>
+                </div>
                 <h2 className="text-xl font-semibold text-gray-800">Hi User, how can I help you today?</h2>
                 <p className="text-gray-500 text-sm mt-1">Ask me anything, upload a file, or use voice input 🎤</p>
                 <div className="flex flex-wrap gap-2 mt-4 justify-center">
@@ -797,14 +780,11 @@ export default function DashboardPage() {
                   <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> Upload</span>
                   <span className="flex items-center gap-1"><Mic className="h-3 w-3" /> Voice</span>
                 </div>
-              </motion.div>
+              </div>
             ) : (
               messages.map((msg, i) => (
-                <motion.div 
+                <div 
                   key={i}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`max-w-[75%] p-3 rounded-2xl text-sm shadow-sm ${
@@ -883,7 +863,7 @@ export default function DashboardPage() {
                       </div>
                     )}
                   </div>
-                </motion.div>
+                </div>
               ))
             )}
           </AnimatePresence>
@@ -976,7 +956,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* ===== TEXT INPUT ===== */}
+          {/* TEXT INPUT */}
           <div className="relative">
             <textarea 
               value={prompt} 
@@ -1070,4 +1050,4 @@ export default function DashboardPage() {
       `}</style>
     </div>
   )
-                                     }
+}
