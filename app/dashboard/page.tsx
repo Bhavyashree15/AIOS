@@ -1,13 +1,16 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Send, Loader2, Wallet, ChevronDown, 
   Bot, Zap, Search, Code, Users, Plus, 
   Image, FolderOpen, Menu, Sparkles,
   MessageSquare, Settings, X, 
   Globe, FileText, GitBranch, Trash2,
-  Paperclip, File, Mic, MicOff
+  Paperclip, File, Mic, MicOff,
+  Copy, Check, ThumbsUp, ThumbsDown, Heart,
+  Clock, Circle, CircleCheck, CircleDot
 } from 'lucide-react'
 
 // ============================================
@@ -76,9 +79,10 @@ const saveChats = (chats: ChatType[]) => {
 type ChatType = {
   id: string
   title: string
-  messages: { role: 'user' | 'assistant', content: string }[]
+  messages: { role: 'user' | 'assistant', content: string, timestamp?: string, reactions?: { like: number, dislike: number, heart: number } }[]
   timestamp: string
   model?: string
+  unread?: boolean
 }
 
 type UploadedFile = {
@@ -88,6 +92,8 @@ type UploadedFile = {
   content: string
   preview?: string
 }
+
+type MessageReaction = 'like' | 'dislike' | 'heart'
 
 export default function DashboardPage() {
   const [prompt, setPrompt] = useState('')
@@ -100,13 +106,9 @@ export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [walletBalance, setWalletBalance] = useState(100)
   const [activePage, setActivePage] = useState('chat')
-  
-  // ============================================
-  // CHAT STATE - WITH STORAGE
-  // ============================================
   const [chats, setChats] = useState<ChatType[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
-  const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([])
+  const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string, timestamp?: string, reactions?: { like: number, dislike: number, heart: number } }[]>([])
   
   // File Upload State
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
@@ -117,6 +119,15 @@ export default function DashboardPage() {
   const [isListening, setIsListening] = useState(false)
   const [isSpeechSupported, setIsSpeechSupported] = useState(true)
   const recognitionRef = useRef<any>(null)
+  
+  // ============================================
+  // NEW FEATURES STATE
+  // ============================================
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const [onlineStatus, setOnlineStatus] = useState(true)
+  const [typingText, setTypingText] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -130,6 +141,8 @@ export default function DashboardPage() {
       const mostRecent = stored[0]
       setCurrentChatId(mostRecent.id)
       setMessages(mostRecent.messages || [])
+      // Mark as read
+      setUnreadCount(0)
     } else {
       createNewChat()
     }
@@ -149,6 +162,16 @@ export default function DashboardPage() {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
     }
   }, [messages])
+
+  // ============================================
+  // ONLINE STATUS - Simulate AI being online
+  // ============================================
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOnlineStatus(true)
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   // ============================================
   // VOICE INPUT SETUP
@@ -313,6 +336,7 @@ export default function DashboardPage() {
       messages: [],
       timestamp: new Date().toISOString(),
       model: selectedModels[0],
+      unread: false,
     }
     setChats(prev => [newChat, ...prev])
     setCurrentChatId(newId)
@@ -321,6 +345,7 @@ export default function DashboardPage() {
     setPrompt('')
     setUploadedFiles([])
     setSidebarOpen(false)
+    setUnreadCount(0)
     saveChats([newChat, ...chats])
   }
 
@@ -333,6 +358,11 @@ export default function DashboardPage() {
       setPrompt('')
       setUploadedFiles([])
       setSidebarOpen(false)
+      // Mark as read
+      setChats(prev => prev.map(c => 
+        c.id === chatId ? { ...c, unread: false } : c
+      ))
+      setUnreadCount(0)
     }
   }
 
@@ -350,7 +380,7 @@ export default function DashboardPage() {
     }
   }
 
-  const updateChatMessages = (chatId: string, newMessages: {role: 'user' | 'assistant', content: string}[]) => {
+  const updateChatMessages = (chatId: string, newMessages: {role: 'user' | 'assistant', content: string, timestamp?: string, reactions?: { like: number, dislike: number, heart: number } }[]) => {
     setChats(prev => prev.map(c => {
       if (c.id === chatId) {
         let title = c.title
@@ -405,14 +435,62 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // SUBMIT QUERY - WITH CHAT STORAGE
+  // MESSAGE REACTIONS
+  // ============================================
+  const addReaction = (messageIndex: number, reaction: MessageReaction) => {
+    setMessages(prev => {
+      const updated = [...prev]
+      const msg = updated[messageIndex]
+      if (!msg.reactions) {
+        msg.reactions = { like: 0, dislike: 0, heart: 0 }
+      }
+      msg.reactions[reaction] = (msg.reactions[reaction] || 0) + 1
+      return updated
+    })
+    
+    // Update chat storage
+    if (currentChatId) {
+      updateChatMessages(currentChatId, messages)
+    }
+  }
+
+  // ============================================
+  // COPY MESSAGE
+  // ============================================
+  const copyMessage = (content: string, id: string) => {
+    navigator.clipboard.writeText(content)
+    setCopiedMessageId(id)
+    setTimeout(() => setCopiedMessageId(null), 2000)
+  }
+
+  // ============================================
+  // TYPING ANIMATION
+  // ============================================
+  const simulateTyping = (fullText: string) => {
+    setIsTyping(true)
+    let index = 0
+    setTypingText('')
+    const interval = setInterval(() => {
+      if (index < fullText.length) {
+        setTypingText(prev => prev + fullText[index])
+        index++
+      } else {
+        clearInterval(interval)
+        setIsTyping(false)
+      }
+    }, 15)
+    return () => clearInterval(interval)
+  }
+
+  // ============================================
+  // SUBMIT QUERY - WITH TYPING ANIMATION
   // ============================================
   const handleSubmit = async () => {
     if (!prompt.trim() && uploadedFiles.length === 0) return
     if (selectedModels.length === 0) return
     
     if (walletBalance < 0.01) {
-      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Insufficient balance. Please add funds.' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Insufficient balance. Please add funds.', timestamp: new Date().toISOString() }])
       return
     }
 
@@ -424,7 +502,8 @@ export default function DashboardPage() {
       fullPrompt = `Context from uploaded files:\n${fileContext}\n\nUser question: ${prompt || 'Please analyze these files'}`
     }
 
-    const userMsg = { role: 'user' as const, content: fullPrompt }
+    const timestamp = new Date().toISOString()
+    const userMsg = { role: 'user' as const, content: fullPrompt, timestamp }
     const updatedMessages = [...messages, userMsg]
     setMessages(updatedMessages)
     
@@ -444,28 +523,43 @@ export default function DashboardPage() {
       })
       const data = await res.json()
       
-      let assistantMsg: {role: 'assistant', content: string}
+      let assistantContent: string
       
       if (res.status === 402) {
-        assistantMsg = { role: 'assistant', content: `⚠️ ${data.error}` }
+        assistantContent = `⚠️ ${data.error}`
       } else if (data.error) {
-        assistantMsg = { role: 'assistant', content: `⚠️ ${data.error}` }
+        assistantContent = `⚠️ ${data.error}`
       } else if (data.consensus) {
         setResponse(data)
-        assistantMsg = { role: 'assistant', content: data.consensus }
+        assistantContent = data.consensus
         setWalletBalance(data.wallet_balance || 100)
       } else {
-        assistantMsg = { role: 'assistant', content: '⚠️ No response. Try again.' }
+        assistantContent = '⚠️ No response. Try again.'
+      }
+      
+      // Add assistant message with timestamp
+      const assistantMsg = { 
+        role: 'assistant' as const, 
+        content: assistantContent, 
+        timestamp: new Date().toISOString(),
+        reactions: { like: 0, dislike: 0, heart: 0 }
       }
       
       const finalMessages = [...updatedMessages, assistantMsg]
       setMessages(finalMessages)
       
+      // Simulate typing animation
+      simulateTyping(assistantContent)
+      
       if (currentChatId) {
         updateChatMessages(currentChatId, finalMessages)
       }
     } catch (error) {
-      const errorMsg = { role: 'assistant' as const, content: '❌ Error. Please try again.' }
+      const errorMsg = { 
+        role: 'assistant' as const, 
+        content: '❌ Error. Please try again.', 
+        timestamp: new Date().toISOString() 
+      }
       const finalMessages = [...updatedMessages, errorMsg]
       setMessages(finalMessages)
       if (currentChatId) {
@@ -506,19 +600,32 @@ export default function DashboardPage() {
     return 'text-red-600'
   }
 
+  // ============================================
+  // RENDER
+  // ============================================
   return (
     <div className="flex h-screen bg-[#ECE5DD] text-gray-800 overflow-hidden">
       
       {/* ===== OVERLAY ===== */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/30 z-40"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ===== SIDEBAR ===== */}
-      <div className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ${sidebarOpen ? 'w-72' : '-translate-x-full'} bg-white border-r border-gray-200 flex flex-col overflow-hidden shadow-xl`}>
+      <motion.div 
+        initial={false}
+        animate={{ x: sidebarOpen ? 0 : -288 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className={`fixed left-0 top-0 h-full z-50 w-72 bg-white border-r border-gray-200 flex flex-col overflow-hidden shadow-xl`}
+      >
         
         <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0 bg-[#075E54] text-white">
           <div className="flex items-center gap-2">
@@ -549,14 +656,26 @@ export default function DashboardPage() {
           ))}
           
           {/* ============================================ */}
-          {/* CHAT HISTORY - STORED AND DISPLAYED */}
+          {/* CHAT HISTORY WITH UNREAD INDICATOR */}
           {/* ============================================ */}
           {chats.length > 0 && (
             <div className="mt-4">
-              <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 px-2">Recent</div>
+              <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 px-2 flex items-center justify-between">
+                <span>Recent</span>
+                {unreadCount > 0 && (
+                  <span className="bg-red-500 text-white text-[8px] px-2 py-0.5 rounded-full">
+                    {unreadCount} unread
+                  </span>
+                )}
+              </div>
               <div className="space-y-0.5">
                 {chats.slice(0, 20).map(chat => (
-                  <div key={chat.id} className="group relative flex items-center">
+                  <motion.div 
+                    key={chat.id} 
+                    className="group relative flex items-center"
+                    whileHover={{ scale: 1.01 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     <button 
                       onClick={() => loadChat(chat.id)}
                       className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all truncate flex items-center gap-2 ${
@@ -567,6 +686,12 @@ export default function DashboardPage() {
                     >
                       <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
                       <span className="truncate">{chat.title}</span>
+                      {chat.unread && (
+                        <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0 animate-pulse" />
+                      )}
+                      <span className="text-[8px] text-gray-400 ml-auto flex-shrink-0">
+                        {new Date(chat.timestamp).toLocaleDateString()}
+                      </span>
                     </button>
                     <button 
                       onClick={(e) => deleteChat(chat.id, e)}
@@ -574,7 +699,7 @@ export default function DashboardPage() {
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -595,20 +720,29 @@ export default function DashboardPage() {
             <button className="mt-1.5 w-full text-xs bg-[#25D366] text-white py-1.5 rounded-lg font-medium hover:shadow-lg transition-all">Upgrade Now</button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ===== MAIN CHAT AREA ===== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header */}
+        {/* ===== HEADER WITH ONLINE STATUS ===== */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3 min-w-0">
             <button onClick={() => setSidebarOpen(true)} className="text-gray-600 hover:text-gray-800">
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="text-sm font-semibold text-gray-800 truncate">
-              {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'New Chat' : 'AIOS Chat'}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-semibold text-gray-800 truncate">
+                {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'New Chat' : 'AIOS Chat'}
+              </h1>
+              {/* Online Status Indicator */}
+              <div className="flex items-center gap-1.5">
+                <div className={`w-2 h-2 rounded-full ${onlineStatus ? 'bg-green-500' : 'bg-gray-400'} animate-pulse`} />
+                <span className="text-[9px] text-gray-500">
+                  {onlineStatus ? 'Online' : 'Offline'}
+                </span>
+              </div>
+            </div>
             {response && (
               <div className="flex items-center gap-1.5 text-[10px]">
                 <span className={`px-1.5 py-0.5 rounded-full ${getScoreColor(response.consensus_score || 0)} bg-gray-100`}>
@@ -631,41 +765,128 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Messages */}
+        {/* ===== MESSAGES WITH TIMESTAMPS & REACTIONS ===== */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0" style={{ backgroundColor: '#ECE5DD' }}>
-          {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
-              <div className="w-16 h-16 rounded-full bg-[#25D366] flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-4">AI</div>
-              <h2 className="text-xl font-semibold text-gray-800">Hi User, how can I help you today?</h2>
-              <p className="text-gray-500 text-sm mt-1">Ask me anything, upload a file, or use voice input 🎤</p>
-              <div className="flex flex-wrap gap-2 mt-4 justify-center">
-                {QUICK_ACTIONS.map((action, i) => (
-                  <button key={i} onClick={() => handleQuickAction(action.prompt)} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
-                    <action.icon className="h-3.5 w-3.5" />
-                    {action.label}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-6 flex items-center gap-4 text-xs text-gray-500">
-                <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {selectedModels.length} model</span>
-                <span className="flex items-center gap-1"><Wallet className="h-3 w-3" /> ₹{walletBalance.toFixed(2)}</span>
-                <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> Upload</span>
-                <span className="flex items-center gap-1"><Mic className="h-3 w-3" /> Voice</span>
-              </div>
-            </div>
-          ) : (
-            messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] p-3 rounded-2xl text-sm shadow-sm ${
-                  msg.role === 'user' 
-                    ? 'bg-[#DCF8C6] text-gray-800 rounded-br-none' 
-                    : 'bg-white text-gray-800 rounded-bl-none'
-                }`}>
-                  <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+          <AnimatePresence>
+            {messages.length === 0 ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto"
+              >
+                <motion.div 
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-16 h-16 rounded-full bg-[#25D366] flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-4"
+                >
+                  AI
+                </motion.div>
+                <h2 className="text-xl font-semibold text-gray-800">Hi User, how can I help you today?</h2>
+                <p className="text-gray-500 text-sm mt-1">Ask me anything, upload a file, or use voice input 🎤</p>
+                <div className="flex flex-wrap gap-2 mt-4 justify-center">
+                  {QUICK_ACTIONS.map((action, i) => (
+                    <button key={i} onClick={() => handleQuickAction(action.prompt)} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+                      <action.icon className="h-3.5 w-3.5" />
+                      {action.label}
+                    </button>
+                  ))}
                 </div>
-              </div>
-            ))
-          )}
+                <div className="mt-6 flex items-center gap-4 text-xs text-gray-500">
+                  <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {selectedModels.length} model</span>
+                  <span className="flex items-center gap-1"><Wallet className="h-3 w-3" /> ₹{walletBalance.toFixed(2)}</span>
+                  <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> Upload</span>
+                  <span className="flex items-center gap-1"><Mic className="h-3 w-3" /> Voice</span>
+                </div>
+              </motion.div>
+            ) : (
+              messages.map((msg, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.3, delay: i * 0.05 }}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`max-w-[75%] p-3 rounded-2xl text-sm shadow-sm ${
+                    msg.role === 'user' 
+                      ? 'bg-[#DCF8C6] text-gray-800 rounded-br-none' 
+                      : 'bg-white text-gray-800 rounded-bl-none'
+                  }`}>
+                    {/* Message Content with Typing Animation */}
+                    <div className="whitespace-pre-wrap leading-relaxed">
+                      {isTyping && i === messages.length - 1 && msg.role === 'assistant' 
+                        ? typingText 
+                        : msg.content
+                      }
+                      {isTyping && i === messages.length - 1 && msg.role === 'assistant' && (
+                        <span className="animate-pulse">|</span>
+                      )}
+                    </div>
+                    
+                    {/* Timestamp */}
+                    {msg.timestamp && (
+                      <div className="flex items-center gap-1 mt-1.5">
+                        <Clock className="h-2.5 w-2.5 text-gray-400" />
+                        <span className="text-[8px] text-gray-400">
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Reactions & Copy Buttons */}
+                    {msg.role === 'assistant' && (
+                      <div className="flex items-center gap-1 mt-1.5">
+                        {/* Copy Button */}
+                        <button
+                          onClick={() => copyMessage(msg.content, `msg-${i}`)}
+                          className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors rounded"
+                        >
+                          {copiedMessageId === `msg-${i}` ? (
+                            <Check className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                        </button>
+                        
+                        {/* Like Button */}
+                        <button
+                          onClick={() => addReaction(i, 'like')}
+                          className="p-0.5 text-gray-400 hover:text-blue-500 transition-colors rounded flex items-center gap-0.5"
+                        >
+                          <ThumbsUp className="h-3 w-3" />
+                          <span className="text-[8px] text-gray-400">
+                            {msg.reactions?.like || 0}
+                          </span>
+                        </button>
+                        
+                        {/* Dislike Button */}
+                        <button
+                          onClick={() => addReaction(i, 'dislike')}
+                          className="p-0.5 text-gray-400 hover:text-red-500 transition-colors rounded flex items-center gap-0.5"
+                        >
+                          <ThumbsDown className="h-3 w-3" />
+                          <span className="text-[8px] text-gray-400">
+                            {msg.reactions?.dislike || 0}
+                          </span>
+                        </button>
+                        
+                        {/* Heart Button */}
+                        <button
+                          onClick={() => addReaction(i, 'heart')}
+                          className="p-0.5 text-gray-400 hover:text-red-500 transition-colors rounded flex items-center gap-0.5"
+                        >
+                          <Heart className="h-3 w-3" />
+                          <span className="text-[8px] text-gray-400">
+                            {msg.reactions?.heart || 0}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </AnimatePresence>
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-white p-3 rounded-2xl rounded-bl-none shadow-sm">
@@ -681,9 +902,7 @@ export default function DashboardPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ============================================ */}
-        {/* INPUT AREA */}
-        {/* ============================================ */}
+        {/* ===== INPUT AREA ===== */}
         <div className="border-t border-gray-200 p-3 bg-[#f0f0f0] flex-shrink-0">
           
           {/* Uploaded Files */}
@@ -757,9 +976,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* ============================================ */}
-          {/* TEXT INPUT - WITH VOICE BUTTON */}
-          {/* ============================================ */}
+          {/* ===== TEXT INPUT ===== */}
           <div className="relative">
             <textarea 
               value={prompt} 
@@ -853,4 +1070,4 @@ export default function DashboardPage() {
       `}</style>
     </div>
   )
-    }
+                                     }
