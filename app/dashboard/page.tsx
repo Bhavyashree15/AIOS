@@ -14,9 +14,6 @@ import {
   Reply, Pencil, Square
 } from 'lucide-react'
 
-// ============================================
-// FULL MODELS DATABASE (ALL 40+ MODELS)
-// ============================================
 const ALL_MODELS = {
   popular: [
     { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', icon: '🤖', tier: 'free', cost: 0.0005 },
@@ -65,9 +62,6 @@ const QUICK_ACTIONS = [
   { icon: FileText, label: 'Create Document', prompt: 'Write a professional document about' },
 ]
 
-// ============================================
-// CHAT STORAGE
-// ============================================
 const STORAGE_KEY = 'aios_chats'
 const THEME_KEY = 'aios_theme'
 
@@ -123,17 +117,14 @@ export default function DashboardPage() {
   const [messages, setMessages] = useState<any[]>([])
   const [isStopped, setIsStopped] = useState(false)
   
-  // File Upload State
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  // Voice Input State
   const [isListening, setIsListening] = useState(false)
   const [isSpeechSupported, setIsSpeechSupported] = useState(true)
   const recognitionRef = useRef<any>(null)
   
-  // Features State
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [onlineStatus, setOnlineStatus] = useState(true)
   const [typingText, setTypingText] = useState('')
@@ -154,7 +145,6 @@ export default function DashboardPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // ===== THEME =====
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light')
@@ -166,7 +156,6 @@ export default function DashboardPage() {
     }
   }, [isDark])
 
-  // ===== LOAD CHATS =====
   useEffect(() => {
     const stored = getStoredChats()
     if (stored.length > 0) {
@@ -190,7 +179,6 @@ export default function DashboardPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ===== ONLINE STATUS =====
   useEffect(() => {
     const interval = setInterval(() => {
       setOnlineStatus(true)
@@ -198,7 +186,6 @@ export default function DashboardPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // ===== VOICE INPUT =====
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) {
@@ -279,7 +266,6 @@ export default function DashboardPage() {
     }
   }
 
-  // ===== FILE UPLOAD =====
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -346,7 +332,6 @@ export default function DashboardPage() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
   }
 
-  // ===== CHAT FUNCTIONS =====
   const createNewChat = () => {
     const newId = Date.now().toString()
     const newChat: ChatType = {
@@ -550,7 +535,6 @@ export default function DashboardPage() {
     setReplyToIndex(null)
   }
 
-  // ===== STOP GENERATION =====
   const stopGeneration = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -562,9 +546,6 @@ export default function DashboardPage() {
     setTypingText('')
   }
 
-  // ============================================
-  // MAIN SUBMIT
-  // ============================================
   const handleSubmit = async () => {
     if (!prompt.trim() && uploadedFiles.length === 0) {
       return
@@ -727,9 +708,6 @@ export default function DashboardPage() {
     return 'text-red-600'
   }
 
-  // ============================================
-  // RENDER
-  // ============================================
   return (
     <div className={`flex h-screen ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'} ${isDark ? 'text-white' : 'text-gray-800'} overflow-hidden`}>
       
@@ -745,7 +723,6 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      {/* ===== SIDEBAR ===== */}
       <motion.div 
         initial={false}
         animate={{ x: sidebarOpen ? 0 : -288 }}
@@ -856,10 +833,8 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
-      {/* ===== MAIN CHAT AREA ===== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* ===== HEADER ===== */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-white'} flex-shrink-0 shadow-sm min-h-[60px]`}>
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <button onClick={() => setSidebarOpen(true)} className={`${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'}`}>
@@ -923,7 +898,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - FINAL FIX WITH BUBBLES ===== */}
+        {/* ===== MESSAGES - WITH BUBBLE FIX ===== */}
         <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -957,7 +932,6 @@ export default function DashboardPage() {
                     transition={{ duration: 0.3 }}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2 px-2`}
                   >
-                    {/* Avatar - AI (left side) */}
                     {isAI && (
                       <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold bg-[#075E54] text-white">
                         AI
@@ -965,7 +939,6 @@ export default function DashboardPage() {
                     )}
                     
                     <div className="relative max-w-[75%] flex flex-col">
-                      {/* Reply indicator */}
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -973,7 +946,7 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Message bubble - WhatsApp/ChatGPT style with inline styles */}
+                      {/* ===== THE FIXED BUBBLE WITH BACKGROUND ===== */}
                       <div 
                         className="px-3 py-2 shadow-sm"
                         style={{
@@ -997,7 +970,6 @@ export default function DashboardPage() {
                           )}
                         </div>
                         
-                        {/* Timestamp */}
                         <div 
                           className="flex items-center gap-1 mt-1 justify-end"
                           style={{ color: '#9ca3af', fontSize: '10px' }}
@@ -1009,7 +981,6 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Actions - ALWAYS VISIBLE for AI messages */}
                       {isAI && (
                         <div className="flex items-center gap-0.5 mt-1" style={{ color: '#9ca3af' }}>
                           <button
@@ -1064,7 +1035,6 @@ export default function DashboardPage() {
                       )}
                     </div>
 
-                    {/* Avatar - User (right side) */}
                     {!isAI && (
                       <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold bg-[#075E54] text-white">
                         U
@@ -1076,7 +1046,6 @@ export default function DashboardPage() {
             )}
           </AnimatePresence>
           
-          {/* Reply indicator at bottom */}
           {replyToMessage && (
             <div className={`flex items-center justify-between ${isDark ? 'bg-gray-700' : 'bg-gray-100'} p-2 rounded-lg mb-2`}>
               <div className="flex items-center gap-2">
@@ -1232,7 +1201,6 @@ export default function DashboardPage() {
                 )}
               </label>
               
-              {/* Send/Stop button */}
               {isLoading ? (
                 <button 
                   onClick={stopGeneration}
