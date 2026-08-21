@@ -15,41 +15,39 @@ import {
 } from 'lucide-react'
 
 const ALL_MODELS = {
-  popular: [
+  free: [
     { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', icon: '🤖', tier: 'free', cost: 0.0005 },
     { id: 'qwen-3.5-flash', name: 'Qwen3.5 Flash', icon: '🐉', tier: 'free', cost: 0.0008 },
     { id: 'ministral-3-8b', name: 'Ministral 3 8B', icon: '🧠', tier: 'free', cost: 0.001 },
     { id: 'mistral-small-4', name: 'Mistral Small 4', icon: '🌊', tier: 'free', cost: 0.001 },
-    { id: 'gpt-4.1', name: 'GPT-4.1', icon: '🤖', tier: 'pro', cost: 0.005 },
-    { id: 'claude-sonnet-4.0', name: 'Claude Sonnet 4.0', icon: '🎯', tier: 'pro', cost: 0.003 },
     { id: 'deepseek-chat', name: 'DeepSeek Chat', icon: '🔮', tier: 'free', cost: 0.0015 },
     { id: 'gemini-3-flash', name: 'Gemini 3 Flash', icon: '⚡', tier: 'free', cost: 0.0005 },
-  ],
-  intelligence: [
     { id: 'gpt-4o-mini', name: 'GPT-4o mini', icon: '🤖', tier: 'free', cost: 0.0005 },
     { id: 'claude-haiku-4.5', name: 'Claude Haiku 4.5', icon: '🎯', tier: 'free', cost: 0.0008 },
+    { id: 'mistral-small', name: 'Mistral Small', icon: '🌊', tier: 'free', cost: 0.001 },
+    { id: 'seed-2.0-lite', name: 'Seed 2.0 Lite', icon: '🌱', tier: 'free', cost: 0.0004 },
+    { id: 'nova-micro', name: 'Nova Micro', icon: '✨', tier: 'free', cost: 0.0005 },
+    { id: 'qwen-3-coder-flash', name: 'Qwen 3 Coder Flash', icon: '💻', tier: 'free', cost: 0.0007 },
+    { id: 'gpt-5-mini', name: 'GPT-5 mini', icon: '🤖', tier: 'free', cost: 0.0005 },
+  ],
+  paid: [
+    { id: 'gpt-4.1', name: 'GPT-4.1', icon: '🤖', tier: 'pro', cost: 0.005 },
+    { id: 'claude-sonnet-4.0', name: 'Claude Sonnet 4.0', icon: '🎯', tier: 'pro', cost: 0.003 },
     { id: 'gpt-5.4', name: 'GPT-5.4', icon: '🤖', tier: 'pro', cost: 0.005 },
     { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', icon: '🧠', tier: 'pro', cost: 0.0025 },
-    { id: 'mistral-small', name: 'Mistral Small', icon: '🌊', tier: 'free', cost: 0.001 },
     { id: 'grok-3-mini', name: 'Grok 3 Mini', icon: '🦍', tier: 'pro', cost: 0.002 },
     { id: 'codestral', name: 'Codestral', icon: '💻', tier: 'pro', cost: 0.001 },
-    { id: 'seed-2.0-lite', name: 'Seed 2.0 Lite', icon: '🌱', tier: 'free', cost: 0.0004 },
-  ],
-  latest: [
-    { id: 'nova-micro', name: 'Nova Micro', icon: '✨', tier: 'free', cost: 0.0005 },
     { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', icon: '🌍', tier: 'pro', cost: 0.005 },
     { id: 'grok-4.5', name: 'Grok 4.5', icon: '🦍', tier: 'pro', cost: 0.002 },
     { id: 'nova-premier-1.0', name: 'Nova Premier 1.0', icon: '✨', tier: 'pro', cost: 0.0025 },
     { id: 'perplexity-sonar', name: 'Perplexity Sonar', icon: '🔍', tier: 'pro', cost: 0.0006 },
     { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', icon: '🌙', tier: 'pro', cost: 0.005 },
-    { id: 'qwen-3-coder-flash', name: 'Qwen 3 Coder Flash', icon: '💻', tier: 'free', cost: 0.0007 },
-    { id: 'gpt-5-mini', name: 'GPT-5 mini', icon: '🤖', tier: 'free', cost: 0.0005 },
     { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', icon: '🧠', tier: 'pro', cost: 0.0015 },
   ]
 }
 
 const getAllModels = () => {
-  const all = [...ALL_MODELS.popular, ...ALL_MODELS.intelligence, ...ALL_MODELS.latest]
+  const all = [...ALL_MODELS.free, ...ALL_MODELS.paid]
   return all.filter((model, index, self) => 
     index === self.findIndex(m => m.id === model.id)
   )
@@ -107,7 +105,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedModels, setSelectedModels] = useState(['gpt-5.4-mini'])
   const [showModelPicker, setShowModelPicker] = useState(false)
-  const [modelTab, setModelTab] = useState('popular')
+  const [modelTab, setModelTab] = useState('free')
   const [searchQuery, setSearchQuery] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [walletBalance, setWalletBalance] = useState(100)
@@ -426,9 +424,9 @@ export default function DashboardPage() {
 
   const toggleModel = (id: string) => {
     if (selectedModels.includes(id)) {
-      setSelectedModels([])
+      setSelectedModels(selectedModels.filter(m => m !== id))
     } else {
-      setSelectedModels([id])
+      setSelectedModels([...selectedModels, id])
     }
   }
 
@@ -899,13 +897,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - PROFESSIONAL BLUE THEME ===== */}
+        {/* ===== MESSAGES - FULL WIDTH, BIGGER FONT ===== */}
         <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-2 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
                 <div className="w-16 h-16 rounded-full bg-[#25D366] flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-4">AI</div>
-                <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Hi User, how can I help you today?</h2>
+                <h2 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Hi User, how can I help you today?</h2>
                 <p className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-sm mt-1`}>Ask me anything, upload a file, or use voice input 🎤</p>
                 <div className="flex flex-wrap gap-2 mt-4 justify-center">
                   {QUICK_ACTIONS.map((action, i) => (
@@ -933,7 +931,7 @@ export default function DashboardPage() {
                     transition={{ duration: 0.3 }}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}
                   >
-                    <div className={`relative max-w-[90%] w-full flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                    <div className={`relative max-w-[100%] w-full flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -941,9 +939,9 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* ===== PROFESSIONAL BLUE THEME ===== */}
+                      {/* ===== FULL WIDTH, BIGGER FONT ===== */}
                       <div 
-                        className={`px-3 py-2 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
+                        className={`px-4 py-3 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
                         style={{
                           backgroundColor: msg.role === 'user' 
                             ? (isDark ? '#2563EB' : '#0A7CFF')
@@ -955,14 +953,18 @@ export default function DashboardPage() {
                           maxWidth: msg.role === 'user' ? 'auto' : '100%',
                           width: msg.role === 'assistant' ? '100%' : 'auto',
                           wordWrap: 'break-word',
+                          fontSize: '16px',
+                          lineHeight: '1.6',
                         }}
                       >
                         <div 
-                          className="whitespace-pre-wrap leading-relaxed text-sm"
+                          className="whitespace-pre-wrap leading-relaxed"
                           style={{ 
                             color: msg.role === 'user' 
                               ? '#ffffff'
-                              : (isDark ? '#e5e5e5' : '#1a1a1a')
+                              : (isDark ? '#e5e5e5' : '#1a1a1a'),
+                            fontSize: '16px',
+                            lineHeight: '1.6',
                           }}
                         >
                           {isTyping && i === messages.length - 1 && isAI && !isStopped
@@ -980,7 +982,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-0.5 mt-1" style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>
                           <button
                             onClick={() => copyMessage(msg.content, `msg-${i}`)}
-                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
+                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
                             style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             {copiedMessageId === `msg-${i}` ? (
@@ -988,43 +990,43 @@ export default function DashboardPage() {
                             ) : (
                               <Copy className="h-3.5 w-3.5" />
                             )}
-                            <span className="text-[9px]">Copy</span>
+                            <span className="text-[10px]">Copy</span>
                           </button>
                           
                           <button
                             onClick={() => addReaction(i, 'like')}
-                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
+                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
                             style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <ThumbsUp className="h-3.5 w-3.5" />
-                            <span className="text-[9px]">{msg.reactions?.like || 0}</span>
+                            <span className="text-[10px]">{msg.reactions?.like || 0}</span>
                           </button>
                           
                           <button
                             onClick={() => addReaction(i, 'dislike')}
-                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
+                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
                             style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <ThumbsDown className="h-3.5 w-3.5" />
-                            <span className="text-[9px]">{msg.reactions?.dislike || 0}</span>
+                            <span className="text-[10px]">{msg.reactions?.dislike || 0}</span>
                           </button>
                           
                           <button
                             onClick={() => addReaction(i, 'heart')}
-                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
+                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
                             style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <Heart className="h-3.5 w-3.5" />
-                            <span className="text-[9px]">{msg.reactions?.heart || 0}</span>
+                            <span className="text-[10px]">{msg.reactions?.heart || 0}</span>
                           </button>
 
                           <button
                             onClick={() => handleReplyClick(msg, i)}
-                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
+                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
                             style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <Reply className="h-3.5 w-3.5" />
-                            <span className="text-[9px]">Reply</span>
+                            <span className="text-[10px]">Reply</span>
                           </button>
                         </div>
                       )}
@@ -1092,7 +1094,7 @@ export default function DashboardPage() {
               return model ? <span key={id} className="text-sm">{model.icon}</span> : null
             })}
             <span className="text-emerald-600 font-medium text-xs">
-              {selectedModels.length === 0 ? 'No model' : getAllModels().find(m => m.id === selectedModels[0])?.name || 'Select'}
+              {selectedModels.length === 0 ? 'No model' : selectedModels.length > 1 ? `${selectedModels.length} models` : getAllModels().find(m => m.id === selectedModels[0])?.name || 'Select'}
             </span>
             <ChevronDown className={`h-3 w-3 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
           </button>
@@ -1103,26 +1105,39 @@ export default function DashboardPage() {
                 <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Choose a model</h3>
                 <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600"><X className="h-3.5 w-3.5" /></button>
               </div>
-              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Select one AI model for your task</p>
+              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Select one or more AI models for your task</p>
               <div className="relative mb-2">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                 <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`w-full ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400'} border rounded-lg pl-8 pr-3 py-1.5 text-sm outline-none focus:border-emerald-500`} />
               </div>
               <div className={`flex gap-1 mb-2 ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-1 flex-wrap`}>
-                {['popular', 'intelligence', 'latest', 'all'].map((tab) => (
+                {['auto', 'free', 'paid'].map((tab) => (
                   <button key={tab} onClick={() => setModelTab(tab)} className={`flex-1 px-2 py-1 rounded-lg text-xs font-medium capitalize ${modelTab === tab ? 'bg-emerald-500 text-white' : isDark ? 'text-gray-400 hover:bg-gray-600' : 'text-gray-600 hover:bg-gray-200'}`}>
-                    {tab === 'all' ? 'All' : tab}
+                    {tab === 'auto' ? '✨ Auto' : tab}
                   </button>
                 ))}
               </div>
-              <button onClick={() => { setSelectedModels(['gpt-5.4-mini']); setShowModelPicker(false) }} className={`w-full p-2 mb-2 ${isDark ? 'bg-amber-900/20 border-amber-700/30 text-amber-400 hover:bg-amber-900/30' : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'} border rounded-lg text-left transition-all`}>
+              
+              {/* Auto Mode - Smart Select */}
+              <button 
+                onClick={() => { 
+                  setSelectedModels(['gpt-5.4-mini']); 
+                  setShowModelPicker(false) 
+                }} 
+                className={`w-full p-2 mb-2 ${isDark ? 'bg-amber-900/20 border-amber-700/30 text-amber-400 hover:bg-amber-900/30' : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'} border rounded-lg text-left transition-all`}
+              >
                 <div className="font-semibold text-xs">✨ Auto Mode</div>
-                <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>picks the best model</div>
+                <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Automatically picks the best model</div>
               </button>
-              <div className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-500'} mb-1.5`}>or pick your own</div>
+              
+              <div className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-500'} mb-1.5`}>Select models (tap to toggle)</div>
               <div className="grid grid-cols-2 gap-1">
                 {getCurrentModels().map((model) => (
-                  <button key={model.id} onClick={() => toggleModel(model.id)} className={`flex items-center gap-1.5 p-1.5 rounded-lg text-left text-xs w-full ${selectedModels.includes(model.id) ? isDark ? 'bg-emerald-900/20 border-emerald-700/30' : 'bg-emerald-50 border-emerald-200' : isDark ? 'bg-gray-700 border-transparent hover:bg-gray-600' : 'bg-gray-50 border-transparent hover:bg-gray-100'} border`}>
+                  <button 
+                    key={model.id} 
+                    onClick={() => toggleModel(model.id)} 
+                    className={`flex items-center gap-1.5 p-1.5 rounded-lg text-left text-xs w-full ${selectedModels.includes(model.id) ? isDark ? 'bg-emerald-900/20 border-emerald-700/30' : 'bg-emerald-50 border-emerald-200' : isDark ? 'bg-gray-700 border-transparent hover:bg-gray-600' : 'bg-gray-50 border-transparent hover:bg-gray-100'} border`}
+                  >
                     <span className="text-sm">{model.icon}</span>
                     <div className="flex-1 min-w-0">
                       <span className={`truncate block ${selectedModels.includes(model.id) ? 'text-emerald-400' : isDark ? 'text-white' : 'text-gray-700'}`}>{model.name}</span>
