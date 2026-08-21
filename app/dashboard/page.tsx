@@ -1,4 +1,7 @@
 'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Send, Loader2, Wallet, ChevronDown, 
   Bot, Zap, Search, Code, Users, Plus, 
@@ -10,7 +13,6 @@ import {
   Clock, Moon, Sun, Download, Search as SearchIcon,
   Reply, Pencil
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 
 // ============================================
 // MODELS DATABASE (40+ MODELS)
@@ -53,10 +55,13 @@ const QUICK_ACTIONS = [
   { icon: FileText, label: 'Create Document', prompt: 'Write a professional document about' },
 ]
 
+// ============================================
+// CHAT STORAGE
+// ============================================
 const STORAGE_KEY = 'aios_chats'
 const THEME_KEY = 'aios_theme'
 
-const getStoredChats = () => {
+const getStoredChats = (): ChatType[] => {
   if (typeof window === 'undefined') return []
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
@@ -66,7 +71,7 @@ const getStoredChats = () => {
   }
 }
 
-const saveChats = (chats: any[]) => {
+const saveChats = (chats: ChatType[]) => {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(chats))
@@ -532,9 +537,7 @@ export default function DashboardPage() {
     setReplyToIndex(null)
   }
 
-  // ============================================
-  // SUBMIT QUERY
-  // ============================================
+  // ===== SUBMIT QUERY =====
   const handleSubmit = async () => {
     if (!prompt.trim() && uploadedFiles.length === 0) return
     if (selectedModels.length === 0) return
