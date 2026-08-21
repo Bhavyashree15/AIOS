@@ -1290,6 +1290,6 @@ export default function DashboardPage() {
           opacity: 1 !important;
         }
       `}</style>
-    </div
+    </div>
   )
 }
