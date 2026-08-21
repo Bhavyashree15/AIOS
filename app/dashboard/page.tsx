@@ -634,6 +634,9 @@ export default function DashboardPage() {
     setTimeout(() => handleSubmit(), 300)
   }
 
+  // ============================================
+  // NAVIGATION ITEMS - REMOVED "Chat" from Image Studio
+  // ============================================
   const navItems = [
     { id: 'chat', icon: MessageSquare, label: 'Chat' },
     { id: 'image', icon: Image, label: 'Image Studio' },
@@ -710,8 +713,14 @@ export default function DashboardPage() {
           </button>
         </div>
 
+        {/* ============================================ */}
+        {/* NEW CHAT BUTTON - ChatGPT Style (Edit Icon) */}
+        {/* ============================================ */}
         <div className="p-3 flex-shrink-0 bg-[#f0f0f0]">
-          <button onClick={createNewChat} className="w-full bg-[#25D366] text-white px-3 py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm">
+          <button 
+            onClick={createNewChat} 
+            className="w-full bg-[#25D366] text-white px-3 py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm"
+          >
             <Pencil className="h-4 w-4" />
             New Chat
           </button>
@@ -992,7 +1001,9 @@ export default function DashboardPage() {
                       )}
                     </div>
                     
-                    {/* Reply Button */}
+                    {/* ============================================ */}
+                    {/* REPLY BUTTON - Like WhatsApp (on every message) */}
+                    {/* ============================================ */}
                     <button
                       onClick={() => handleReplyClick(msg, i)}
                       className={`absolute -bottom-2 ${msg.role === 'user' ? '-left-2' : '-right-2'} opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full ${
@@ -1212,6 +1223,6 @@ export default function DashboardPage() {
           opacity: 1 !important;
         }
       `}</style>
-    </div>   
+    </div>
   )
 }
