@@ -5,7 +5,7 @@
 @layer base {
   body {
     background-color: #0B0F17;
-    /* REMOVED: color: white; - this was causing all text to be white */
+    /* REMOVED: color: white - this was the problem! */
   }
 }
 
@@ -21,7 +21,7 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* Force message bubble styles - these will override everything */
+/* Force message bubble styles */
 .message-bubble-user {
   background-color: #DCF8C6 !important;
   color: #1a1a1a !important;
@@ -32,10 +32,10 @@
   color: #1a1a1a !important;
 }
 
-.message-timestamp {
-  color: #9ca3af !important;
-}
-
 .message-text {
   color: #1a1a1a !important;
+}
+
+.message-timestamp {
+  color: #9ca3af !important;
 }
