@@ -923,7 +923,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - USING INLINE STYLES ===== */}
+        {/* ===== MESSAGES - WITH WRAPPER TO RESET STYLES ===== */}
         <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -972,26 +972,34 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Message bubble - USING INLINE STYLES to override globals.css */}
+                      {/* MESSAGE BUBBLE - COMPLETE STYLE RESET */}
                       <div 
                         className="relative p-3 rounded-2xl shadow-sm rounded-br-sm"
                         style={{
                           backgroundColor: msg.role === 'user' ? '#DCF8C6' : '#ffffff',
-                          color: '#1a1a1a'
+                          color: '#1a1a1a',
+                          fontFamily: 'inherit'
                         }}
                       >
-                        <div className="whitespace-pre-wrap leading-relaxed text-sm" style={{ color: '#1a1a1a' }}>
+                        {/* Content with explicit color */}
+                        <div 
+                          className="whitespace-pre-wrap leading-relaxed text-sm"
+                          style={{ color: '#1a1a1a' }}
+                        >
                           {isTyping && i === messages.length - 1 && isAI && !isStopped
                             ? typingText 
                             : msg.content
                           }
                           {isTyping && i === messages.length - 1 && isAI && !isStopped && (
-                            <span className="animate-pulse">|</span>
+                            <span className="animate-pulse" style={{ color: '#1a1a1a' }}>|</span>
                           )}
                         </div>
                         
                         {/* Timestamp */}
-                        <div className="flex items-center gap-1 mt-2" style={{ color: '#9ca3af' }}>
+                        <div 
+                          className="flex items-center gap-1 mt-2"
+                          style={{ color: '#9ca3af' }}
+                        >
                           <Clock className="h-3 w-3" />
                           <span className="text-[10px]">
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1001,10 +1009,11 @@ export default function DashboardPage() {
 
                       {/* Actions - ALWAYS VISIBLE */}
                       {isAI && (
-                        <div className="flex items-center gap-0.5 mt-1 text-gray-400">
+                        <div className="flex items-center gap-0.5 mt-1" style={{ color: '#9ca3af' }}>
                           <button
                             onClick={() => copyMessage(msg.content, `msg-${i}`)}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
+                            style={{ color: '#9ca3af' }}
                           >
                             {copiedMessageId === `msg-${i}` ? (
                               <Check className="h-3.5 w-3.5 text-green-500" />
@@ -1017,6 +1026,7 @@ export default function DashboardPage() {
                           <button
                             onClick={() => addReaction(i, 'like')}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
+                            style={{ color: '#9ca3af' }}
                           >
                             <ThumbsUp className="h-3.5 w-3.5" />
                             <span className="text-[9px]">{msg.reactions?.like || 0}</span>
@@ -1025,6 +1035,7 @@ export default function DashboardPage() {
                           <button
                             onClick={() => addReaction(i, 'dislike')}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
+                            style={{ color: '#9ca3af' }}
                           >
                             <ThumbsDown className="h-3.5 w-3.5" />
                             <span className="text-[9px]">{msg.reactions?.dislike || 0}</span>
@@ -1033,6 +1044,7 @@ export default function DashboardPage() {
                           <button
                             onClick={() => addReaction(i, 'heart')}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
+                            style={{ color: '#9ca3af' }}
                           >
                             <Heart className="h-3.5 w-3.5" />
                             <span className="text-[9px]">{msg.reactions?.heart || 0}</span>
@@ -1041,6 +1053,7 @@ export default function DashboardPage() {
                           <button
                             onClick={() => handleReplyClick(msg, i)}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
+                            style={{ color: '#9ca3af' }}
                           >
                             <Reply className="h-3.5 w-3.5" />
                             <span className="text-[9px]">Reply</span>
