@@ -608,7 +608,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ 
           prompt: currentPrompt, 
           models: selectedModels,
-          max_tokens: 50  // REDUCED to 50 to fix API error
+          max_tokens: 50
         }),
         signal: abortControllerRef.current.signal
       })
@@ -616,8 +616,8 @@ export default function DashboardPage() {
       const data = await res.json()
       let assistantContent: string
       
-      if (res.status === 402) {
-        assistantContent = `⚠️ ${data.error || 'Insufficient balance'}`
+      if (res.status === 402 || data.error === 'insufficient_credits') {
+        assistantContent = `⚠️ Insufficient credits. Please add funds at https://openrouter.ai/settings/creds`
       } else if (data.error) {
         assistantContent = `⚠️ ${data.error}`
       } else if (data.consensus) {
@@ -945,8 +945,12 @@ export default function DashboardPage() {
                       <div 
                         className={`px-3 py-2 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
                         style={{
-                          backgroundColor: msg.role === 'user' ? '#0A7CFF' : 'transparent',
-                          color: msg.role === 'user' ? '#ffffff' : '#1a1a1a',
+                          backgroundColor: msg.role === 'user' 
+                            ? (isDark ? '#2563EB' : '#0A7CFF')
+                            : 'transparent',
+                          color: msg.role === 'user' 
+                            ? '#ffffff'
+                            : (isDark ? '#e5e5e5' : '#1a1a1a'),
                           borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '0px',
                           maxWidth: msg.role === 'user' ? 'auto' : '100%',
                           width: msg.role === 'assistant' ? '100%' : 'auto',
@@ -955,25 +959,29 @@ export default function DashboardPage() {
                       >
                         <div 
                           className="whitespace-pre-wrap leading-relaxed text-sm"
-                          style={{ color: msg.role === 'user' ? '#ffffff' : '#1a1a1a' }}
+                          style={{ 
+                            color: msg.role === 'user' 
+                              ? '#ffffff'
+                              : (isDark ? '#e5e5e5' : '#1a1a1a')
+                          }}
                         >
                           {isTyping && i === messages.length - 1 && isAI && !isStopped
                             ? typingText 
                             : msg.content
                           }
                           {isTyping && i === messages.length - 1 && isAI && !isStopped && (
-                            <span className="animate-pulse" style={{ color: '#1a1a1a' }}>|</span>
+                            <span className="animate-pulse" style={{ color: isDark ? '#e5e5e5' : '#1a1a1a' }}>|</span>
                           )}
                         </div>
                       </div>
 
                       {/* Actions - ALWAYS VISIBLE for AI messages */}
                       {isAI && (
-                        <div className="flex items-center gap-0.5 mt-1" style={{ color: '#9ca3af' }}>
+                        <div className="flex items-center gap-0.5 mt-1" style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>
                           <button
                             onClick={() => copyMessage(msg.content, `msg-${i}`)}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
-                            style={{ color: '#9ca3af' }}
+                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             {copiedMessageId === `msg-${i}` ? (
                               <Check className="h-3.5 w-3.5 text-green-500" />
@@ -986,7 +994,7 @@ export default function DashboardPage() {
                           <button
                             onClick={() => addReaction(i, 'like')}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
-                            style={{ color: '#9ca3af' }}
+                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <ThumbsUp className="h-3.5 w-3.5" />
                             <span className="text-[9px]">{msg.reactions?.like || 0}</span>
@@ -995,7 +1003,7 @@ export default function DashboardPage() {
                           <button
                             onClick={() => addReaction(i, 'dislike')}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
-                            style={{ color: '#9ca3af' }}
+                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <ThumbsDown className="h-3.5 w-3.5" />
                             <span className="text-[9px]">{msg.reactions?.dislike || 0}</span>
@@ -1004,7 +1012,7 @@ export default function DashboardPage() {
                           <button
                             onClick={() => addReaction(i, 'heart')}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
-                            style={{ color: '#9ca3af' }}
+                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <Heart className="h-3.5 w-3.5" />
                             <span className="text-[9px]">{msg.reactions?.heart || 0}</span>
@@ -1013,7 +1021,7 @@ export default function DashboardPage() {
                           <button
                             onClick={() => handleReplyClick(msg, i)}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
-                            style={{ color: '#9ca3af' }}
+                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <Reply className="h-3.5 w-3.5" />
                             <span className="text-[9px]">Reply</span>
