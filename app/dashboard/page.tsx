@@ -1,6 +1,4 @@
 'use client'
-
-import { useState, useEffect, useRef } from 'react'
 import { 
   Send, Loader2, Wallet, ChevronDown, 
   Bot, Zap, Search, Code, Users, Plus, 
@@ -10,7 +8,7 @@ import {
   Paperclip, File, Mic, MicOff,
   Copy, Check, ThumbsUp, ThumbsDown, Heart,
   Clock, Moon, Sun, Download, Search as SearchIcon,
-  Reply, Pencil, Circle, CircleCheck, CircleDot
+  Reply, Pencil
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
