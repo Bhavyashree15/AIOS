@@ -716,7 +716,6 @@ export default function DashboardPage() {
   }
 
   const navItems = [
-    { id: 'chat', icon: MessageSquare, label: 'Chat' },
     { id: 'image', icon: Image, label: 'Image Studio' },
     { id: 'experts', icon: Users, label: 'Experts' },
     { id: 'projects', icon: FolderOpen, label: 'Projects' },
