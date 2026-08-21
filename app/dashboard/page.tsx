@@ -923,7 +923,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - CHATGPT STYLE WITH INLINE STYLES ===== */}
+        {/* ===== MESSAGES - CHATGPT STYLE ===== */}
         <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -973,12 +973,11 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Message bubble - ChatGPT style with FORCED inline styles */}
+                      {/* Message bubble - ChatGPT style with FORCED colors */}
                       <div 
                         className="relative p-3 rounded-2xl shadow-sm"
                         style={{
                           backgroundColor: msg.role === 'user' ? '#DCF8C6' : '#ffffff',
-                          color: '#1a1a1a',
                           borderTopRightRadius: msg.role === 'user' ? '4px' : '16px',
                           borderTopLeftRadius: msg.role === 'user' ? '16px' : '4px',
                           borderBottomRightRadius: '16px',
