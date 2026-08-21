@@ -40,7 +40,7 @@ function calculateCost(modelId: string, tokens: number): number {
 // ============================================
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, models } = await req.json()
+    const { prompt, models, max_tokens = 50 } = await req.json()  // FIXED: default 50
 
     if (!prompt) {
       return NextResponse.json({ 
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         model: modelId,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: max_tokens,  // FIXED: use the passed value
       }),
     })
 
@@ -86,6 +86,18 @@ export async function POST(req: NextRequest) {
     // ============================================
     if (!response.ok) {
       console.error('API Error:', data.error)
+      
+      // Check if it's a credit issue
+      if (response.status === 402 || data.error?.message?.includes('credits')) {
+        return NextResponse.json({
+          consensus: `⚠️ Insufficient credits. Please visit https://openrouter.ai/settings/creds to add funds.`,
+          consensus_score: 0,
+          confidence: 0,
+          wallet_balance: walletBalance,
+          error: 'insufficient_credits',
+        })
+      }
+      
       return NextResponse.json({
         consensus: `⚠️ API Error: ${data.error?.message || 'Unknown error'}`,
         consensus_score: 0,
