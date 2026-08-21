@@ -105,7 +105,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedModels, setSelectedModels] = useState(['gpt-5.4-mini'])
   const [showModelPicker, setShowModelPicker] = useState(false)
-  const [modelTab, setModelTab] = useState('free')
+  const [modelTab, setModelTab] = useState('auto')
   const [searchQuery, setSearchQuery] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [walletBalance, setWalletBalance] = useState(100)
@@ -422,20 +422,41 @@ export default function DashboardPage() {
     fetchWallet()
   }, [])
 
+  // ===== MODEL SELECTION LOGIC =====
   const toggleModel = (id: string) => {
+    const isPaid = getAllModels().find(m => m.id === id)?.tier === 'pro'
+    
     if (selectedModels.includes(id)) {
+      // For paid models: only deselect if it's not the last selected
+      if (isPaid && selectedModels.length === 1) {
+        return // Can't deselect the last paid model
+      }
+      // For free models: can deselect freely
       setSelectedModels(selectedModels.filter(m => m !== id))
     } else {
-      setSelectedModels([...selectedModels, id])
+      // Adding a model
+      if (isPaid) {
+        // Paid: replace all selected with just this one
+        setSelectedModels([id])
+      } else {
+        // Free: add to selection
+        setSelectedModels([...selectedModels, id])
+      }
     }
   }
 
   const getCurrentModels = () => {
-    let models = modelTab === 'all' ? getAllModels() : ALL_MODELS[modelTab as keyof typeof ALL_MODELS] || []
+    let models = modelTab === 'auto' ? getAllModels() : ALL_MODELS[modelTab as keyof typeof ALL_MODELS] || []
     if (searchQuery) {
       models = models.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
     }
     return models
+  }
+
+  // Auto select - picks the best free model
+  const handleAutoSelect = () => {
+    setSelectedModels(['gpt-5.4-mini'])
+    setShowModelPicker(false)
   }
 
   const filteredChats = chatSearchQuery.trim() === '' 
@@ -897,7 +918,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - FULL WIDTH, BIGGER FONT ===== */}
+        {/* ===== MESSAGES - CHATGPT STYLE ===== */}
         <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-2 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -939,7 +960,6 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* ===== FULL WIDTH, BIGGER FONT ===== */}
                       <div 
                         className={`px-4 py-3 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
                         style={{
@@ -977,7 +997,6 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Actions - ALWAYS VISIBLE for AI messages */}
                       {isAI && (
                         <div className="flex items-center gap-0.5 mt-1" style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>
                           <button
@@ -1088,70 +1107,154 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <button onClick={() => setShowModelPicker(!showModelPicker)} className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} transition-colors mb-1.5`}>
-            {selectedModels.map(id => {
-              const model = getAllModels().find(m => m.id === id)
-              return model ? <span key={id} className="text-sm">{model.icon}</span> : null
-            })}
-            <span className="text-emerald-600 font-medium text-xs">
-              {selectedModels.length === 0 ? 'No model' : selectedModels.length > 1 ? `${selectedModels.length} models` : getAllModels().find(m => m.id === selectedModels[0])?.name || 'Select'}
-            </span>
-            <ChevronDown className={`h-3 w-3 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
-          </button>
-
-          {showModelPicker && (
-            <div className={`mb-2 p-3 ${isDark ? 'bg-[#2a2a2a] border-gray-700' : 'bg-white border-gray-200'} border rounded-xl max-h-[280px] overflow-y-auto shadow-lg`}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Choose a model</h3>
-                <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600"><X className="h-3.5 w-3.5" /></button>
-              </div>
-              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Select one or more AI models for your task</p>
-              <div className="relative mb-2">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`w-full ${isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400'} border rounded-lg pl-8 pr-3 py-1.5 text-sm outline-none focus:border-emerald-500`} />
-              </div>
-              <div className={`flex gap-1 mb-2 ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-1 flex-wrap`}>
-                {['auto', 'free', 'paid'].map((tab) => (
-                  <button key={tab} onClick={() => setModelTab(tab)} className={`flex-1 px-2 py-1 rounded-lg text-xs font-medium capitalize ${modelTab === tab ? 'bg-emerald-500 text-white' : isDark ? 'text-gray-400 hover:bg-gray-600' : 'text-gray-600 hover:bg-gray-200'}`}>
-                    {tab === 'auto' ? '✨ Auto' : tab}
-                  </button>
-                ))}
-              </div>
-              
-              {/* Auto Mode - Smart Select */}
-              <button 
-                onClick={() => { 
-                  setSelectedModels(['gpt-5.4-mini']); 
-                  setShowModelPicker(false) 
-                }} 
-                className={`w-full p-2 mb-2 ${isDark ? 'bg-amber-900/20 border-amber-700/30 text-amber-400 hover:bg-amber-900/30' : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'} border rounded-lg text-left transition-all`}
-              >
-                <div className="font-semibold text-xs">✨ Auto Mode</div>
-                <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Automatically picks the best model</div>
-              </button>
-              
-              <div className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-500'} mb-1.5`}>Select models (tap to toggle)</div>
-              <div className="grid grid-cols-2 gap-1">
-                {getCurrentModels().map((model) => (
-                  <button 
-                    key={model.id} 
-                    onClick={() => toggleModel(model.id)} 
-                    className={`flex items-center gap-1.5 p-1.5 rounded-lg text-left text-xs w-full ${selectedModels.includes(model.id) ? isDark ? 'bg-emerald-900/20 border-emerald-700/30' : 'bg-emerald-50 border-emerald-200' : isDark ? 'bg-gray-700 border-transparent hover:bg-gray-600' : 'bg-gray-50 border-transparent hover:bg-gray-100'} border`}
-                  >
-                    <span className="text-sm">{model.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <span className={`truncate block ${selectedModels.includes(model.id) ? 'text-emerald-400' : isDark ? 'text-white' : 'text-gray-700'}`}>{model.name}</span>
-                      <span className={`text-[8px] ${model.tier === 'pro' ? 'text-amber-500' : 'text-emerald-500'}`}>{model.tier === 'pro' ? '⭐ Pro' : 'Free'}</span>
-                    </div>
-                    {selectedModels.includes(model.id) && <span className="text-emerald-500 text-xs">✓</span>}
-                  </button>
-                ))}
-              </div>
-              <button onClick={() => setShowModelPicker(false)} className="w-full mt-2 bg-emerald-500 text-white py-1.5 rounded-lg font-semibold text-xs hover:shadow-lg transition-all">Apply</button>
-            </div>
-          )}
-
+          {/* ===== MODEL SELECTOR - PROFESSIONAL ===== */}
           <div className="relative">
+            <button 
+              onClick={() => setShowModelPicker(!showModelPicker)} 
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs w-full justify-between ${
+                isDark ? 'bg-[#2a2a2a] hover:bg-[#333] border-gray-700' : 'bg-white hover:bg-gray-50 border-gray-200'
+              } border transition-all`}
+            >
+              <div className="flex items-center gap-2">
+                <div className="flex -space-x-1">
+                  {selectedModels.slice(0, 3).map(id => {
+                    const model = getAllModels().find(m => m.id === id)
+                    return model ? <span key={id} className="text-sm">{model.icon}</span> : null
+                  })}
+                  {selectedModels.length > 3 && (
+                    <span className={`text-[8px] ${isDark ? 'text-gray-400' : 'text-gray-500'} ml-1`}>
+                      +{selectedModels.length - 3}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-xs font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {selectedModels.length === 0 ? 'Select model' :
+                   selectedModels.length === 1 ? getAllModels().find(m => m.id === selectedModels[0])?.name || 'Model' :
+                   `${selectedModels.length} models`}
+                </span>
+              </div>
+              <ChevronDown className={`h-3 w-3 ${isDark ? 'text-gray-400' : 'text-gray-400'} transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showModelPicker && (
+              <div className={`absolute bottom-full mb-2 left-0 right-0 z-50 p-3 rounded-xl shadow-xl border ${
+                isDark ? 'bg-[#2a2a2a] border-gray-700' : 'bg-white border-gray-200'
+              } max-h-[320px] overflow-y-auto`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Select Models</h3>
+                  <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex gap-1 mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                  {['auto', 'free', 'paid'].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setModelTab(tab)}
+                      className={`flex-1 px-2 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
+                        modelTab === tab
+                          ? 'bg-emerald-500 text-white'
+                          : isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
+                      }`}
+                    >
+                      {tab === 'auto' ? '✨ Auto' : tab}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search */}
+                <div className="relative mb-3">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search models..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border ${
+                      isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400'
+                    } outline-none focus:border-emerald-500`}
+                  />
+                </div>
+
+                {/* Auto Mode */}
+                {modelTab === 'auto' && (
+                  <button
+                    onClick={handleAutoSelect}
+                    className={`w-full p-3 mb-2 rounded-lg border-2 border-emerald-500/30 bg-emerald-500/5 text-left transition-all hover:bg-emerald-500/10`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">✨</span>
+                      <div>
+                        <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-800'}`}>Auto Mode</div>
+                        <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Automatically picks the best model</div>
+                      </div>
+                      {selectedModels.length === 1 && (
+                        <span className="ml-auto text-emerald-500 text-xs font-medium">✓ Active</span>
+                      )}
+                    </div>
+                  </button>
+                )}
+
+                {/* Model List */}
+                <div className="text-[10px] text-gray-400 mb-2">
+                  {modelTab === 'free' && 'Select multiple free models'}
+                  {modelTab === 'paid' && 'Select one paid model'}
+                  {modelTab === 'auto' && 'Choose your preferred model'}
+                </div>
+
+                <div className="grid grid-cols-2 gap-1">
+                  {getCurrentModels().map((model) => {
+                    const isSelected = selectedModels.includes(model.id)
+                    const isPaid = model.tier === 'pro'
+                    const canSelect = !isPaid || selectedModels.length === 0 || (isPaid && selectedModels.length === 1 && selectedModels[0] === model.id)
+                    
+                    return (
+                      <button
+                        key={model.id}
+                        onClick={() => {
+                          if (modelTab === 'auto') {
+                            // In auto mode, clicking selects just that model
+                            setSelectedModels([model.id])
+                          } else {
+                            toggleModel(model.id)
+                          }
+                        }}
+                        className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs transition-all ${
+                          isSelected
+                            ? isDark ? 'bg-emerald-900/30 border-emerald-700/50' : 'bg-emerald-50 border-emerald-300'
+                            : isDark ? 'bg-gray-700/50 hover:bg-gray-600/50 border-transparent' : 'bg-gray-50 hover:bg-gray-100 border-transparent'
+                        } border`}
+                      >
+                        <span className="text-sm">{model.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className={`truncate ${isSelected ? 'text-emerald-400 dark:text-emerald-400' : isDark ? 'text-white' : 'text-gray-700'}`}>
+                            {model.name}
+                          </div>
+                          <div className={`text-[8px] ${model.tier === 'pro' ? 'text-amber-500' : 'text-emerald-500'}`}>
+                            {model.tier === 'pro' ? '⭐ Paid' : 'Free'}
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <span className="text-emerald-500 text-xs">✓</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button 
+                  onClick={() => setShowModelPicker(false)} 
+                  className="w-full mt-3 bg-emerald-500 text-white py-2 rounded-lg font-medium text-xs hover:bg-emerald-600 transition-all"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="relative mt-2">
             <textarea 
               id="message-input"
               value={prompt} 
