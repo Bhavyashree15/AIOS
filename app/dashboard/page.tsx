@@ -607,7 +607,8 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt: currentPrompt, 
-          models: selectedModels 
+          models: selectedModels,
+          max_tokens: 100
         }),
         signal: abortControllerRef.current.signal
       })
@@ -709,7 +710,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={`flex h-screen ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'} ${isDark ? 'text-white' : 'text-gray-800'} overflow-hidden`}>
+    <div className={`flex h-screen ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'} ${isDark ? 'text-white' : 'text-gray-800'} overflow-hidden`}>
       
       <AnimatePresence>
         {sidebarOpen && (
@@ -898,8 +899,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - WITH BUBBLE FIX ===== */}
-        <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
+        {/* ===== MESSAGES - EXACT CHATGPT STYLE ===== */}
+        <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-2 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
@@ -930,15 +931,9 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2 px-2`}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}
                   >
-                    {isAI && (
-                      <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold bg-[#075E54] text-white">
-                        AI
-                      </div>
-                    )}
-                    
-                    <div className="relative max-w-[75%] flex flex-col">
+                    <div className={`relative max-w-[90%] w-full flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -946,20 +941,21 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* ===== THE FIXED BUBBLE WITH BACKGROUND ===== */}
+                      {/* ===== EXACT CHATGPT STYLE ===== */}
                       <div 
-                        className="px-3 py-2 shadow-sm"
+                        className={`px-3 py-2 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
                         style={{
-                          backgroundColor: msg.role === 'user' ? '#DCF8C6' : '#ffffff',
-                          color: '#1a1a1a',
-                          borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
-                          maxWidth: '100%',
+                          backgroundColor: msg.role === 'user' ? '#2b2d31' : 'transparent',
+                          color: msg.role === 'user' ? '#ffffff' : '#1a1a1a',
+                          borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '0px',
+                          maxWidth: msg.role === 'user' ? 'auto' : '100%',
+                          width: msg.role === 'assistant' ? '100%' : 'auto',
                           wordWrap: 'break-word',
                         }}
                       >
                         <div 
                           className="whitespace-pre-wrap leading-relaxed text-sm"
-                          style={{ color: '#1a1a1a' }}
+                          style={{ color: msg.role === 'user' ? '#ffffff' : '#1a1a1a' }}
                         >
                           {isTyping && i === messages.length - 1 && isAI && !isStopped
                             ? typingText 
@@ -969,18 +965,9 @@ export default function DashboardPage() {
                             <span className="animate-pulse" style={{ color: '#1a1a1a' }}>|</span>
                           )}
                         </div>
-                        
-                        <div 
-                          className="flex items-center gap-1 mt-1 justify-end"
-                          style={{ color: '#9ca3af', fontSize: '10px' }}
-                        >
-                          <Clock className="h-3 w-3" />
-                          <span>
-                            {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
                       </div>
 
+                      {/* Actions - ALWAYS VISIBLE for AI messages */}
                       {isAI && (
                         <div className="flex items-center gap-0.5 mt-1" style={{ color: '#9ca3af' }}>
                           <button
@@ -1034,12 +1021,6 @@ export default function DashboardPage() {
                         </div>
                       )}
                     </div>
-
-                    {!isAI && (
-                      <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold bg-[#075E54] text-white">
-                        U
-                      </div>
-                    )}
                   </motion.div>
                 )
               })
