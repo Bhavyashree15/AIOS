@@ -936,7 +936,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - CHATGPT STYLE ===== */}
+        {/* ===== MESSAGES - CHATGPT STYLE WITH FIXED STYLING ===== */}
         <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -972,9 +972,7 @@ export default function DashboardPage() {
                   >
                     {/* Avatar - AI (left side) */}
                     {isAI && (
-                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold ${
-                        isDark ? 'bg-[#2a2a2a] text-white' : 'bg-[#075E54] text-white'
-                      }`}>
+                      <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold bg-[#075E54] text-white">
                         AI
                       </div>
                     )}
@@ -988,15 +986,11 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Message bubble - ChatGPT style */}
+                      {/* Message bubble - ChatGPT style with explicit colors */}
                       <div className={`relative p-3 rounded-2xl shadow-sm ${
                         msg.role === 'user' 
-                          ? isDark 
-                            ? 'bg-[#075E54] text-white rounded-br-sm' 
-                            : 'bg-[#DCF8C6] text-gray-800 rounded-br-sm'
-                          : isDark 
-                            ? 'bg-[#2a2a2a] text-white rounded-bl-sm' 
-                            : 'bg-white text-gray-800 rounded-bl-sm'
+                          ? 'bg-[#DCF8C6] text-gray-800 rounded-br-sm' 
+                          : 'bg-white text-gray-800 rounded-bl-sm'
                       }`}>
                         <div className="whitespace-pre-wrap leading-relaxed text-sm">
                           {isTyping && i === messages.length - 1 && isAI 
@@ -1009,11 +1003,7 @@ export default function DashboardPage() {
                         </div>
                         
                         {/* Timestamp - always visible */}
-                        <div className={`flex items-center gap-1 mt-2 ${
-                          msg.role === 'user' 
-                            ? isDark ? 'text-gray-300' : 'text-gray-600' 
-                            : isDark ? 'text-gray-400' : 'text-gray-400'
-                        }`}>
+                        <div className="flex items-center gap-1 mt-2 text-gray-400">
                           <Clock className="h-3 w-3" />
                           <span className="text-[10px]">
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1021,16 +1011,12 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Actions - ALWAYS VISIBLE */}
+                      {/* Actions - ALWAYS VISIBLE for AI messages */}
                       {isAI && (
-                        <div className={`flex items-center gap-0.5 mt-1 ${
-                          isDark ? 'text-gray-400' : 'text-gray-400'
-                        }`}>
+                        <div className="flex items-center gap-0.5 mt-1 text-gray-400">
                           <button
                             onClick={() => copyMessage(msg.content, `msg-${i}`)}
-                            className={`p-1 rounded transition-colors hover:${
-                              isDark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-700'
-                            } flex items-center gap-1 text-[10px]`}
+                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
                           >
                             {copiedMessageId === `msg-${i}` ? (
                               <Check className="h-3.5 w-3.5 text-green-500" />
@@ -1042,9 +1028,7 @@ export default function DashboardPage() {
                           
                           <button
                             onClick={() => addReaction(i, 'like')}
-                            className={`p-1 rounded transition-colors hover:${
-                              isDark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-700'
-                            } flex items-center gap-1 text-[10px]`}
+                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
                           >
                             <ThumbsUp className="h-3.5 w-3.5" />
                             <span className="text-[9px]">{msg.reactions?.like || 0}</span>
@@ -1052,9 +1036,7 @@ export default function DashboardPage() {
                           
                           <button
                             onClick={() => addReaction(i, 'dislike')}
-                            className={`p-1 rounded transition-colors hover:${
-                              isDark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-700'
-                            } flex items-center gap-1 text-[10px]`}
+                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
                           >
                             <ThumbsDown className="h-3.5 w-3.5" />
                             <span className="text-[9px]">{msg.reactions?.dislike || 0}</span>
@@ -1062,9 +1044,7 @@ export default function DashboardPage() {
                           
                           <button
                             onClick={() => addReaction(i, 'heart')}
-                            className={`p-1 rounded transition-colors hover:${
-                              isDark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-700'
-                            } flex items-center gap-1 text-[10px]`}
+                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
                           >
                             <Heart className="h-3.5 w-3.5" />
                             <span className="text-[9px]">{msg.reactions?.heart || 0}</span>
@@ -1073,9 +1053,7 @@ export default function DashboardPage() {
                           {/* Reply button - ALWAYS VISIBLE */}
                           <button
                             onClick={() => handleReplyClick(msg, i)}
-                            className={`p-1 rounded transition-colors hover:${
-                              isDark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-700'
-                            } flex items-center gap-1 text-[10px]`}
+                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
                           >
                             <Reply className="h-3.5 w-3.5" />
                             <span className="text-[9px]">Reply</span>
@@ -1086,9 +1064,7 @@ export default function DashboardPage() {
 
                     {/* Avatar - User (right side) */}
                     {!isAI && (
-                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold ${
-                        isDark ? 'bg-[#075E54] text-white' : 'bg-[#075E54] text-white'
-                      }`}>
+                      <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold bg-[#075E54] text-white">
                         U
                       </div>
                     )}
@@ -1115,12 +1091,12 @@ export default function DashboardPage() {
           
           {isLoading && (
             <div className="flex justify-start">
-              <div className={`${isDark ? 'bg-[#2a2a2a] border-gray-700' : 'bg-white border-gray-200'} p-3 rounded-2xl rounded-bl-sm shadow-sm border`}>
+              <div className="bg-white p-3 rounded-2xl rounded-bl-sm shadow-sm border border-gray-200">
                 <div className="flex items-center gap-2">
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
-                  <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} ml-2`}>Getting response...</span>
+                  <span className="text-xs text-gray-500 ml-2">Getting response...</span>
                 </div>
               </div>
             </div>
