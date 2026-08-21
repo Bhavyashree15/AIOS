@@ -11,7 +11,7 @@ import {
   Paperclip, File, Mic, MicOff,
   Copy, Check, ThumbsUp, ThumbsDown, Heart,
   Clock, Moon, Sun, Download, Search as SearchIcon,
-  Reply, Pencil
+  Reply, Pencil, Square
 } from 'lucide-react'
 
 // ============================================
@@ -121,6 +121,7 @@ export default function DashboardPage() {
   const [chats, setChats] = useState<ChatType[]>([])
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [messages, setMessages] = useState<any[]>([])
+  const [isStopped, setIsStopped] = useState(false)
   
   // File Upload State
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
@@ -151,6 +152,7 @@ export default function DashboardPage() {
   const [replyToIndex, setReplyToIndex] = useState<number | null>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // ===== THEME =====
   useEffect(() => {
@@ -522,12 +524,13 @@ export default function DashboardPage() {
     let index = 0
     setTypingText('')
     const interval = setInterval(() => {
-      if (index < fullText.length) {
+      if (index < fullText.length && !isStopped) {
         setTypingText(prev => prev + fullText[index])
         index++
       } else {
         clearInterval(interval)
         setIsTyping(false)
+        setIsStopped(false)
       }
     }, 15)
     return () => clearInterval(interval)
@@ -547,13 +550,24 @@ export default function DashboardPage() {
     setReplyToIndex(null)
   }
 
+  // ===== STOP GENERATION =====
+  const stopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    setIsStopped(true)
+    setIsTyping(false)
+    setIsLoading(false)
+    setTypingText('')
+  }
+
   // ============================================
   // MAIN SUBMIT - FIXED
   // ============================================
   const handleSubmit = async () => {
     // Check if there's any content to send
     if (!prompt.trim() && uploadedFiles.length === 0) {
-      // Don't add the error message - just return silently
       return
     }
     
@@ -598,6 +612,7 @@ export default function DashboardPage() {
     }
     
     setIsLoading(true)
+    setIsStopped(false)
     const currentPrompt = prompt
     setPrompt('')
     setUploadedFiles([])
@@ -605,15 +620,19 @@ export default function DashboardPage() {
     setReplyToMessage(null)
     setReplyToIndex(null)
 
+    // Create abort controller for this request
+    abortControllerRef.current = new AbortController()
+
     try {
-      // API CALL
+      // API CALL with abort signal
       const res = await fetch('/api/ai/consensus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt: currentPrompt, 
           models: selectedModels 
-        })
+        }),
+        signal: abortControllerRef.current.signal
       })
       
       const data = await res.json()
@@ -648,21 +667,37 @@ export default function DashboardPage() {
       if (currentChatId) {
         updateChatMessages(currentChatId, finalMessages)
       }
-    } catch (error) {
-      console.error('Error:', error)
-      const errorMsg = { 
-        role: 'assistant', 
-        content: '❌ Error: Could not connect to AI. Please try again.', 
-        timestamp: new Date().toISOString(),
-        reactions: { like: 0, dislike: 0, heart: 0 }
-      }
-      const finalMessages = [...updatedMessages, errorMsg]
-      setMessages(finalMessages)
-      if (currentChatId) {
-        updateChatMessages(currentChatId, finalMessages)
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        // User stopped the generation
+        const stoppedMsg = { 
+          role: 'assistant', 
+          content: '⏹️ Generation stopped by user.', 
+          timestamp: new Date().toISOString(),
+          reactions: { like: 0, dislike: 0, heart: 0 }
+        }
+        const finalMessages = [...updatedMessages, stoppedMsg]
+        setMessages(finalMessages)
+        if (currentChatId) {
+          updateChatMessages(currentChatId, finalMessages)
+        }
+      } else {
+        console.error('Error:', error)
+        const errorMsg = { 
+          role: 'assistant', 
+          content: '❌ Error: Could not connect to AI. Please try again.', 
+          timestamp: new Date().toISOString(),
+          reactions: { like: 0, dislike: 0, heart: 0 }
+        }
+        const finalMessages = [...updatedMessages, errorMsg]
+        setMessages(finalMessages)
+        if (currentChatId) {
+          updateChatMessages(currentChatId, finalMessages)
+        }
       }
     }
     setIsLoading(false)
+    abortControllerRef.current = null
   }
 
   const addFunds = () => {
@@ -680,7 +715,6 @@ export default function DashboardPage() {
 
   const handleQuickAction = (actionPrompt: string) => {
     setPrompt(actionPrompt)
-    // Add a small delay to ensure the prompt is set
     setTimeout(() => {
       handleSubmit()
     }, 100)
@@ -699,37 +733,11 @@ export default function DashboardPage() {
     return 'text-red-600'
   }
 
-  const themeClasses = isDark ? {
-    bg: 'bg-[#1a1a1a]',
-    bgChat: 'bg-[#1e1e1e]',
-    bgInput: 'bg-[#2a2a2a]',
-    bgSidebar: 'bg-[#1a1a1a]',
-    text: 'text-white',
-    textSecondary: 'text-gray-400',
-    border: 'border-gray-700',
-    cardBg: 'bg-[#2a2a2a]',
-    userMsg: 'bg-[#075E54] text-white',
-    aiMsg: 'bg-[#2a2a2a] text-white',
-    header: 'bg-[#1a1a1a] border-b border-gray-700',
-  } : {
-    bg: 'bg-[#ECE5DD]',
-    bgChat: 'bg-[#ECE5DD]',
-    bgInput: 'bg-[#f0f0f0]',
-    bgSidebar: 'bg-white',
-    text: 'text-gray-800',
-    textSecondary: 'text-gray-500',
-    border: 'border-gray-200',
-    cardBg: 'bg-white',
-    userMsg: 'bg-[#DCF8C6] text-gray-800',
-    aiMsg: 'bg-white text-gray-800',
-    header: 'bg-white border-b border-gray-200',
-  }
-
   // ============================================
   // RENDER - FULL UI WITH ALL FEATURES
   // ============================================
   return (
-    <div className={`flex h-screen ${themeClasses.bg} ${themeClasses.text} overflow-hidden`}>
+    <div className={`flex h-screen ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'} ${isDark ? 'text-white' : 'text-gray-800'} overflow-hidden`}>
       
       {/* ===== OVERLAY ===== */}
       <AnimatePresence>
@@ -749,7 +757,7 @@ export default function DashboardPage() {
         initial={false}
         animate={{ x: sidebarOpen ? 0 : -288 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className={`fixed left-0 top-0 h-full z-50 w-72 ${themeClasses.bgSidebar} border-r ${themeClasses.border} flex flex-col overflow-hidden shadow-xl`}
+        className={`fixed left-0 top-0 h-full z-50 w-72 ${isDark ? 'bg-[#1a1a1a]' : 'bg-white'} border-r ${isDark ? 'border-gray-700' : 'border-gray-200'} flex flex-col overflow-hidden shadow-xl`}
       >
         
         <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0 bg-[#075E54] text-white">
@@ -842,7 +850,7 @@ export default function DashboardPage() {
           ) : null}
         </div>
 
-        <div className={`p-4 border-t ${themeClasses.border} flex-shrink-0 bg-[#f0f0f0]`}>
+        <div className={`p-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'} flex-shrink-0 bg-[#f0f0f0]`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-[#075E54] flex items-center justify-center text-white text-[10px] font-bold">U</div>
@@ -861,36 +869,36 @@ export default function DashboardPage() {
       {/* ===== MAIN CHAT AREA ===== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* ===== HEADER ===== */}
-        <div className={`flex items-center justify-between px-4 py-3 border-b ${themeClasses.border} ${themeClasses.header} flex-shrink-0 shadow-sm`}>
-          <div className="flex items-center gap-3 min-w-0">
-            <button onClick={() => setSidebarOpen(true)} className="text-gray-600 hover:text-gray-800">
-              <Menu className="h-5 w-5" />
+        {/* ===== HEADER - FIXED OVERLAP ===== */}
+        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-white'} flex-shrink-0 shadow-sm min-h-[60px]`}>
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <button onClick={() => setSidebarOpen(true)} className={`${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'}`}>
+              <Menu className="h-5 w-5 flex-shrink-0" />
             </button>
-            <div className="flex items-center gap-2">
-              <h1 className={`text-sm font-semibold truncate ${themeClasses.text}`}>
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-800'}`}>
                 {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'New Chat' : 'AIOS Chat'}
               </h1>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
                 <div className={`w-2 h-2 rounded-full ${onlineStatus ? 'bg-green-500' : 'bg-gray-400'} animate-pulse`} />
-                <span className="text-[9px] text-gray-500">
+                <span className="text-[9px] text-gray-500 hidden sm:inline">
                   {onlineStatus ? 'Online' : 'Offline'}
                 </span>
               </div>
             </div>
             {response && (
-              <div className="flex items-center gap-1.5 text-[10px]">
+              <div className="flex items-center gap-1.5 text-[10px] flex-shrink-0">
                 <span className={`px-1.5 py-0.5 rounded-full ${getScoreColor(response.consensus_score || 0)} bg-gray-100`}>
                   {response.consensus_score || 0}%
                 </span>
-                <span className="text-gray-400">|</span>
-                <span className="text-cyan-600">{response.total_models || 0}</span>
-                <span className="text-gray-400">|</span>
-                <span className="text-emerald-600">₹{(response.cost_inr || 0).toFixed(4)}</span>
+                <span className="text-gray-400 hidden sm:inline">|</span>
+                <span className="text-cyan-600 hidden sm:inline">{response.total_models || 0}</span>
+                <span className="text-gray-400 hidden sm:inline">|</span>
+                <span className="text-emerald-600 hidden sm:inline">₹{(response.cost_inr || 0).toFixed(4)}</span>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <button
               onClick={() => setIsDark(!isDark)}
               className={`p-1.5 rounded-lg transition-colors ${isDark ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
@@ -932,11 +940,11 @@ export default function DashboardPage() {
               <span className={`${isDark ? 'text-emerald-400' : 'text-emerald-600'} font-mono font-semibold text-xs`}>₹{walletBalance.toFixed(2)}</span>
               <button onClick={addFunds} className="text-gray-400 hover:text-gray-600"><Plus className="h-2.5 w-2.5" /></button>
             </div>
-            <button className="text-gray-400 hover:text-gray-600"><Settings className="h-4 w-4" /></button>
+            <button className={`${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}><Settings className="h-4 w-4" /></button>
           </div>
         </div>
 
-        {/* ===== MESSAGES - CHATGPT STYLE WITH FIXED STYLING ===== */}
+        {/* ===== MESSAGES - CHATGPT STYLE WITH FIXED BUBBLES ===== */}
         <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -993,11 +1001,11 @@ export default function DashboardPage() {
                           : 'bg-white text-gray-800 rounded-bl-sm'
                       }`}>
                         <div className="whitespace-pre-wrap leading-relaxed text-sm">
-                          {isTyping && i === messages.length - 1 && isAI 
+                          {isTyping && i === messages.length - 1 && isAI && !isStopped
                             ? typingText 
                             : msg.content
                           }
-                          {isTyping && i === messages.length - 1 && isAI && (
+                          {isTyping && i === messages.length - 1 && isAI && !isStopped && (
                             <span className="animate-pulse">|</span>
                           )}
                         </div>
@@ -1230,13 +1238,24 @@ export default function DashboardPage() {
                 )}
               </label>
               
-              <button 
-                onClick={handleSubmit} 
-                disabled={isLoading || (!prompt.trim() && uploadedFiles.length === 0) || selectedModels.length === 0} 
-                className="bg-[#25D366] text-white p-2 rounded-lg disabled:opacity-50 hover:shadow-lg transition-all"
-              >
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </button>
+              {/* Send/Stop button */}
+              {isLoading ? (
+                <button 
+                  onClick={stopGeneration}
+                  className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-all shadow-lg"
+                  title="Stop generating"
+                >
+                  <Square className="h-4 w-4" />
+                </button>
+              ) : (
+                <button 
+                  onClick={handleSubmit} 
+                  disabled={(!prompt.trim() && uploadedFiles.length === 0) || selectedModels.length === 0} 
+                  className="bg-[#25D366] text-white p-2 rounded-lg disabled:opacity-50 hover:shadow-lg transition-all"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
           
