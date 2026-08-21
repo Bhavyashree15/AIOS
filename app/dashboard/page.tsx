@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 
 // ============================================
-// MODELS DATABASE (40+ MODELS)
+// FULL MODELS DATABASE (ALL 40+ MODELS)
 // ============================================
 const ALL_MODELS = {
   popular: [
@@ -33,9 +33,19 @@ const ALL_MODELS = {
     { id: 'claude-haiku-4.5', name: 'Claude Haiku 4.5', icon: '🎯', tier: 'free', cost: 0.0008 },
     { id: 'gpt-5.4', name: 'GPT-5.4', icon: '🤖', tier: 'pro', cost: 0.005 },
     { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro Preview', icon: '🧠', tier: 'pro', cost: 0.0025 },
+    { id: 'mistral-small', name: 'Mistral Small', icon: '🌊', tier: 'free', cost: 0.001 },
+    { id: 'grok-3-mini', name: 'Grok 3 Mini', icon: '🦍', tier: 'pro', cost: 0.002 },
+    { id: 'codestral', name: 'Codestral', icon: '💻', tier: 'pro', cost: 0.001 },
+    { id: 'seed-2.0-lite', name: 'Seed 2.0 Lite', icon: '🌱', tier: 'free', cost: 0.0004 },
   ],
   latest: [
+    { id: 'nova-micro', name: 'Nova Micro', icon: '✨', tier: 'free', cost: 0.0005 },
+    { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', icon: '🌍', tier: 'pro', cost: 0.005 },
+    { id: 'grok-4.5', name: 'Grok 4.5', icon: '🦍', tier: 'pro', cost: 0.002 },
+    { id: 'nova-premier-1.0', name: 'Nova Premier 1.0', icon: '✨', tier: 'pro', cost: 0.0025 },
     { id: 'perplexity-sonar', name: 'Perplexity Sonar', icon: '🔍', tier: 'pro', cost: 0.0006 },
+    { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', icon: '🌙', tier: 'pro', cost: 0.005 },
+    { id: 'qwen-3-coder-flash', name: 'Qwen 3 Coder Flash', icon: '💻', tier: 'free', cost: 0.0007 },
     { id: 'gpt-5-mini', name: 'GPT-5 mini', icon: '🤖', tier: 'free', cost: 0.0005 },
     { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', icon: '🧠', tier: 'pro', cost: 0.0015 },
   ]
@@ -537,34 +547,42 @@ export default function DashboardPage() {
     setReplyToIndex(null)
   }
 
-  // ===== SUBMIT QUERY =====
+  // ============================================
+  // MAIN SUBMIT - CALLS REAL API
+  // ============================================
   const handleSubmit = async () => {
-    if (!prompt.trim() && uploadedFiles.length === 0) return
-    if (selectedModels.length === 0) return
+    if (!prompt.trim() && uploadedFiles.length === 0) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: '⚠️ Please enter a message or upload a file.', 
+        timestamp: new Date().toISOString() 
+      }])
+      return
+    }
+    
+    if (selectedModels.length === 0) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: '⚠️ Please select a model first!', 
+        timestamp: new Date().toISOString() 
+      }])
+      return
+    }
     
     if (walletBalance < 0.01) {
-      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Insufficient balance. Please add funds.', timestamp: new Date().toISOString() }])
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: '⚠️ Insufficient balance. Please add funds.', 
+        timestamp: new Date().toISOString() 
+      }])
       return
     }
 
-    let fullPrompt = prompt
-    if (uploadedFiles.length > 0) {
-      const fileContext = uploadedFiles.map(f => 
-        `📎 File: ${f.name}\nContent: ${f.content.slice(0, 1000)}`
-      ).join('\n\n')
-      fullPrompt = `Context from uploaded files:\n${fileContext}\n\nUser question: ${prompt || 'Please analyze these files'}`
-    }
-
-    if (replyToMessage) {
-      const sender = replyToMessage.role === 'user' ? 'User' : 'AI'
-      const preview = replyToMessage.content.slice(0, 100) + (replyToMessage.content.length > 100 ? '...' : '')
-      fullPrompt = `[Replying to ${sender}: "${preview}"]\n\n${fullPrompt}`
-    }
-
     const timestamp = new Date().toISOString()
+    
     const userMsg = { 
       role: 'user', 
-      content: fullPrompt, 
+      content: prompt, 
       timestamp,
       replyTo: replyToMessage ? { 
         content: replyToMessage.content.slice(0, 50) + (replyToMessage.content.length > 50 ? '...' : ''),
@@ -580,22 +598,43 @@ export default function DashboardPage() {
     }
     
     setIsLoading(true)
+    const currentPrompt = prompt
     setPrompt('')
     setUploadedFiles([])
+    const currentReplyTo = replyToMessage
     setReplyToMessage(null)
     setReplyToIndex(null)
 
     try {
-      // Simulate API call - replace with real API
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // ============================================
+      // CALL THE API - REAL OPENROUTER CALL
+      // ============================================
+      const res = await fetch('/api/ai/consensus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt: currentPrompt, 
+          models: selectedModels 
+        })
+      })
       
-      let assistantContent = `Here's my response to: "${prompt}"`
+      const data = await res.json()
+      let assistantContent: string
       
-      if (replyToMessage) {
-        const sender = replyToMessage.role === 'user' ? 'User' : 'AI'
-        assistantContent = `[Replying to ${sender}]\n\n${assistantContent}`
+      if (res.status === 402) {
+        assistantContent = `⚠️ ${data.error || 'Insufficient balance'}`
+      } else if (data.error) {
+        assistantContent = `⚠️ ${data.error}`
+      } else if (data.consensus) {
+        setResponse(data)
+        assistantContent = data.consensus
+        if (data.wallet_balance !== undefined) {
+          setWalletBalance(data.wallet_balance)
+        }
+      } else {
+        assistantContent = '⚠️ No response from AI. Please try again.'
       }
-
+      
       const assistantMsg = { 
         role: 'assistant', 
         content: assistantContent, 
@@ -612,6 +651,16 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Error:', error)
+      const errorMsg = { 
+        role: 'assistant', 
+        content: '❌ Error: Could not connect to AI. Please try again.', 
+        timestamp: new Date().toISOString() 
+      }
+      const finalMessages = [...updatedMessages, errorMsg]
+      setMessages(finalMessages)
+      if (currentChatId) {
+        updateChatMessages(currentChatId, finalMessages)
+      }
     }
     setIsLoading(false)
   }
@@ -673,6 +722,9 @@ export default function DashboardPage() {
     header: 'bg-white border-b border-gray-200',
   }
 
+  // ============================================
+  // RENDER - FULL UI WITH ALL FEATURES
+  // ============================================
   return (
     <div className={`flex h-screen ${themeClasses.bg} ${themeClasses.text} overflow-hidden`}>
       
@@ -917,7 +969,6 @@ export default function DashboardPage() {
                         ? isDark ? 'bg-[#075E54] text-white rounded-br-none' : 'bg-[#DCF8C6] text-gray-800 rounded-br-none'
                         : isDark ? 'bg-[#2a2a2a] text-white rounded-bl-none' : 'bg-white text-gray-800 rounded-bl-none'
                     }`}>
-                      {/* Reply Indicator */}
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -925,7 +976,6 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Message Content with Typing Animation */}
                       <div className="whitespace-pre-wrap leading-relaxed">
                         {isTyping && i === messages.length - 1 && isAI 
                           ? typingText 
@@ -936,7 +986,6 @@ export default function DashboardPage() {
                         )}
                       </div>
                       
-                      {/* Timestamp */}
                       <div className="flex items-center gap-1 mt-1.5">
                         <Clock className={`h-2.5 w-2.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                         <span className={`text-[8px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -944,7 +993,6 @@ export default function DashboardPage() {
                         </span>
                       </div>
 
-                      {/* Reactions & Copy Button - Only on AI messages */}
                       {isAI && (
                         <div className="flex items-center gap-1 mt-1.5">
                           <button
@@ -992,7 +1040,6 @@ export default function DashboardPage() {
                       )}
                     </div>
                     
-                    {/* Reply Button */}
                     <button
                       onClick={() => handleReplyClick(msg, i)}
                       className={`absolute -bottom-2 ${msg.role === 'user' ? '-left-2' : '-right-2'} opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full ${
@@ -1008,7 +1055,6 @@ export default function DashboardPage() {
             )}
           </AnimatePresence>
           
-          {/* Reply Indicator in Input */}
           {replyToMessage && (
             <div className={`flex items-center justify-between ${isDark ? 'bg-gray-700' : 'bg-gray-100'} p-2 rounded-lg mb-2`}>
               <div className="flex items-center gap-2">
@@ -1041,7 +1087,6 @@ export default function DashboardPage() {
         {/* ===== INPUT AREA ===== */}
         <div className={`border-t ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-[#f0f0f0]'} p-3 flex-shrink-0`}>
           
-          {/* Uploaded Files */}
           {uploadedFiles.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-2">
               {uploadedFiles.map((file, index) => (
@@ -1061,7 +1106,6 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Model Selector */}
           <button onClick={() => setShowModelPicker(!showModelPicker)} className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'} transition-colors mb-1.5`}>
             {selectedModels.map(id => {
               const model = getAllModels().find(m => m.id === id)
@@ -1112,7 +1156,6 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* TEXT INPUT */}
           <div className="relative">
             <textarea 
               id="message-input"
@@ -1124,7 +1167,6 @@ export default function DashboardPage() {
               rows={1}
             />
             
-            {/* Voice Input Indicator */}
             {isListening && (
               <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                 <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -1133,7 +1175,6 @@ export default function DashboardPage() {
             )}
 
             <div className="absolute right-2 bottom-2 flex items-center gap-1">
-              {/* Voice Input Button */}
               <button
                 onClick={toggleVoiceInput}
                 className={`p-1.5 rounded-lg transition-all ${
@@ -1150,7 +1191,6 @@ export default function DashboardPage() {
                 )}
               </button>
 
-              {/* File Upload Button */}
               <input
                 type="file"
                 ref={fileInputRef}
@@ -1170,7 +1210,6 @@ export default function DashboardPage() {
                 )}
               </label>
               
-              {/* Send Button */}
               <button 
                 onClick={handleSubmit} 
                 disabled={isLoading || (!prompt.trim() && uploadedFiles.length === 0) || selectedModels.length === 0} 
@@ -1215,4 +1254,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-  
