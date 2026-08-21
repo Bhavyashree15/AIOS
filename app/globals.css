@@ -5,7 +5,6 @@
 @layer base {
   body {
     background-color: #0B0F17;
-    /* REMOVED: color: white - this was the problem! */
   }
 }
 
@@ -21,21 +20,11 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* Force message bubble styles */
+/* Force message bubble backgrounds */
 .message-bubble-user {
   background-color: #DCF8C6 !important;
-  color: #1a1a1a !important;
 }
 
 .message-bubble-ai {
   background-color: #ffffff !important;
-  color: #1a1a1a !important;
-}
-
-.message-text {
-  color: #1a1a1a !important;
-}
-
-.message-timestamp {
-  color: #9ca3af !important;
 }
