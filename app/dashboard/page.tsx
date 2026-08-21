@@ -934,7 +934,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ===== MESSAGES ===== */}
-        <div className={`flex-1 overflow-y-auto p-4 space-y-2 min-h-0 ${isDark ? 'bg-[#1e1e1e]' : 'bg-[#ECE5DD]'}`}>
+        <div className={`flex-1 overflow-y-auto p-4 space-y-3 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
@@ -960,15 +960,24 @@ export default function DashboardPage() {
               messages.map((msg: any, i: number) => {
                 const isAI = msg.role === 'assistant'
                 return (
-                  <div 
+                  <motion.div 
                     key={i}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} group relative`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-2 group`}
                   >
-                    <div className={`max-w-[75%] p-3 rounded-2xl text-sm shadow-sm ${
-                      msg.role === 'user' 
-                        ? isDark ? 'bg-[#075E54] text-white rounded-br-none' : 'bg-[#DCF8C6] text-gray-800 rounded-br-none'
-                        : isDark ? 'bg-[#2a2a2a] text-white rounded-bl-none' : 'bg-white text-gray-800 rounded-bl-none'
-                    }`}>
+                    {/* Avatar - AI */}
+                    {isAI && (
+                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold ${
+                        isDark ? 'bg-[#2a2a2a] text-white' : 'bg-[#075E54] text-white'
+                      }`}>
+                        AI
+                      </div>
+                    )}
+                    
+                    <div className="relative max-w-[80%]">
+                      {/* Reply indicator */}
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -976,80 +985,110 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      <div className="whitespace-pre-wrap leading-relaxed">
-                        {isTyping && i === messages.length - 1 && isAI 
-                          ? typingText 
-                          : msg.content
-                        }
-                        {isTyping && i === messages.length - 1 && isAI && (
-                          <span className="animate-pulse">|</span>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-1 mt-1.5">
-                        <Clock className={`h-2.5 w-2.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-                        <span className={`text-[8px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                          {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                      {/* Message bubble - ChatGPT style */}
+                      <div className={`relative p-3 rounded-2xl shadow-sm ${
+                        msg.role === 'user' 
+                          ? isDark 
+                            ? 'bg-[#075E54] text-white rounded-br-sm' 
+                            : 'bg-[#DCF8C6] text-gray-800 rounded-br-sm'
+                          : isDark 
+                            ? 'bg-[#2a2a2a] text-white rounded-bl-sm' 
+                            : 'bg-white text-gray-800 rounded-bl-sm'
+                      }`}>
+                        <div className="whitespace-pre-wrap leading-relaxed text-sm">
+                          {isTyping && i === messages.length - 1 && isAI 
+                            ? typingText 
+                            : msg.content
+                          }
+                          {isTyping && i === messages.length - 1 && isAI && (
+                            <span className="animate-pulse">|</span>
+                          )}
+                        </div>
+                        
+                        {/* Timestamp - always visible */}
+                        <div className={`flex items-center gap-1 mt-2 ${
+                          msg.role === 'user' 
+                            ? isDark ? 'text-gray-300' : 'text-gray-600' 
+                            : isDark ? 'text-gray-400' : 'text-gray-400'
+                        }`}>
+                          <Clock className="h-3 w-3" />
+                          <span className="text-[10px]">
+                            {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
                       </div>
 
+                      {/* Actions - ALWAYS VISIBLE */}
                       {isAI && (
-                        <div className="flex items-center gap-1 mt-1.5">
+                        <div className={`flex items-center gap-0.5 mt-1 ${
+                          isDark ? 'text-gray-400' : 'text-gray-400'
+                        }`}>
                           <button
                             onClick={() => copyMessage(msg.content, `msg-${i}`)}
-                            className={`p-0.5 ${isDark ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'} transition-colors rounded flex items-center gap-0.5`}
+                            className={`p-1 rounded transition-colors hover:${
+                              isDark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-700'
+                            } flex items-center gap-1 text-[10px]`}
                           >
                             {copiedMessageId === `msg-${i}` ? (
-                              <Check className="h-3 w-3 text-green-500" />
+                              <Check className="h-3.5 w-3.5 text-green-500" />
                             ) : (
-                              <Copy className="h-3 w-3" />
+                              <Copy className="h-3.5 w-3.5" />
                             )}
-                            <span className={`text-[8px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Copy</span>
+                            <span className="text-[9px]">Copy</span>
                           </button>
                           
                           <button
                             onClick={() => addReaction(i, 'like')}
-                            className={`p-0.5 ${isDark ? 'text-gray-500 hover:text-blue-400' : 'text-gray-400 hover:text-blue-500'} transition-colors rounded flex items-center gap-0.5`}
+                            className={`p-1 rounded transition-colors hover:${
+                              isDark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-700'
+                            } flex items-center gap-1 text-[10px]`}
                           >
-                            <ThumbsUp className="h-3 w-3" />
-                            <span className={`text-[8px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                              {msg.reactions?.like || 0}
-                            </span>
+                            <ThumbsUp className="h-3.5 w-3.5" />
+                            <span className="text-[9px]">{msg.reactions?.like || 0}</span>
                           </button>
                           
                           <button
                             onClick={() => addReaction(i, 'dislike')}
-                            className={`p-0.5 ${isDark ? 'text-gray-500 hover:text-red-400' : 'text-gray-400 hover:text-red-500'} transition-colors rounded flex items-center gap-0.5`}
+                            className={`p-1 rounded transition-colors hover:${
+                              isDark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-700'
+                            } flex items-center gap-1 text-[10px]`}
                           >
-                            <ThumbsDown className="h-3 w-3" />
-                            <span className={`text-[8px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                              {msg.reactions?.dislike || 0}
-                            </span>
+                            <ThumbsDown className="h-3.5 w-3.5" />
+                            <span className="text-[9px]">{msg.reactions?.dislike || 0}</span>
                           </button>
                           
                           <button
                             onClick={() => addReaction(i, 'heart')}
-                            className={`p-0.5 ${isDark ? 'text-gray-500 hover:text-red-400' : 'text-gray-400 hover:text-red-500'} transition-colors rounded flex items-center gap-0.5`}
+                            className={`p-1 rounded transition-colors hover:${
+                              isDark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-700'
+                            } flex items-center gap-1 text-[10px]`}
                           >
-                            <Heart className="h-3 w-3" />
-                            <span className={`text-[8px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                              {msg.reactions?.heart || 0}
-                            </span>
+                            <Heart className="h-3.5 w-3.5" />
+                            <span className="text-[9px]">{msg.reactions?.heart || 0}</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleReplyClick(msg, i)}
+                            className={`p-1 rounded transition-colors hover:${
+                              isDark ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-700'
+                            } flex items-center gap-1 text-[10px]`}
+                          >
+                            <Reply className="h-3.5 w-3.5" />
+                            <span className="text-[9px]">Reply</span>
                           </button>
                         </div>
                       )}
                     </div>
-                    
-                    <button
-                      onClick={() => handleReplyClick(msg, i)}
-                      className={`absolute -bottom-2 ${msg.role === 'user' ? '-left-2' : '-right-2'} opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full ${
-                        isDark ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:bg-gray-100'
-                      } shadow-md border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}
-                      title="Reply to this message"
-                    >
-                      <Reply className="h-3.5 w-3.5 text-emerald-500" />
-                    </button>
-                  </div>
+
+                    {/* Avatar - User */}
+                    {!isAI && (
+                      <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold ${
+                        isDark ? 'bg-[#075E54] text-white' : 'bg-[#075E54] text-white'
+                      }`}>
+                        U
+                      </div>
+                    )}
+                  </motion.div>
                 )
               })
             )}
@@ -1071,7 +1110,7 @@ export default function DashboardPage() {
           
           {isLoading && (
             <div className="flex justify-start">
-              <div className={`${isDark ? 'bg-[#2a2a2a] border-gray-700' : 'bg-white border-gray-200'} p-3 rounded-2xl rounded-bl-none shadow-sm border`}>
+              <div className={`${isDark ? 'bg-[#2a2a2a] border-gray-700' : 'bg-white border-gray-200'} p-3 rounded-2xl rounded-bl-sm shadow-sm border`}>
                 <div className="flex items-center gap-2">
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
@@ -1251,6 +1290,6 @@ export default function DashboardPage() {
           opacity: 1 !important;
         }
       `}</style>
-    </div>
+    </div
   )
 }
