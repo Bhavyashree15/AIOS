@@ -933,8 +933,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES ===== */}
-        <div className={`flex-1 overflow-y-auto p-4 space-y-3 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
+        {/* ===== MESSAGES - FIXED WITH CHATGPT STYLE ===== */}
+        <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
@@ -965,9 +965,9 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-start gap-2 group`}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2`}
                   >
-                    {/* Avatar - AI */}
+                    {/* Avatar - AI (left side) */}
                     {isAI && (
                       <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold ${
                         isDark ? 'bg-[#2a2a2a] text-white' : 'bg-[#075E54] text-white'
@@ -1018,7 +1018,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Actions - ALWAYS VISIBLE */}
+                      {/* Actions - ALWAYS VISIBLE (fixed) */}
                       {isAI && (
                         <div className={`flex items-center gap-0.5 mt-1 ${
                           isDark ? 'text-gray-400' : 'text-gray-400'
@@ -1067,6 +1067,7 @@ export default function DashboardPage() {
                             <span className="text-[9px]">{msg.reactions?.heart || 0}</span>
                           </button>
 
+                          {/* Reply button - ALWAYS VISIBLE (fixed) */}
                           <button
                             onClick={() => handleReplyClick(msg, i)}
                             className={`p-1 rounded transition-colors hover:${
@@ -1080,7 +1081,7 @@ export default function DashboardPage() {
                       )}
                     </div>
 
-                    {/* Avatar - User */}
+                    {/* Avatar - User (right side) */}
                     {!isAI && (
                       <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold ${
                         isDark ? 'bg-[#075E54] text-white' : 'bg-[#075E54] text-white'
@@ -1094,6 +1095,7 @@ export default function DashboardPage() {
             )}
           </AnimatePresence>
           
+          {/* Reply indicator at bottom */}
           {replyToMessage && (
             <div className={`flex items-center justify-between ${isDark ? 'bg-gray-700' : 'bg-gray-100'} p-2 rounded-lg mb-2`}>
               <div className="flex items-center gap-2">
@@ -1283,12 +1285,6 @@ export default function DashboardPage() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
-        .group:hover .group-hover\\:opacity-100 {
-          opacity: 1 !important;
-        }
-        .dark .group:hover .group-hover\\:opacity-100 {
-          opacity: 1 !important;
-        }
       `}</style>
     </div>
   )
