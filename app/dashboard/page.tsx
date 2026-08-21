@@ -563,10 +563,9 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // MAIN SUBMIT - FIXED
+  // MAIN SUBMIT
   // ============================================
   const handleSubmit = async () => {
-    // Check if there's any content to send
     if (!prompt.trim() && uploadedFiles.length === 0) {
       return
     }
@@ -593,7 +592,6 @@ export default function DashboardPage() {
 
     const timestamp = new Date().toISOString()
     
-    // Create user message with proper structure
     const userMsg = { 
       role: 'user', 
       content: prompt, 
@@ -620,11 +618,9 @@ export default function DashboardPage() {
     setReplyToMessage(null)
     setReplyToIndex(null)
 
-    // Create abort controller for this request
     abortControllerRef.current = new AbortController()
 
     try {
-      // API CALL with abort signal
       const res = await fetch('/api/ai/consensus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -652,7 +648,6 @@ export default function DashboardPage() {
         assistantContent = '⚠️ No response from AI. Please try again.'
       }
       
-      // Create assistant message with reactions
       const assistantMsg = { 
         role: 'assistant', 
         content: assistantContent, 
@@ -669,7 +664,6 @@ export default function DashboardPage() {
       }
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        // User stopped the generation
         const stoppedMsg = { 
           role: 'assistant', 
           content: '⏹️ Generation stopped by user.', 
@@ -734,12 +728,11 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // RENDER - FULL UI WITH ALL FEATURES
+  // RENDER
   // ============================================
   return (
     <div className={`flex h-screen ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'} ${isDark ? 'text-white' : 'text-gray-800'} overflow-hidden`}>
       
-      {/* ===== OVERLAY ===== */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div 
@@ -759,7 +752,6 @@ export default function DashboardPage() {
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className={`fixed left-0 top-0 h-full z-50 w-72 ${isDark ? 'bg-[#1a1a1a]' : 'bg-white'} border-r ${isDark ? 'border-gray-700' : 'border-gray-200'} flex flex-col overflow-hidden shadow-xl`}
       >
-        
         <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0 bg-[#075E54] text-white">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">AI</div>
@@ -788,7 +780,6 @@ export default function DashboardPage() {
             </button>
           ))}
           
-          {/* Search Chats */}
           <div className="mt-4 px-2">
             <div className="relative">
               <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
@@ -802,7 +793,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Chat History */}
           {filteredChats.length > 0 ? (
             <div className="mt-4">
               <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 px-2 flex items-center justify-between">
@@ -869,7 +859,7 @@ export default function DashboardPage() {
       {/* ===== MAIN CHAT AREA ===== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* ===== HEADER - FIXED OVERLAP ===== */}
+        {/* ===== HEADER ===== */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-white'} flex-shrink-0 shadow-sm min-h-[60px]`}>
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <button onClick={() => setSidebarOpen(true)} className={`${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'}`}>
@@ -886,17 +876,6 @@ export default function DashboardPage() {
                 </span>
               </div>
             </div>
-            {response && (
-              <div className="flex items-center gap-1.5 text-[10px] flex-shrink-0">
-                <span className={`px-1.5 py-0.5 rounded-full ${getScoreColor(response.consensus_score || 0)} bg-gray-100`}>
-                  {response.consensus_score || 0}%
-                </span>
-                <span className="text-gray-400 hidden sm:inline">|</span>
-                <span className="text-cyan-600 hidden sm:inline">{response.total_models || 0}</span>
-                <span className="text-gray-400 hidden sm:inline">|</span>
-                <span className="text-emerald-600 hidden sm:inline">₹{(response.cost_inr || 0).toFixed(4)}</span>
-              </div>
-            )}
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
             <button
@@ -944,7 +923,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - CHATGPT STYLE WITH FIXED BUBBLES ===== */}
+        {/* ===== MESSAGES - USING INLINE STYLES ===== */}
         <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -978,7 +957,7 @@ export default function DashboardPage() {
                     transition={{ duration: 0.3 }}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2`}
                   >
-                    {/* Avatar - AI (left side) */}
+                    {/* Avatar - AI */}
                     {isAI && (
                       <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold bg-[#075E54] text-white">
                         AI
@@ -986,7 +965,6 @@ export default function DashboardPage() {
                     )}
                     
                     <div className="relative max-w-[80%]">
-                      {/* Reply indicator */}
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -994,13 +972,15 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Message bubble - ChatGPT style with explicit colors */}
-                      <div className={`relative p-3 rounded-2xl shadow-sm ${
-                        msg.role === 'user' 
-                          ? 'bg-[#DCF8C6] text-gray-800 rounded-br-sm' 
-                          : 'bg-white text-gray-800 rounded-bl-sm'
-                      }`}>
-                        <div className="whitespace-pre-wrap leading-relaxed text-sm">
+                      {/* Message bubble - USING INLINE STYLES to override globals.css */}
+                      <div 
+                        className="relative p-3 rounded-2xl shadow-sm rounded-br-sm"
+                        style={{
+                          backgroundColor: msg.role === 'user' ? '#DCF8C6' : '#ffffff',
+                          color: '#1a1a1a'
+                        }}
+                      >
+                        <div className="whitespace-pre-wrap leading-relaxed text-sm" style={{ color: '#1a1a1a' }}>
                           {isTyping && i === messages.length - 1 && isAI && !isStopped
                             ? typingText 
                             : msg.content
@@ -1010,8 +990,8 @@ export default function DashboardPage() {
                           )}
                         </div>
                         
-                        {/* Timestamp - always visible */}
-                        <div className="flex items-center gap-1 mt-2 text-gray-400">
+                        {/* Timestamp */}
+                        <div className="flex items-center gap-1 mt-2" style={{ color: '#9ca3af' }}>
                           <Clock className="h-3 w-3" />
                           <span className="text-[10px]">
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1019,7 +999,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Actions - ALWAYS VISIBLE for AI messages */}
+                      {/* Actions - ALWAYS VISIBLE */}
                       {isAI && (
                         <div className="flex items-center gap-0.5 mt-1 text-gray-400">
                           <button
@@ -1058,7 +1038,6 @@ export default function DashboardPage() {
                             <span className="text-[9px]">{msg.reactions?.heart || 0}</span>
                           </button>
 
-                          {/* Reply button - ALWAYS VISIBLE */}
                           <button
                             onClick={() => handleReplyClick(msg, i)}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
@@ -1070,7 +1049,7 @@ export default function DashboardPage() {
                       )}
                     </div>
 
-                    {/* Avatar - User (right side) */}
+                    {/* Avatar - User */}
                     {!isAI && (
                       <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold bg-[#075E54] text-white">
                         U
@@ -1082,7 +1061,6 @@ export default function DashboardPage() {
             )}
           </AnimatePresence>
           
-          {/* Reply indicator at bottom */}
           {replyToMessage && (
             <div className={`flex items-center justify-between ${isDark ? 'bg-gray-700' : 'bg-gray-100'} p-2 rounded-lg mb-2`}>
               <div className="flex items-center gap-2">
