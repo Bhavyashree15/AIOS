@@ -923,7 +923,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - CHATGPT STYLE ===== */}
+        {/* ===== MESSAGES - FINAL FIX WITH BUBBLES ===== */}
         <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -955,7 +955,7 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2`}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2 px-2`}
                   >
                     {/* Avatar - AI (left side) */}
                     {isAI && (
@@ -964,7 +964,7 @@ export default function DashboardPage() {
                       </div>
                     )}
                     
-                    <div className="relative max-w-[75%]">
+                    <div className="relative max-w-[75%] flex flex-col">
                       {/* Reply indicator */}
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-1 flex items-center gap-1`}>
@@ -973,15 +973,15 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Message bubble - ChatGPT style with FORCED colors */}
+                      {/* Message bubble - WhatsApp/ChatGPT style with inline styles */}
                       <div 
-                        className="relative p-3 rounded-2xl shadow-sm"
+                        className="px-3 py-2 shadow-sm"
                         style={{
                           backgroundColor: msg.role === 'user' ? '#DCF8C6' : '#ffffff',
-                          borderTopRightRadius: msg.role === 'user' ? '4px' : '16px',
-                          borderTopLeftRadius: msg.role === 'user' ? '16px' : '4px',
-                          borderBottomRightRadius: '16px',
-                          borderBottomLeftRadius: '16px',
+                          color: '#1a1a1a',
+                          borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                          maxWidth: '100%',
+                          wordWrap: 'break-word',
                         }}
                       >
                         <div 
@@ -997,13 +997,13 @@ export default function DashboardPage() {
                           )}
                         </div>
                         
-                        {/* Timestamp - always visible */}
+                        {/* Timestamp */}
                         <div 
-                          className="flex items-center gap-1 mt-2"
-                          style={{ color: '#9ca3af' }}
+                          className="flex items-center gap-1 mt-1 justify-end"
+                          style={{ color: '#9ca3af', fontSize: '10px' }}
                         >
                           <Clock className="h-3 w-3" />
-                          <span className="text-[10px]">
+                          <span>
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -1052,7 +1052,6 @@ export default function DashboardPage() {
                             <span className="text-[9px]">{msg.reactions?.heart || 0}</span>
                           </button>
 
-                          {/* Reply button - ALWAYS VISIBLE */}
                           <button
                             onClick={() => handleReplyClick(msg, i)}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[10px]"
