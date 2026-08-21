@@ -608,7 +608,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ 
           prompt: currentPrompt, 
           models: selectedModels,
-          max_tokens: 100
+          max_tokens: 50  // REDUCED to 50 to fix API error
         }),
         signal: abortControllerRef.current.signal
       })
@@ -899,7 +899,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - EXACT CHATGPT STYLE ===== */}
+        {/* ===== MESSAGES - PROFESSIONAL BLUE THEME ===== */}
         <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-2 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -941,11 +941,11 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* ===== EXACT CHATGPT STYLE ===== */}
+                      {/* ===== PROFESSIONAL BLUE THEME ===== */}
                       <div 
                         className={`px-3 py-2 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
                         style={{
-                          backgroundColor: msg.role === 'user' ? '#2b2d31' : 'transparent',
+                          backgroundColor: msg.role === 'user' ? '#0A7CFF' : 'transparent',
                           color: msg.role === 'user' ? '#ffffff' : '#1a1a1a',
                           borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '0px',
                           maxWidth: msg.role === 'user' ? 'auto' : '100%',
