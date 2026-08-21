@@ -548,15 +548,12 @@ export default function DashboardPage() {
   }
 
   // ============================================
-  // MAIN SUBMIT - CALLS REAL API
+  // MAIN SUBMIT - FIXED
   // ============================================
   const handleSubmit = async () => {
+    // Check if there's any content to send
     if (!prompt.trim() && uploadedFiles.length === 0) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: '⚠️ Please enter a message or upload a file.', 
-        timestamp: new Date().toISOString() 
-      }])
+      // Don't add the error message - just return silently
       return
     }
     
@@ -564,7 +561,8 @@ export default function DashboardPage() {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: '⚠️ Please select a model first!', 
-        timestamp: new Date().toISOString() 
+        timestamp: new Date().toISOString(),
+        reactions: { like: 0, dislike: 0, heart: 0 }
       }])
       return
     }
@@ -573,13 +571,15 @@ export default function DashboardPage() {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: '⚠️ Insufficient balance. Please add funds.', 
-        timestamp: new Date().toISOString() 
+        timestamp: new Date().toISOString(),
+        reactions: { like: 0, dislike: 0, heart: 0 }
       }])
       return
     }
 
     const timestamp = new Date().toISOString()
     
+    // Create user message with proper structure
     const userMsg = { 
       role: 'user', 
       content: prompt, 
@@ -606,9 +606,7 @@ export default function DashboardPage() {
     setReplyToIndex(null)
 
     try {
-      // ============================================
-      // CALL THE API - REAL OPENROUTER CALL
-      // ============================================
+      // API CALL
       const res = await fetch('/api/ai/consensus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -635,6 +633,7 @@ export default function DashboardPage() {
         assistantContent = '⚠️ No response from AI. Please try again.'
       }
       
+      // Create assistant message with reactions
       const assistantMsg = { 
         role: 'assistant', 
         content: assistantContent, 
@@ -654,7 +653,8 @@ export default function DashboardPage() {
       const errorMsg = { 
         role: 'assistant', 
         content: '❌ Error: Could not connect to AI. Please try again.', 
-        timestamp: new Date().toISOString() 
+        timestamp: new Date().toISOString(),
+        reactions: { like: 0, dislike: 0, heart: 0 }
       }
       const finalMessages = [...updatedMessages, errorMsg]
       setMessages(finalMessages)
@@ -680,7 +680,10 @@ export default function DashboardPage() {
 
   const handleQuickAction = (actionPrompt: string) => {
     setPrompt(actionPrompt)
-    setTimeout(() => handleSubmit(), 300)
+    // Add a small delay to ensure the prompt is set
+    setTimeout(() => {
+      handleSubmit()
+    }, 100)
   }
 
   const navItems = [
@@ -933,7 +936,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - FIXED WITH CHATGPT STYLE ===== */}
+        {/* ===== MESSAGES - CHATGPT STYLE ===== */}
         <div className={`flex-1 overflow-y-auto p-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#ECE5DD]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -1018,7 +1021,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      {/* Actions - ALWAYS VISIBLE (fixed) */}
+                      {/* Actions - ALWAYS VISIBLE */}
                       {isAI && (
                         <div className={`flex items-center gap-0.5 mt-1 ${
                           isDark ? 'text-gray-400' : 'text-gray-400'
@@ -1067,7 +1070,7 @@ export default function DashboardPage() {
                             <span className="text-[9px]">{msg.reactions?.heart || 0}</span>
                           </button>
 
-                          {/* Reply button - ALWAYS VISIBLE (fixed) */}
+                          {/* Reply button - ALWAYS VISIBLE */}
                           <button
                             onClick={() => handleReplyClick(msg, i)}
                             className={`p-1 rounded transition-colors hover:${
