@@ -5,7 +5,7 @@
 @layer base {
   body {
     background-color: #0B0F17;
-    color: white;
+    /* REMOVED: color: white; - this was causing all text to be white */
   }
 }
 
@@ -19,4 +19,23 @@
   background: linear-gradient(135deg, #10B981, #06B6D4, #8B5CF6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Force message bubble styles - these will override everything */
+.message-bubble-user {
+  background-color: #DCF8C6 !important;
+  color: #1a1a1a !important;
+}
+
+.message-bubble-ai {
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+.message-timestamp {
+  color: #9ca3af !important;
+}
+
+.message-text {
+  color: #1a1a1a !important;
 }
