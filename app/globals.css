@@ -19,12 +19,3 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-
-/* Force message bubble backgrounds */
-.message-bubble-user {
-  background-color: #DCF8C6 !important;
-}
-
-.message-bubble-ai {
-  background-color: #ffffff !important;
-}
