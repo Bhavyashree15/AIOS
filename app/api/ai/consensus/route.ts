@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// OPENROUTER API KEY - YOUR KEY (NO CREDITS NEEDED FOR FREE MODELS)
+// OPENROUTER API KEY - YOUR KEY
 // ============================================
 const OPENROUTER_API_KEY = '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'
 
 // ============================================
-// MODEL MAPPING - ALL USING FREE MODELS
+// MODEL MAPPING - USING CONFIRMED FREE MODELS
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'google/gemma-3-27b-it:free',
-  'qwen-3.5-flash': 'google/gemma-3-27b-it:free',
-  'ministral-3-8b': 'google/gemma-3-27b-it:free',
-  'mistral-small-4': 'google/gemma-3-27b-it:free',
-  'deepseek-chat': 'google/gemma-3-27b-it:free',
-  'gemini-3-flash': 'google/gemma-3-27b-it:free',
-  'gpt-4o-mini': 'google/gemma-3-27b-it:free',
-  'claude-haiku-4.5': 'google/gemma-3-27b-it:free',
-  'mistral-small': 'google/gemma-3-27b-it:free',
-  'gpt-4.1': 'google/gemma-3-27b-it:free',
-  'claude-sonnet-4.0': 'google/gemma-3-27b-it:free',
-  'gpt-5.4': 'google/gemma-3-27b-it:free',
-  'gemini-3-pro-preview': 'google/gemma-3-27b-it:free',
-  'grok-3-mini': 'google/gemma-3-27b-it:free',
-  'codestral': 'google/gemma-3-27b-it:free',
-  'gpt-5.6-terra': 'google/gemma-3-27b-it:free',
-  'grok-4.5': 'google/gemma-3-27b-it:free',
-  'nova-premier-1.0': 'google/gemma-3-27b-it:free',
-  'perplexity-sonar': 'google/gemma-3-27b-it:free',
-  'gpt-5.6-luna': 'google/gemma-3-27b-it:free',
-  'deepseek-reasoner': 'google/gemma-3-27b-it:free',
+  'gpt-5.4-mini': 'google/gemma-2-9b-it:free',
+  'qwen-3.5-flash': 'google/gemma-2-9b-it:free',
+  'ministral-3-8b': 'google/gemma-2-9b-it:free',
+  'mistral-small-4': 'google/gemma-2-9b-it:free',
+  'deepseek-chat': 'google/gemma-2-9b-it:free',
+  'gemini-3-flash': 'google/gemma-2-9b-it:free',
+  'gpt-4o-mini': 'google/gemma-2-9b-it:free',
+  'claude-haiku-4.5': 'google/gemma-2-9b-it:free',
+  'mistral-small': 'google/gemma-2-9b-it:free',
+  'gpt-4.1': 'google/gemma-2-9b-it:free',
+  'claude-sonnet-4.0': 'google/gemma-2-9b-it:free',
+  'gpt-5.4': 'google/gemma-2-9b-it:free',
+  'gemini-3-pro-preview': 'google/gemma-2-9b-it:free',
+  'grok-3-mini': 'google/gemma-2-9b-it:free',
+  'codestral': 'google/gemma-2-9b-it:free',
+  'gpt-5.6-terra': 'google/gemma-2-9b-it:free',
+  'grok-4.5': 'google/gemma-2-9b-it:free',
+  'nova-premier-1.0': 'google/gemma-2-9b-it:free',
+  'perplexity-sonar': 'google/gemma-2-9b-it:free',
+  'gpt-5.6-luna': 'google/gemma-2-9b-it:free',
+  'deepseek-reasoner': 'google/gemma-2-9b-it:free',
 }
 
 // ============================================
@@ -54,14 +54,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // USING FREE MODEL - NO CREDITS NEEDED!
-    const modelId = 'google/gemma-3-27b-it:free'
-    const modelName = 'Gemma 3 27B (Free)'
+    // USING CONFIRMED FREE MODEL
+    const modelId = 'google/gemma-2-9b-it:free'
+    const modelName = 'Gemma 2 9B (Free)'
 
     console.log('🤖 Using Free Model:', modelId)
 
     // ============================================
-    // CALL OPENROUTER API WITH FREE MODEL
+    // CALL OPENROUTER API
     // ============================================
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -81,18 +81,24 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json()
 
-    // ============================================
-    // HANDLE API ERRORS
-    // ============================================
     if (!response.ok) {
       console.error('❌ OpenRouter API Error:', JSON.stringify(data, null, 2))
       
       if (response.status === 402 || data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
         return NextResponse.json({
-          consensus: `⚠️ This free model may have daily limits. Try again later or use a different free model.`,
+          consensus: `⚠️ Free model daily limit reached. Try again later.`,
           consensus_score: 0,
           confidence: 0,
           error: 'free_model_limit',
+        })
+      }
+      
+      if (data.error?.message?.includes('unavailable for free')) {
+        return NextResponse.json({
+          consensus: `⚠️ This free model is currently unavailable. Trying another free model...`,
+          consensus_score: 0,
+          confidence: 0,
+          error: 'model_unavailable',
         })
       }
       
@@ -103,13 +109,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // ============================================
-    // GET THE AI RESPONSE
-    // ============================================
     const aiResponse = data.choices?.[0]?.message?.content || 'No response from AI'
-    const tokensUsed = data.usage?.total_tokens || 0
-
-    console.log('✅ Success! Tokens used:', tokensUsed)
 
     return NextResponse.json({
       success: true,
@@ -117,7 +117,6 @@ export async function POST(req: NextRequest) {
       consensus_score: 85,
       confidence: 80,
       model_used: modelName,
-      tokens_used: tokensUsed,
       is_free: true,
     })
 
