@@ -1,36 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// MODEL MAPPING - Gemini Models
+// MODEL MAPPING - OpenRouter Free Models
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'gemini-2.5-flash',
-  'qwen-3.5-flash': 'gemini-2.5-flash',
-  'ministral-3-8b': 'gemini-2.5-flash',
-  'mistral-small-4': 'gemini-2.5-flash',
-  'deepseek-chat': 'gemini-2.5-pro',
-  'gemini-3-flash': 'gemini-2.5-flash',
-  'gpt-4o-mini': 'gemini-2.5-flash',
-  'claude-haiku-4.5': 'gemini-2.5-flash',
-  'mistral-small': 'gemini-2.5-flash',
-  'gpt-4.1': 'gemini-2.5-pro',
-  'claude-sonnet-4.0': 'gemini-2.5-pro',
-  'gpt-5.4': 'gemini-2.5-pro',
-  'gemini-3-pro-preview': 'gemini-2.5-pro',
-  'grok-3-mini': 'gemini-2.5-pro',
-  'codestral': 'gemini-2.5-pro',
-  'gpt-5.6-terra': 'gemini-2.5-pro',
-  'grok-4.5': 'gemini-2.5-pro',
-  'nova-premier-1.0': 'gemini-2.5-pro',
-  'perplexity-sonar': 'gemini-2.5-pro',
-  'gpt-5.6-luna': 'gemini-2.5-pro',
-  'deepseek-reasoner': 'gemini-2.5-pro',
+  // Free models (no credits needed)
+  'gpt-5.4-mini': 'google/gemma-2-9b-it:free',
+  'qwen-3.5-flash': 'google/gemma-2-9b-it:free',
+  'ministral-3-8b': 'google/gemma-2-9b-it:free',
+  'mistral-small-4': 'google/gemma-2-9b-it:free',
+  'deepseek-chat': 'deepseek/deepseek-r1:free',
+  'gemini-3-flash': 'google/gemini-flash-1.5:free',
+  'gpt-4o-mini': 'google/gemma-2-9b-it:free',
+  'claude-haiku-4.5': 'google/gemma-2-9b-it:free',
+  'mistral-small': 'google/gemma-2-9b-it:free',
+  // Paid models (need credits)
+  'gpt-4.1': 'openai/gpt-4o',
+  'claude-sonnet-4.0': 'anthropic/claude-3.5-sonnet',
+  'gpt-5.4': 'openai/gpt-4o',
+  'gemini-3-pro-preview': 'google/gemini-1.5-pro',
+  'grok-3-mini': 'x-ai/grok-2-1212',
+  'codestral': 'mistralai/codestral-2501',
+  'gpt-5.6-terra': 'openai/gpt-4o',
+  'grok-4.5': 'x-ai/grok-2-1212',
+  'nova-premier-1.0': 'openai/gpt-4o',
+  'perplexity-sonar': 'perplexity/sonar-small-online',
+  'gpt-5.6-luna': 'openai/gpt-4o',
+  'deepseek-reasoner': 'deepseek/deepseek-r1:free',
 }
 
 // ============================================
-// GEMINI API KEY
+// OPENROUTER API KEY
 // ============================================
-const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || 'AQ.Ab8RN6JJCByARllC4uNI-z959UCMSJXWatK8OHQAp4YFCk1viQ'
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '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'
 
 // ============================================
 // WALLET
@@ -38,12 +40,20 @@ const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || 'AQ.Ab8RN6JJCByARllC4uNI-z9
 let walletBalance = 100.00
 
 function calculateCost(modelId: string, tokens: number): number {
-  // Gemini free tier is generous, but we still track usage
-  const rates: Record<string, number> = {
-    'gemini-2.5-flash': 0.0001,
-    'gemini-2.5-pro': 0.0003,
+  // Free models cost nothing
+  if (modelId.includes(':free')) {
+    return 0
   }
-  const rate = rates[modelId] || 0.0001
+  // Paid models
+  const rates: Record<string, number> = {
+    'openai/gpt-4o': 0.005,
+    'anthropic/claude-3.5-sonnet': 0.003,
+    'google/gemini-1.5-pro': 0.0025,
+    'x-ai/grok-2-1212': 0.002,
+    'mistralai/codestral-2501': 0.001,
+    'perplexity/sonar-small-online': 0.0006,
+  }
+  const rate = rates[modelId] || 0.001
   return (tokens / 1000) * rate * 1.2
 }
 
@@ -69,33 +79,27 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const modelId = MODEL_MAP[models[0]] || 'gemini-2.5-flash'
+    const modelId = MODEL_MAP[models[0]] || 'google/gemma-2-9b-it:free'
+    const isFree = modelId.includes(':free')
 
     // ============================================
-    // CALL GEMINI API
+    // CALL OPENROUTER API
     // ============================================
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: prompt }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 100,  // Gemini free tier supports this
-            topP: 0.95,
-            topK: 40,
-          }
-        }),
-      }
-    )
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/Bhayashree15/AIOS',
+        'X-Title': 'AIOS',
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: isFree ? 100 : 50,  // Free models allow more tokens
+      }),
+    })
 
     const data = await response.json()
 
@@ -103,15 +107,15 @@ export async function POST(req: NextRequest) {
     // HANDLE API ERRORS
     // ============================================
     if (!response.ok) {
-      console.error('Gemini API Error:', data)
+      console.error('OpenRouter API Error:', data)
       
-      if (data.error?.message?.includes('quota') || data.error?.message?.includes('limit')) {
+      if (response.status === 402 || data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
         return NextResponse.json({
-          consensus: `⚠️ Free tier quota exceeded. Try again later or upgrade to paid tier.`,
+          consensus: `⚠️ Insufficient credits. Please use a free model or add funds at https://openrouter.ai/settings/creds`,
           consensus_score: 0,
           confidence: 0,
           wallet_balance: walletBalance,
-          error: 'quota_exceeded',
+          error: 'insufficient_credits',
         })
       }
       
@@ -126,11 +130,11 @@ export async function POST(req: NextRequest) {
     // ============================================
     // GET THE AI RESPONSE
     // ============================================
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from AI'
-    const tokensUsed = data.usageMetadata?.totalTokenCount || 0
+    const aiResponse = data.choices?.[0]?.message?.content || 'No response from AI'
+    const tokensUsed = data.usage?.total_tokens || 0
 
     // ============================================
-    // CALCULATE COST (Gemini is very cheap)
+    // CALCULATE COST (Free models cost $0)
     // ============================================
     const cost = calculateCost(modelId, tokensUsed)
     walletBalance = Math.round((walletBalance - cost) * 100) / 100
@@ -148,6 +152,7 @@ export async function POST(req: NextRequest) {
       cost_inr: cost,
       tokens_used: tokensUsed,
       wallet_balance: walletBalance,
+      is_free: isFree,
     })
 
   } catch (error) {
