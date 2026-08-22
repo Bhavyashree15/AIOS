@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// GEMINI API KEY - YOUR KEY
+// GEMINI API KEY - FROM ENVIRONMENT VARIABLE
 // ============================================
-const GEMINI_API_KEY = 'AQ.Ab8RN6LHZcy0xGvG5_Pgl5T-k85nll19HIA8OXHQXryyF-RihQ'
+// NEVER hardcode API keys! Use environment variables.
+// Add to .env.local as: GOOGLE_API_KEY=your_key_here
+const GEMINI_API_KEY = process.env.GOOGLE_API_KEY
+
+if (!GEMINI_API_KEY) {
+  console.warn('⚠️ GOOGLE_API_KEY environment variable is not set')
+}
 
 // ============================================
 // MODEL MAPPING - Gemini Models
@@ -52,6 +58,16 @@ export async function POST(req: NextRequest) {
         { error: 'Please select at least one model.' },
         { status: 400 }
       )
+    }
+
+    // Check if API key is configured
+    if (!GEMINI_API_KEY) {
+      return NextResponse.json({
+        consensus: '⚠️ API key not configured. Please set GOOGLE_API_KEY environment variable.',
+        consensus_score: 0,
+        confidence: 0,
+        error: 'missing_api_key',
+      })
     }
 
     const modelId = MODEL_MAP[models[0]] || 'gemini-2.0-flash'
