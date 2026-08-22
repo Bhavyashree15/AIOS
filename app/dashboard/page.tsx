@@ -12,7 +12,7 @@ import {
   Copy, Check, ThumbsUp, ThumbsDown, Heart,
   Clock, Moon, Sun, Download, Search as SearchIcon,
   Reply, Pencil, Square, RotateCw,
-  Sparkles as SparklesIcon, RefreshCw
+  Sparkles as SparklesIcon
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -618,6 +618,14 @@ export default function DashboardPage() {
     setTypingText('')
   }
 
+  const askAnotherAI = () => {
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+    if (lastUserMsg) {
+      setPrompt(lastUserMsg.content)
+      setTimeout(() => handleSubmit(), 100)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!prompt.trim() && uploadedFiles.length === 0) {
       return
@@ -687,10 +695,8 @@ export default function DashboardPage() {
       const data = await res.json()
       let assistantContent: string
       
-      if (data.error === 'quota_exceeded') {
-        assistantContent = `⚠️ Free tier quota exceeded. Try again later.`
-      } else if (data.error === 'invalid_key') {
-        assistantContent = `⚠️ Invalid API key. Please check your Google API key.`
+      if (data.error === 'insufficient_credits') {
+        assistantContent = `⚠️ Insufficient credits. Please add funds at https://openrouter.ai/settings/creds`
       } else if (data.error) {
         assistantContent = `⚠️ ${data.error}`
       } else if (data.consensus) {
@@ -699,7 +705,6 @@ export default function DashboardPage() {
         if (data.wallet_balance !== undefined) {
           setWalletBalance(data.wallet_balance)
         }
-        // Store which model was used
         if (data.model_used) {
           setModelUsed(data.model_used)
         }
@@ -712,7 +717,7 @@ export default function DashboardPage() {
         content: assistantContent, 
         timestamp: new Date().toISOString(),
         reactions: { like: 0, dislike: 0, heart: 0 },
-        model_used: data.model_used || modelUsed || 'Gemini 3.6 Flash'
+        model_used: data.model_used || modelUsed || 'GPT-4o Mini'
       }
       
       const finalMessages = [...updatedMessages, assistantMsg]
@@ -752,15 +757,6 @@ export default function DashboardPage() {
     }
     setIsLoading(false)
     abortControllerRef.current = null
-  }
-
-  const askAnotherAI = () => {
-    // Get the last user message and regenerate with a different model
-    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
-    if (lastUserMsg) {
-      setPrompt(lastUserMsg.content)
-      setTimeout(() => handleSubmit(), 100)
-    }
   }
 
   const addFunds = () => {
@@ -1046,7 +1042,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - CHATGPT STYLE WITH MODEL NAME ===== */}
+        {/* ===== MESSAGES - WITH MODEL NAME AND ASK ANOTHER AI ===== */}
         <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -1199,14 +1195,14 @@ export default function DashboardPage() {
                             )}
                           </div>
 
-                          {/* Model Name Badge - Show which AI model was used */}
+                          {/* Model Name Badge */}
                           {isAI && msg.model_used && (
                             <div className={`flex items-center gap-1 mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                               <span className="text-[10px]">🤖 {msg.model_used}</span>
                             </div>
                           )}
 
-                          {/* Ask Another AI Button - Like AI Fiesta */}
+                          {/* Ask Another AI Button */}
                           {isAI && (
                             <button
                               onClick={askAnotherAI}
