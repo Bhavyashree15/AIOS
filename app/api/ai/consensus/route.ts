@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// GEMINI API KEY - YOUR KEY
+// GEMINI API KEY - REPLACE WITH YOUR NEW AIza KEY
 // ============================================
-// From: AI Studio - Free tier
-const GEMINI_API_KEY = 'AQ.Ab8RN6Lbnzr8Lf_O4d9RVFNbL2kcw5LeHwsYGLiSd6-AZ5VlHg'
+// 1. Go to https://aistudio.google.com/app/apikey
+// 2. Click "Create API Key"
+// 3. Copy the new AIza key
+// 4. Paste it below (replace 'AIza...')
+const GEMINI_API_KEY = 'AIza...'  // <-- PASTE YOUR NEW AIza KEY HERE
 
 // ============================================
 // MODEL MAPPING - Gemini Models
@@ -59,7 +62,6 @@ export async function POST(req: NextRequest) {
     const modelName = models[0] || 'Gemini 2.0 Flash'
 
     console.log('🤖 Using Gemini Model:', modelId)
-    console.log('🔑 Using API Key:', GEMINI_API_KEY.substring(0, 20) + '...')
 
     // ============================================
     // CALL GEMINI API
@@ -106,7 +108,7 @@ export async function POST(req: NextRequest) {
       
       if (data.error?.message?.includes('API key') || data.error?.message?.includes('authentication') || data.error?.message?.includes('credentials')) {
         return NextResponse.json({
-          consensus: `⚠️ Invalid API key. Please check your Google API key.`,
+          consensus: `⚠️ Invalid API key. Please create a new key at https://aistudio.google.com/app/apikey (must start with AIza)`,
           consensus_score: 0,
           confidence: 0,
           error: 'invalid_key',
@@ -115,7 +117,7 @@ export async function POST(req: NextRequest) {
       
       if (data.error?.message?.includes('model') || data.error?.message?.includes('not found')) {
         return NextResponse.json({
-          consensus: `⚠️ Model not found. Using gemini-1.5-flash instead.`,
+          consensus: `⚠️ Model not found. Using fallback model.`,
           consensus_score: 0,
           confidence: 0,
           error: 'model_not_found',
