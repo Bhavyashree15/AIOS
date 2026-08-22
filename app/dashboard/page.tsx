@@ -586,7 +586,6 @@ export default function DashboardPage() {
   }
 
   const regenerateResponse = (index: number) => {
-    // Find the user message before this AI response
     let userPrompt = ''
     for (let i = index - 1; i >= 0; i--) {
       if (messages[i].role === 'user') {
@@ -595,13 +594,11 @@ export default function DashboardPage() {
       }
     }
     if (userPrompt) {
-      // Remove this AI message and regenerate
       const updatedMessages = messages.slice(0, index)
       setMessages(updatedMessages)
       if (currentChatId) {
         updateChatMessages(currentChatId, updatedMessages)
       }
-      // Resubmit the prompt
       setPrompt(userPrompt)
       setTimeout(() => handleSubmit(), 100)
     }
@@ -680,7 +677,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ 
           prompt: currentPrompt, 
           models: selectedModels,
-          max_tokens: 50
+          max_tokens: 30
         }),
         signal: abortControllerRef.current.signal
       })
@@ -780,7 +777,6 @@ export default function DashboardPage() {
     return 'text-red-600'
   }
 
-  // Custom Markdown renderer with syntax highlighting
   const MarkdownContent = ({ content }: { content: string }) => {
     return (
       <ReactMarkdown
@@ -1122,7 +1118,6 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Edit mode for user messages */}
                       {isEditing && msg.role === 'user' ? (
                         <div className="w-full flex flex-col gap-2">
                           <textarea
@@ -1186,12 +1181,10 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Actions - visible on hover or always for AI */}
                       {!isEditing && (
                         <div className={`flex items-center gap-0.5 mt-1 transition-opacity duration-200 ${
                           msg.role === 'assistant' ? 'opacity-100' : hoveredMessageId === msgId ? 'opacity-100' : 'opacity-0'
                         }`} style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>
-                          {/* Timestamp on hover */}
                           <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'} mr-1`}>
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
@@ -1209,7 +1202,6 @@ export default function DashboardPage() {
                             <span className="text-[10px]">Copy</span>
                           </button>
                           
-                          {/* Edit button - only for user messages */}
                           {msg.role === 'user' && (
                             <button
                               onClick={() => startEditing(msg, i)}
@@ -1221,7 +1213,6 @@ export default function DashboardPage() {
                             </button>
                           )}
                           
-                          {/* Regenerate - only for AI messages */}
                           {msg.role === 'assistant' && (
                             <button
                               onClick={() => regenerateResponse(i)}
