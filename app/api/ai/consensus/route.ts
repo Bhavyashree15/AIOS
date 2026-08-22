@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // ============================================
 // GEMINI API KEY - FROM ENVIRONMENT VARIABLE
 // ============================================
-// NEVER hardcode API keys! Use environment variables.
-// Add to .env.local as: GOOGLE_API_KEY=your_key_here
+// This will work on Vercel AND GitHub
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY
 
 if (!GEMINI_API_KEY) {
@@ -60,7 +59,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check if API key is configured
     if (!GEMINI_API_KEY) {
       return NextResponse.json({
         consensus: '⚠️ API key not configured. Please set GOOGLE_API_KEY environment variable.',
@@ -73,9 +71,6 @@ export async function POST(req: NextRequest) {
     const modelId = MODEL_MAP[models[0]] || 'gemini-2.0-flash'
     const modelName = models[0] || 'Gemini 2.0 Flash'
 
-    // ============================================
-    // CALL GEMINI API
-    // ============================================
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -101,9 +96,6 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json()
 
-    // ============================================
-    // HANDLE API ERRORS
-    // ============================================
     if (!response.ok) {
       console.error('❌ Gemini API Error:', JSON.stringify(data, null, 2))
       
@@ -141,9 +133,6 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // ============================================
-    // GET THE AI RESPONSE
-    // ============================================
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from AI'
 
     return NextResponse.json({
