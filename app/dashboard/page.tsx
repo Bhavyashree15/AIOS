@@ -676,8 +676,8 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt: currentPrompt, 
-          models: selectedModels,
-          max_tokens: 20  // ← CHANGED TO 20
+          models: selectedModels
+          // max_tokens REMOVED - now hardcoded in route.ts
         }),
         signal: abortControllerRef.current.signal
       })
