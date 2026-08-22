@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// OPENROUTER API KEY - YOUR KEY (FREE MODELS)
+// DEEPSEEK API KEY - YOUR KEY
 // ============================================
-const OPENROUTER_API_KEY = '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'
+const DEEPSEEK_API_KEY = 'sk-285ee6afb0ed4a2b8ca2be990396ac1f'
 
 // ============================================
-// MODEL MAPPING - USING FREE MODELS
+// MODEL MAPPING - All to DeepSeek
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'meta-llama/llama-3.2-3b-instruct:free',
-  'qwen-3.5-flash': 'meta-llama/llama-3.2-3b-instruct:free',
-  'ministral-3-8b': 'meta-llama/llama-3.2-3b-instruct:free',
-  'mistral-small-4': 'meta-llama/llama-3.2-3b-instruct:free',
-  'deepseek-chat': 'meta-llama/llama-3.2-3b-instruct:free',
-  'gemini-3-flash': 'meta-llama/llama-3.2-3b-instruct:free',
-  'gpt-4o-mini': 'meta-llama/llama-3.2-3b-instruct:free',
-  'claude-haiku-4.5': 'meta-llama/llama-3.2-3b-instruct:free',
-  'mistral-small': 'meta-llama/llama-3.2-3b-instruct:free',
-  'gpt-4.1': 'meta-llama/llama-3.2-3b-instruct:free',
-  'claude-sonnet-4.0': 'meta-llama/llama-3.2-3b-instruct:free',
-  'gpt-5.4': 'meta-llama/llama-3.2-3b-instruct:free',
-  'gemini-3-pro-preview': 'meta-llama/llama-3.2-3b-instruct:free',
-  'grok-3-mini': 'meta-llama/llama-3.2-3b-instruct:free',
-  'codestral': 'meta-llama/llama-3.2-3b-instruct:free',
-  'gpt-5.6-terra': 'meta-llama/llama-3.2-3b-instruct:free',
-  'grok-4.5': 'meta-llama/llama-3.2-3b-instruct:free',
-  'nova-premier-1.0': 'meta-llama/llama-3.2-3b-instruct:free',
-  'perplexity-sonar': 'meta-llama/llama-3.2-3b-instruct:free',
-  'gpt-5.6-luna': 'meta-llama/llama-3.2-3b-instruct:free',
-  'deepseek-reasoner': 'meta-llama/llama-3.2-3b-instruct:free',
+  'gpt-5.4-mini': 'deepseek-chat',
+  'qwen-3.5-flash': 'deepseek-chat',
+  'ministral-3-8b': 'deepseek-chat',
+  'mistral-small-4': 'deepseek-chat',
+  'deepseek-chat': 'deepseek-chat',
+  'gemini-3-flash': 'deepseek-chat',
+  'gpt-4o-mini': 'deepseek-chat',
+  'claude-haiku-4.5': 'deepseek-chat',
+  'mistral-small': 'deepseek-chat',
+  'gpt-4.1': 'deepseek-chat',
+  'claude-sonnet-4.0': 'deepseek-chat',
+  'gpt-5.4': 'deepseek-chat',
+  'gemini-3-pro-preview': 'deepseek-chat',
+  'grok-3-mini': 'deepseek-chat',
+  'codestral': 'deepseek-chat',
+  'gpt-5.6-terra': 'deepseek-chat',
+  'grok-4.5': 'deepseek-chat',
+  'nova-premier-1.0': 'deepseek-chat',
+  'perplexity-sonar': 'deepseek-chat',
+  'gpt-5.6-luna': 'deepseek-chat',
+  'deepseek-reasoner': 'deepseek-chat',
 }
 
 // ============================================
@@ -54,42 +54,51 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // USING FREE MODEL - NO CREDITS NEEDED!
-    const modelId = 'meta-llama/llama-3.2-3b-instruct:free'
-    const modelName = 'Llama 3.2 3B (Free)'
+    const modelId = 'deepseek-chat'
+    const modelName = 'DeepSeek Chat'
 
-    console.log('🤖 Using Free Model:', modelId)
+    console.log('🤖 Using DeepSeek Model:', modelId)
 
     // ============================================
-    // CALL OPENROUTER API WITH FREE MODEL
+    // CALL DEEPSEEK API
     // ============================================
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://github.com/Bhavyashree15/AIOS',
-        'X-Title': 'AIOS',
       },
       body: JSON.stringify({
         model: modelId,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 200,
+        max_tokens: 50,
       }),
     })
 
     const data = await response.json()
 
+    // ============================================
+    // HANDLE API ERRORS
+    // ============================================
     if (!response.ok) {
-      console.error('❌ OpenRouter API Error:', JSON.stringify(data, null, 2))
+      console.error('❌ DeepSeek API Error:', JSON.stringify(data, null, 2))
       
-      if (data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
+      if (data.error?.message?.includes('quota') || data.error?.message?.includes('insufficient') || data.error?.message?.includes('balance')) {
         return NextResponse.json({
-          consensus: `⚠️ Free model daily limit reached. Try again later.`,
+          consensus: `⚠️ Insufficient balance. Add funds at https://platform.deepseek.com/billing`,
           consensus_score: 0,
           confidence: 0,
-          error: 'free_model_limit',
+          error: 'insufficient_balance',
+        })
+      }
+      
+      if (data.error?.message?.includes('API key') || data.error?.message?.includes('invalid')) {
+        return NextResponse.json({
+          consensus: `⚠️ Invalid API key. Check your key at https://platform.deepseek.com/api_keys`,
+          consensus_score: 0,
+          confidence: 0,
+          error: 'invalid_key',
         })
       }
       
@@ -100,7 +109,13 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // ============================================
+    // GET THE AI RESPONSE
+    // ============================================
     const aiResponse = data.choices?.[0]?.message?.content || 'No response from AI'
+    const tokensUsed = data.usage?.total_tokens || 0
+
+    console.log('✅ Success! Tokens used:', tokensUsed)
 
     return NextResponse.json({
       success: true,
@@ -108,7 +123,7 @@ export async function POST(req: NextRequest) {
       consensus_score: 85,
       confidence: 80,
       model_used: modelName,
-      is_free: true,
+      tokens_used: tokensUsed,
     })
 
   } catch (error) {
@@ -123,7 +138,6 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    balance: 0,
-    is_free: true,
+    balance: 5,
   })
 }
