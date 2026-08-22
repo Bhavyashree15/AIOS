@@ -677,7 +677,6 @@ export default function DashboardPage() {
         body: JSON.stringify({ 
           prompt: currentPrompt, 
           models: selectedModels
-          // max_tokens REMOVED - now hardcoded in route.ts
         }),
         signal: abortControllerRef.current.signal
       })
@@ -685,8 +684,10 @@ export default function DashboardPage() {
       const data = await res.json()
       let assistantContent: string
       
-      if (res.status === 402 || data.error === 'insufficient_credits') {
-        assistantContent = `⚠️ Insufficient credits. Please add funds at https://openrouter.ai/settings/creds`
+      if (data.error === 'quota_exceeded') {
+        assistantContent = `⚠️ Free tier quota exceeded. Try again later.`
+      } else if (data.error === 'invalid_key') {
+        assistantContent = `⚠️ Invalid API key. Please check your Google API key.`
       } else if (data.error) {
         assistantContent = `⚠️ ${data.error}`
       } else if (data.consensus) {
@@ -1028,7 +1029,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - CHATGPT STYLE WITH MARKDOWN ===== */}
+        {/* ===== MESSAGES - CHATGPT STYLE ===== */}
         <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
