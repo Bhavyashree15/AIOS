@@ -1,40 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// GEMINI API KEY - FROM GITHUB ENVIRONMENT VARIABLE
+// OPENROUTER API KEY - HARDCODED (NO ENV VAR NEEDED)
 // ============================================
-// This reads from GitHub Actions environment variable
-const GEMINI_API_KEY = process.env.GOOGLE_API_KEY
-
-if (!GEMINI_API_KEY) {
-  console.warn('⚠️ GOOGLE_API_KEY environment variable is not set')
-}
+// This key works without any environment variables
+const OPENROUTER_API_KEY = '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'
 
 // ============================================
-// MODEL MAPPING - Gemini Models
+// MODEL MAPPING
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'gemini-2.0-flash',
-  'qwen-3.5-flash': 'gemini-2.0-flash',
-  'ministral-3-8b': 'gemini-2.0-flash',
-  'mistral-small-4': 'gemini-2.0-flash',
-  'deepseek-chat': 'gemini-2.0-flash',
-  'gemini-3-flash': 'gemini-2.0-flash',
-  'gpt-4o-mini': 'gemini-2.0-flash',
-  'claude-haiku-4.5': 'gemini-2.0-flash',
-  'mistral-small': 'gemini-2.0-flash',
-  'gpt-4.1': 'gemini-2.0-flash',
-  'claude-sonnet-4.0': 'gemini-2.0-flash',
-  'gpt-5.4': 'gemini-2.0-flash',
-  'gemini-3-pro-preview': 'gemini-2.0-flash',
-  'grok-3-mini': 'gemini-2.0-flash',
-  'codestral': 'gemini-2.0-flash',
-  'gpt-5.6-terra': 'gemini-2.0-flash',
-  'grok-4.5': 'gemini-2.0-flash',
-  'nova-premier-1.0': 'gemini-2.0-flash',
-  'perplexity-sonar': 'gemini-2.0-flash',
-  'gpt-5.6-luna': 'gemini-2.0-flash',
-  'deepseek-reasoner': 'gemini-2.0-flash',
+  'gpt-5.4-mini': 'openai/gpt-4o-mini',
+  'qwen-3.5-flash': 'openai/gpt-4o-mini',
+  'ministral-3-8b': 'openai/gpt-4o-mini',
+  'mistral-small-4': 'openai/gpt-4o-mini',
+  'deepseek-chat': 'openai/gpt-4o-mini',
+  'gemini-3-flash': 'openai/gpt-4o-mini',
+  'gpt-4o-mini': 'openai/gpt-4o-mini',
+  'claude-haiku-4.5': 'openai/gpt-4o-mini',
+  'mistral-small': 'openai/gpt-4o-mini',
+  'gpt-4.1': 'openai/gpt-4o-mini',
+  'claude-sonnet-4.0': 'openai/gpt-4o-mini',
+  'gpt-5.4': 'openai/gpt-4o-mini',
+  'gemini-3-pro-preview': 'openai/gpt-4o-mini',
+  'grok-3-mini': 'openai/gpt-4o-mini',
+  'codestral': 'openai/gpt-4o-mini',
+  'gpt-5.6-terra': 'openai/gpt-4o-mini',
+  'grok-4.5': 'openai/gpt-4o-mini',
+  'nova-premier-1.0': 'openai/gpt-4o-mini',
+  'perplexity-sonar': 'openai/gpt-4o-mini',
+  'gpt-5.6-luna': 'openai/gpt-4o-mini',
+  'deepseek-reasoner': 'openai/gpt-4o-mini',
 }
 
 // ============================================
@@ -59,63 +55,45 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!GEMINI_API_KEY) {
-      return NextResponse.json({
-        consensus: '⚠️ GOOGLE_API_KEY environment variable is not set in GitHub Actions.',
-        consensus_score: 0,
-        confidence: 0,
-        error: 'missing_api_key',
-      })
-    }
+    // ALWAYS USE GPT-4o-MINI (CHEAP AND RELIABLE)
+    const modelId = 'openai/gpt-4o-mini'
+    const modelName = 'GPT-4o Mini'
 
-    const modelId = MODEL_MAP[models[0]] || 'gemini-2.0-flash'
-    const modelName = models[0] || 'Gemini 2.0 Flash'
+    console.log('🤖 Using OpenRouter Model:', modelId)
 
-    console.log('🤖 Using Gemini Model:', modelId)
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: prompt }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 100,
-            topP: 0.95,
-            topK: 40,
-          }
-        }),
-      }
-    )
+    // ============================================
+    // CALL OPENROUTER API
+    // ============================================
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/Bhavyashree15/AIOS',
+        'X-Title': 'AIOS',
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 50,
+      }),
+    })
 
     const data = await response.json()
 
+    // ============================================
+    // HANDLE API ERRORS
+    // ============================================
     if (!response.ok) {
-      console.error('❌ Gemini API Error:', JSON.stringify(data, null, 2))
+      console.error('❌ OpenRouter API Error:', JSON.stringify(data, null, 2))
       
-      if (data.error?.message?.includes('quota') || data.error?.message?.includes('limit') || data.error?.message?.includes('exceeded')) {
+      if (response.status === 402 || data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
         return NextResponse.json({
-          consensus: `⚠️ Free tier quota exceeded. Try again later.`,
+          consensus: `⚠️ Insufficient credits. Please add $5 at https://openrouter.ai/settings/creds`,
           consensus_score: 0,
           confidence: 0,
-          error: 'quota_exceeded',
-        })
-      }
-      
-      if (data.error?.message?.includes('API key') || data.error?.message?.includes('authentication') || data.error?.message?.includes('credentials')) {
-        return NextResponse.json({
-          consensus: `⚠️ Invalid API key. Please check your Google API key.`,
-          consensus_score: 0,
-          confidence: 0,
-          error: 'invalid_key',
+          error: 'insufficient_credits',
         })
       }
       
@@ -126,7 +104,13 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from AI'
+    // ============================================
+    // GET THE AI RESPONSE
+    // ============================================
+    const aiResponse = data.choices?.[0]?.message?.content || 'No response from AI'
+    const tokensUsed = data.usage?.total_tokens || 0
+
+    console.log('✅ Success! Tokens used:', tokensUsed)
 
     return NextResponse.json({
       success: true,
@@ -134,7 +118,7 @@ export async function POST(req: NextRequest) {
       consensus_score: 85,
       confidence: 80,
       model_used: modelName,
-      is_free: true,
+      tokens_used: tokensUsed,
     })
 
   } catch (error) {
@@ -149,7 +133,6 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    balance: 100,
-    is_free: true,
+    balance: 0.20,
   })
 }
