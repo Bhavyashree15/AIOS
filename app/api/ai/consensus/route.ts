@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// OPENROUTER API KEY - THIS IS HARDCODED AND WILL WORK
+// OPENROUTER API KEY - YOUR KEY (NO CREDITS NEEDED FOR FREE MODELS)
 // ============================================
 const OPENROUTER_API_KEY = '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'
 
 // ============================================
-// MODEL MAPPING - All to GPT-4o-mini
+// MODEL MAPPING - ALL USING FREE MODELS
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'openai/gpt-4o-mini',
-  'qwen-3.5-flash': 'openai/gpt-4o-mini',
-  'ministral-3-8b': 'openai/gpt-4o-mini',
-  'mistral-small-4': 'openai/gpt-4o-mini',
-  'deepseek-chat': 'openai/gpt-4o-mini',
-  'gemini-3-flash': 'openai/gpt-4o-mini',
-  'gpt-4o-mini': 'openai/gpt-4o-mini',
-  'claude-haiku-4.5': 'openai/gpt-4o-mini',
-  'mistral-small': 'openai/gpt-4o-mini',
-  'gpt-4.1': 'openai/gpt-4o-mini',
-  'claude-sonnet-4.0': 'openai/gpt-4o-mini',
-  'gpt-5.4': 'openai/gpt-4o-mini',
-  'gemini-3-pro-preview': 'openai/gpt-4o-mini',
-  'grok-3-mini': 'openai/gpt-4o-mini',
-  'codestral': 'openai/gpt-4o-mini',
-  'gpt-5.6-terra': 'openai/gpt-4o-mini',
-  'grok-4.5': 'openai/gpt-4o-mini',
-  'nova-premier-1.0': 'openai/gpt-4o-mini',
-  'perplexity-sonar': 'openai/gpt-4o-mini',
-  'gpt-5.6-luna': 'openai/gpt-4o-mini',
-  'deepseek-reasoner': 'openai/gpt-4o-mini',
+  'gpt-5.4-mini': 'google/gemma-3-27b-it:free',
+  'qwen-3.5-flash': 'google/gemma-3-27b-it:free',
+  'ministral-3-8b': 'google/gemma-3-27b-it:free',
+  'mistral-small-4': 'google/gemma-3-27b-it:free',
+  'deepseek-chat': 'google/gemma-3-27b-it:free',
+  'gemini-3-flash': 'google/gemma-3-27b-it:free',
+  'gpt-4o-mini': 'google/gemma-3-27b-it:free',
+  'claude-haiku-4.5': 'google/gemma-3-27b-it:free',
+  'mistral-small': 'google/gemma-3-27b-it:free',
+  'gpt-4.1': 'google/gemma-3-27b-it:free',
+  'claude-sonnet-4.0': 'google/gemma-3-27b-it:free',
+  'gpt-5.4': 'google/gemma-3-27b-it:free',
+  'gemini-3-pro-preview': 'google/gemma-3-27b-it:free',
+  'grok-3-mini': 'google/gemma-3-27b-it:free',
+  'codestral': 'google/gemma-3-27b-it:free',
+  'gpt-5.6-terra': 'google/gemma-3-27b-it:free',
+  'grok-4.5': 'google/gemma-3-27b-it:free',
+  'nova-premier-1.0': 'google/gemma-3-27b-it:free',
+  'perplexity-sonar': 'google/gemma-3-27b-it:free',
+  'gpt-5.6-luna': 'google/gemma-3-27b-it:free',
+  'deepseek-reasoner': 'google/gemma-3-27b-it:free',
 }
 
 // ============================================
@@ -54,14 +54,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const modelId = 'openai/gpt-4o-mini'
-    const modelName = 'GPT-4o Mini'
+    // USING FREE MODEL - NO CREDITS NEEDED!
+    const modelId = 'google/gemma-3-27b-it:free'
+    const modelName = 'Gemma 3 27B (Free)'
 
-    console.log('🤖 Using OpenRouter Model:', modelId)
-    console.log('📝 Prompt:', prompt.substring(0, 50) + '...')
+    console.log('🤖 Using Free Model:', modelId)
 
     // ============================================
-    // CALL OPENROUTER API
+    // CALL OPENROUTER API WITH FREE MODEL
     // ============================================
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         model: modelId,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 30,
+        max_tokens: 200,
       }),
     })
 
@@ -89,10 +89,10 @@ export async function POST(req: NextRequest) {
       
       if (response.status === 402 || data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
         return NextResponse.json({
-          consensus: `⚠️ Insufficient credits. Please add funds at https://openrouter.ai/settings/creds`,
+          consensus: `⚠️ This free model may have daily limits. Try again later or use a different free model.`,
           consensus_score: 0,
           confidence: 0,
-          error: 'insufficient_credits',
+          error: 'free_model_limit',
         })
       }
       
@@ -118,6 +118,7 @@ export async function POST(req: NextRequest) {
       confidence: 80,
       model_used: modelName,
       tokens_used: tokensUsed,
+      is_free: true,
     })
 
   } catch (error) {
@@ -132,6 +133,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    balance: 0.20,
+    balance: 0,
+    is_free: true,
   })
 }
