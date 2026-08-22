@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// GEMINI API KEY - YOUR KEY
+// GEMINI API KEY - YOUR GOOGLE AI STUDIO KEY
 // ============================================
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || 'AQ.Ab8RN6LF7WDE4OWgIdNSjLlLLfcrOG5-peE47twcAQKBsxm1LA'
 
 // ============================================
-// MODEL MAPPING - USE WORKING MODELS
+// MODEL MAPPING - Gemini Models
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  // All models mapped to working Gemini models
   'gpt-5.4-mini': 'gemini-2.0-flash',
   'qwen-3.5-flash': 'gemini-2.0-flash',
   'ministral-3-8b': 'gemini-2.0-flash',
@@ -55,14 +54,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Use a WORKING model
+    // ALWAYS USE GEMINI - NOT OPENROUTER
     const modelId = 'gemini-2.0-flash'
 
     console.log('🤖 Using Gemini Model:', modelId)
     console.log('📝 Prompt:', prompt.substring(0, 50) + '...')
 
     // ============================================
-    // CALL GEMINI API - CORRECT FORMAT
+    // CALL GEMINI API
     // ============================================
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
@@ -94,15 +93,6 @@ export async function POST(req: NextRequest) {
     // ============================================
     if (!response.ok) {
       console.error('❌ Gemini API Error:', JSON.stringify(data, null, 2))
-      
-      if (response.status === 404) {
-        return NextResponse.json({
-          consensus: `⚠️ Model not found. Using gemini-2.0-flash instead.`,
-          consensus_score: 0,
-          confidence: 0,
-          error: 'model_not_found',
-        })
-      }
       
       if (data.error?.message?.includes('quota') || data.error?.message?.includes('limit') || data.error?.message?.includes('exceeded')) {
         return NextResponse.json({
