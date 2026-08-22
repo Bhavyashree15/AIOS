@@ -1,36 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// OPENROUTER API KEY - YOUR NEW KEY
+// OPENROUTER API KEY
 // ============================================
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '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'
 
 // ============================================
-// MODEL MAPPING - WORKING FREE MODELS
+// MODEL MAPPING - CONFIRMED WORKING MODELS
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  // All models mapped to verified working free models
-  'gpt-5.4-mini': 'deepseek/deepseek-r1:free',
-  'qwen-3.5-flash': 'deepseek/deepseek-r1:free',
-  'ministral-3-8b': 'deepseek/deepseek-r1:free',
-  'mistral-small-4': 'deepseek/deepseek-r1:free',
-  'deepseek-chat': 'deepseek/deepseek-r1:free',
-  'gemini-3-flash': 'deepseek/deepseek-r1:free',
-  'gpt-4o-mini': 'deepseek/deepseek-r1:free',
-  'claude-haiku-4.5': 'deepseek/deepseek-r1:free',
-  'mistral-small': 'deepseek/deepseek-r1:free',
-  'gpt-4.1': 'deepseek/deepseek-r1:free',
-  'claude-sonnet-4.0': 'deepseek/deepseek-r1:free',
-  'gpt-5.4': 'deepseek/deepseek-r1:free',
-  'gemini-3-pro-preview': 'deepseek/deepseek-r1:free',
-  'grok-3-mini': 'deepseek/deepseek-r1:free',
-  'codestral': 'deepseek/deepseek-r1:free',
-  'gpt-5.6-terra': 'deepseek/deepseek-r1:free',
-  'grok-4.5': 'deepseek/deepseek-r1:free',
-  'nova-premier-1.0': 'deepseek/deepseek-r1:free',
-  'perplexity-sonar': 'deepseek/deepseek-r1:free',
-  'gpt-5.6-luna': 'deepseek/deepseek-r1:free',
-  'deepseek-reasoner': 'deepseek/deepseek-r1:free',
+  // Using ONLY confirmed working models
+  'gpt-5.4-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'qwen-3.5-flash': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'ministral-3-8b': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'mistral-small-4': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'deepseek-chat': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gemini-3-flash': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-4o-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'claude-haiku-4.5': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'mistral-small': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-4.1': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'claude-sonnet-4.0': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-5.4': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gemini-3-pro-preview': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'grok-3-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'codestral': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-5.6-terra': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'grok-4.5': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'nova-premier-1.0': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'perplexity-sonar': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-5.6-luna': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'deepseek-reasoner': 'microsoft/phi-3.5-mini-128k-instruct:free',
 }
 
 // ============================================
@@ -39,17 +39,12 @@ const MODEL_MAP: Record<string, string> = {
 let walletBalance = 100.00
 
 function calculateCost(modelId: string, tokens: number): number {
-  // Free models cost nothing
   if (modelId.includes(':free')) {
     return 0
   }
   const rates: Record<string, number> = {
     'openai/gpt-4o': 0.005,
     'anthropic/claude-3.5-sonnet': 0.003,
-    'google/gemini-1.5-pro': 0.0025,
-    'x-ai/grok-2-1212': 0.002,
-    'mistralai/codestral-2501': 0.001,
-    'perplexity/sonar-small-online': 0.0006,
   }
   const rate = rates[modelId] || 0.001
   return (tokens / 1000) * rate * 1.2
@@ -77,7 +72,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const modelId = MODEL_MAP[models[0]] || 'deepseek/deepseek-r1:free'
+    // Use a hardcoded working model
+    const modelId = 'microsoft/phi-3.5-mini-128k-instruct:free'
 
     // ============================================
     // CALL OPENROUTER API
@@ -106,16 +102,6 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       console.error('OpenRouter API Error:', data)
       
-      if (data.error?.code === 401 || data.error?.message?.includes('authentication') || data.error?.message?.includes('invalid credentials')) {
-        return NextResponse.json({
-          consensus: `⚠️ Authentication error. Please check your OpenRouter API key.`,
-          consensus_score: 0,
-          confidence: 0,
-          wallet_balance: walletBalance,
-          error: 'auth_error',
-        })
-      }
-      
       if (response.status === 402 || data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
         return NextResponse.json({
           consensus: `⚠️ Insufficient credits. Please add funds at https://openrouter.ai/settings/creds`,
@@ -124,50 +110,6 @@ export async function POST(req: NextRequest) {
           wallet_balance: walletBalance,
           error: 'insufficient_credits',
         })
-      }
-      
-      // Check if model not found
-      if (data.error?.message?.includes('No endpoints found')) {
-        // Fallback to another free model
-        const fallbackModels = [
-          'meta-llama/llama-3.2-3b-instruct:free',
-          'microsoft/phi-3-mini-128k-instruct:free',
-          'qwen/qwen3-coder:free'
-        ]
-        
-        // Try the first fallback model
-        const fallbackResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://github.com/Bhayashree15/AIOS',
-            'X-Title': 'AIOS',
-          },
-          body: JSON.stringify({
-            model: fallbackModels[0],
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7,
-            max_tokens: 200,
-          }),
-        })
-        
-        const fallbackData = await fallbackResponse.json()
-        
-        if (fallbackResponse.ok) {
-          const aiResponse = fallbackData.choices?.[0]?.message?.content || 'No response from AI'
-          return NextResponse.json({
-            success: true,
-            consensus: aiResponse,
-            consensus_score: 85,
-            confidence: 80,
-            model_used: fallbackModels[0],
-            cost_inr: 0,
-            tokens_used: 0,
-            wallet_balance: walletBalance,
-            is_free: true,
-          })
-        }
       }
       
       return NextResponse.json({
@@ -197,7 +139,7 @@ export async function POST(req: NextRequest) {
       cost_inr: cost,
       tokens_used: tokensUsed,
       wallet_balance: walletBalance,
-      is_free: modelId.includes(':free'),
+      is_free: true,
     })
 
   } catch (error) {
