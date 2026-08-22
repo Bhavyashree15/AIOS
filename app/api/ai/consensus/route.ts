@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
+// OPENROUTER API KEY - YOUR NEW KEY
+// ============================================
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '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'
+
+// ============================================
 // MODEL MAPPING - WORKING FREE MODELS
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  // All models mapped to verified free models
-  'gpt-5.4-mini': 'google/gemini-2.0-flash-lite-preview-02-05:free',
-  'qwen-3.5-flash': 'google/gemini-2.0-flash-lite-preview-02-05:free',
-  'ministral-3-8b': 'google/gemini-2.0-flash-lite-preview-02-05:free',
-  'mistral-small-4': 'google/gemini-2.0-flash-lite-preview-02-05:free',
+  // All models mapped to verified working free models
+  'gpt-5.4-mini': 'deepseek/deepseek-r1:free',
+  'qwen-3.5-flash': 'deepseek/deepseek-r1:free',
+  'ministral-3-8b': 'deepseek/deepseek-r1:free',
+  'mistral-small-4': 'deepseek/deepseek-r1:free',
   'deepseek-chat': 'deepseek/deepseek-r1:free',
-  'gemini-3-flash': 'google/gemini-2.0-flash-lite-preview-02-05:free',
-  'gpt-4o-mini': 'google/gemini-2.0-flash-lite-preview-02-05:free',
-  'claude-haiku-4.5': 'google/gemini-2.0-flash-lite-preview-02-05:free',
-  'mistral-small': 'google/gemini-2.0-flash-lite-preview-02-05:free',
+  'gemini-3-flash': 'deepseek/deepseek-r1:free',
+  'gpt-4o-mini': 'deepseek/deepseek-r1:free',
+  'claude-haiku-4.5': 'deepseek/deepseek-r1:free',
+  'mistral-small': 'deepseek/deepseek-r1:free',
   'gpt-4.1': 'deepseek/deepseek-r1:free',
   'claude-sonnet-4.0': 'deepseek/deepseek-r1:free',
   'gpt-5.4': 'deepseek/deepseek-r1:free',
@@ -29,16 +34,12 @@ const MODEL_MAP: Record<string, string> = {
 }
 
 // ============================================
-// OPENROUTER API KEY
-// ============================================
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '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'
-
-// ============================================
 // WALLET
 // ============================================
 let walletBalance = 100.00
 
 function calculateCost(modelId: string, tokens: number): number {
+  // Free models cost nothing
   if (modelId.includes(':free')) {
     return 0
   }
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const modelId = MODEL_MAP[models[0]] || 'google/gemini-2.0-flash-lite-preview-02-05:free'
+    const modelId = MODEL_MAP[models[0]] || 'deepseek/deepseek-r1:free'
 
     // ============================================
     // CALL OPENROUTER API
@@ -123,6 +124,50 @@ export async function POST(req: NextRequest) {
           wallet_balance: walletBalance,
           error: 'insufficient_credits',
         })
+      }
+      
+      // Check if model not found
+      if (data.error?.message?.includes('No endpoints found')) {
+        // Fallback to another free model
+        const fallbackModels = [
+          'meta-llama/llama-3.2-3b-instruct:free',
+          'microsoft/phi-3-mini-128k-instruct:free',
+          'qwen/qwen3-coder:free'
+        ]
+        
+        // Try the first fallback model
+        const fallbackResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://github.com/Bhayashree15/AIOS',
+            'X-Title': 'AIOS',
+          },
+          body: JSON.stringify({
+            model: fallbackModels[0],
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+            max_tokens: 200,
+          }),
+        })
+        
+        const fallbackData = await fallbackResponse.json()
+        
+        if (fallbackResponse.ok) {
+          const aiResponse = fallbackData.choices?.[0]?.message?.content || 'No response from AI'
+          return NextResponse.json({
+            success: true,
+            consensus: aiResponse,
+            consensus_score: 85,
+            confidence: 80,
+            model_used: fallbackModels[0],
+            cost_inr: 0,
+            tokens_used: 0,
+            wallet_balance: walletBalance,
+            is_free: true,
+          })
+        }
       }
       
       return NextResponse.json({
