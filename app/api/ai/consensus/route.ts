@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // MODEL MAPPING - OpenRouter Free Models
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  // Free models (no credits needed)
+  // All models mapped to free OpenRouter models
   'gpt-5.4-mini': 'google/gemma-2-9b-it:free',
   'qwen-3.5-flash': 'google/gemma-2-9b-it:free',
   'ministral-3-8b': 'google/gemma-2-9b-it:free',
@@ -14,18 +14,17 @@ const MODEL_MAP: Record<string, string> = {
   'gpt-4o-mini': 'google/gemma-2-9b-it:free',
   'claude-haiku-4.5': 'google/gemma-2-9b-it:free',
   'mistral-small': 'google/gemma-2-9b-it:free',
-  // Paid models (need credits)
-  'gpt-4.1': 'openai/gpt-4o',
-  'claude-sonnet-4.0': 'anthropic/claude-3.5-sonnet',
-  'gpt-5.4': 'openai/gpt-4o',
-  'gemini-3-pro-preview': 'google/gemini-1.5-pro',
-  'grok-3-mini': 'x-ai/grok-2-1212',
-  'codestral': 'mistralai/codestral-2501',
-  'gpt-5.6-terra': 'openai/gpt-4o',
-  'grok-4.5': 'x-ai/grok-2-1212',
-  'nova-premier-1.0': 'openai/gpt-4o',
-  'perplexity-sonar': 'perplexity/sonar-small-online',
-  'gpt-5.6-luna': 'openai/gpt-4o',
+  'gpt-4.1': 'deepseek/deepseek-r1:free',
+  'claude-sonnet-4.0': 'deepseek/deepseek-r1:free',
+  'gpt-5.4': 'deepseek/deepseek-r1:free',
+  'gemini-3-pro-preview': 'deepseek/deepseek-r1:free',
+  'grok-3-mini': 'deepseek/deepseek-r1:free',
+  'codestral': 'deepseek/deepseek-r1:free',
+  'gpt-5.6-terra': 'deepseek/deepseek-r1:free',
+  'grok-4.5': 'deepseek/deepseek-r1:free',
+  'nova-premier-1.0': 'deepseek/deepseek-r1:free',
+  'perplexity-sonar': 'deepseek/deepseek-r1:free',
+  'gpt-5.6-luna': 'deepseek/deepseek-r1:free',
   'deepseek-reasoner': 'deepseek/deepseek-r1:free',
 }
 
@@ -44,7 +43,6 @@ function calculateCost(modelId: string, tokens: number): number {
   if (modelId.includes(':free')) {
     return 0
   }
-  // Paid models
   const rates: Record<string, number> = {
     'openai/gpt-4o': 0.005,
     'anthropic/claude-3.5-sonnet': 0.003,
@@ -80,10 +78,9 @@ export async function POST(req: NextRequest) {
     }
 
     const modelId = MODEL_MAP[models[0]] || 'google/gemma-2-9b-it:free'
-    const isFree = modelId.includes(':free')
 
     // ============================================
-    // CALL OPENROUTER API
+    // CALL OPENROUTER API WITH FREE MODELS
     // ============================================
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -97,7 +94,7 @@ export async function POST(req: NextRequest) {
         model: modelId,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: isFree ? 100 : 50,  // Free models allow more tokens
+        max_tokens: 200,  // Free models allow decent tokens
       }),
     })
 
@@ -108,6 +105,17 @@ export async function POST(req: NextRequest) {
     // ============================================
     if (!response.ok) {
       console.error('OpenRouter API Error:', data)
+      
+      // Check for authentication errors
+      if (data.error?.code === 401 || data.error?.message?.includes('authentication') || data.error?.message?.includes('invalid credentials')) {
+        return NextResponse.json({
+          consensus: `⚠️ Authentication error. Please check your OpenRouter API key.`,
+          consensus_score: 0,
+          confidence: 0,
+          wallet_balance: walletBalance,
+          error: 'auth_error',
+        })
+      }
       
       if (response.status === 402 || data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
         return NextResponse.json({
@@ -152,7 +160,7 @@ export async function POST(req: NextRequest) {
       cost_inr: cost,
       tokens_used: tokensUsed,
       wallet_balance: walletBalance,
-      is_free: isFree,
+      is_free: modelId.includes(':free'),
     })
 
   } catch (error) {
