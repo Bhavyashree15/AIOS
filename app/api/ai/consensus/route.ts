@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// GEMINI API KEY - REPLACE WITH YOUR NEW AIza KEY
+// GEMINI API KEY - YOUR KEY
 // ============================================
-// 1. Go to https://aistudio.google.com/app/apikey
-// 2. Click "Create API Key"
-// 3. Copy the new AIza key
-// 4. Paste it below (replace 'AIza...')
-const GEMINI_API_KEY = 'AIza...'  // <-- PASTE YOUR NEW AIza KEY HERE
+const GEMINI_API_KEY = 'AQ.Ab8RN6LHZcy0xGvG5_Pgl5T-k85nll19HIA8OXHQXryyF-RihQ'
 
 // ============================================
 // MODEL MAPPING - Gemini Models
@@ -61,8 +57,6 @@ export async function POST(req: NextRequest) {
     const modelId = MODEL_MAP[models[0]] || 'gemini-2.0-flash'
     const modelName = models[0] || 'Gemini 2.0 Flash'
 
-    console.log('🤖 Using Gemini Model:', modelId)
-
     // ============================================
     // CALL GEMINI API
     // ============================================
@@ -108,7 +102,7 @@ export async function POST(req: NextRequest) {
       
       if (data.error?.message?.includes('API key') || data.error?.message?.includes('authentication') || data.error?.message?.includes('credentials')) {
         return NextResponse.json({
-          consensus: `⚠️ Invalid API key. Please create a new key at https://aistudio.google.com/app/apikey (must start with AIza)`,
+          consensus: `⚠️ Invalid API key. Please check your Google API key.`,
           consensus_score: 0,
           confidence: 0,
           error: 'invalid_key',
@@ -135,8 +129,6 @@ export async function POST(req: NextRequest) {
     // GET THE AI RESPONSE
     // ============================================
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from AI'
-
-    console.log('✅ Success! Response length:', aiResponse.length)
 
     return NextResponse.json({
       success: true,
