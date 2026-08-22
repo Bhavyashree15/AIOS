@@ -5,12 +5,12 @@ import { NextRequest, NextResponse } from 'next/server'
 // ============================================
 const MODEL_MAP: Record<string, string> = {
   // All models mapped to free OpenRouter models
-  'gpt-5.4-mini': 'google/gemma-2-9b-it:free',
+  'gpt-5.4-mini': 'google/gemma-2-9b-it:free',  // ✅ Correct: :free
   'qwen-3.5-flash': 'google/gemma-2-9b-it:free',
   'ministral-3-8b': 'google/gemma-2-9b-it:free',
   'mistral-small-4': 'google/gemma-2-9b-it:free',
-  'deepseek-chat': 'deepseek/deepseek-r1:free',
-  'gemini-3-flash': 'google/gemini-flash-1.5:free',
+  'deepseek-chat': 'deepseek/deepseek-r1:free',  // ✅ Correct
+  'gemini-3-flash': 'google/gemini-2.0-flash-lite-001:free',  // ✅ Correct
   'gpt-4o-mini': 'google/gemma-2-9b-it:free',
   'claude-haiku-4.5': 'google/gemma-2-9b-it:free',
   'mistral-small': 'google/gemma-2-9b-it:free',
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
         model: modelId,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 200,  // Free models allow decent tokens
+        max_tokens: 200,
       }),
     })
 
@@ -106,7 +106,6 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       console.error('OpenRouter API Error:', data)
       
-      // Check for authentication errors
       if (data.error?.code === 401 || data.error?.message?.includes('authentication') || data.error?.message?.includes('invalid credentials')) {
         return NextResponse.json({
           consensus: `⚠️ Authentication error. Please check your OpenRouter API key.`,
