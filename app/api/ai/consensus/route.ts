@@ -40,7 +40,7 @@ function calculateCost(modelId: string, tokens: number): number {
 // ============================================
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, models, max_tokens = 50 } = await req.json()
+    const { prompt, models, max_tokens = 30 } = await req.json()  // CHANGED: default 30
 
     if (!prompt) {
       return NextResponse.json({ 
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         model: modelId,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: Number(max_tokens) || 50,  // FIXED: ensure it's a number
+        max_tokens: Number(max_tokens) || 30,  // CHANGED: default 30
       }),
     })
 
