@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// OPENROUTER API KEY - HARDCODED (BUT SAFE)
+// OPENROUTER API KEY - THIS IS HARDCODED AND WILL WORK
 // ============================================
-// This key has $0.200 balance - enough for ~800 requests
 const OPENROUTER_API_KEY = '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'
 
 // ============================================
@@ -58,6 +57,9 @@ export async function POST(req: NextRequest) {
     const modelId = 'openai/gpt-4o-mini'
     const modelName = 'GPT-4o Mini'
 
+    console.log('🤖 Using OpenRouter Model:', modelId)
+    console.log('📝 Prompt:', prompt.substring(0, 50) + '...')
+
     // ============================================
     // CALL OPENROUTER API
     // ============================================
@@ -79,6 +81,9 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json()
 
+    // ============================================
+    // HANDLE API ERRORS
+    // ============================================
     if (!response.ok) {
       console.error('❌ OpenRouter API Error:', JSON.stringify(data, null, 2))
       
@@ -98,8 +103,13 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // ============================================
+    // GET THE AI RESPONSE
+    // ============================================
     const aiResponse = data.choices?.[0]?.message?.content || 'No response from AI'
     const tokensUsed = data.usage?.total_tokens || 0
+
+    console.log('✅ Success! Tokens used:', tokensUsed)
 
     return NextResponse.json({
       success: true,
