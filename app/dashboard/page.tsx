@@ -12,7 +12,7 @@ import {
   Copy, Check, ThumbsUp, ThumbsDown, Heart,
   Clock, Moon, Sun, Download, Search as SearchIcon,
   Reply, Pencil, Square, RotateCw,
-  Sparkles as SparklesIcon
+  Sparkles as SparklesIcon, RefreshCw
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
