@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// DEEPSEEK API KEY - YOUR KEY
+// API KEY - YOUR NEW KEY
 // ============================================
-const DEEPSEEK_API_KEY = 'sk-285ee6afb0ed4a2b8ca2be990396ac1f'
+const API_KEY = 'sk-5124192731614b74b3fba2fe2de2a800'
 
 // ============================================
-// MODEL MAPPING - All to DeepSeek
+// MODEL MAPPING - Using DeepSeek
 // ============================================
 const MODEL_MAP: Record<string, string> = {
   'gpt-5.4-mini': 'deepseek-chat',
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+        'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       
       if (data.error?.message?.includes('API key') || data.error?.message?.includes('invalid')) {
         return NextResponse.json({
-          consensus: `⚠️ Invalid API key. Check your key at https://platform.deepseek.com/api_keys`,
+          consensus: `⚠️ Invalid API key. Please check your API key.`,
           consensus_score: 0,
           confidence: 0,
           error: 'invalid_key',
@@ -138,6 +138,6 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    balance: 5,
+    balance: 0,
   })
 }
