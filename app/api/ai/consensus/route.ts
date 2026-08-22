@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// API KEY - YOUR NEW KEY
+// OPENROUTER API KEY - YOUR KEY
 // ============================================
-const API_KEY = 'sk-5124192731614b74b3fba2fe2de2a800'
+const OPENROUTER_API_KEY = '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'
 
 // ============================================
-// MODEL MAPPING - Using DeepSeek
+// MODEL MAPPING - ALL USE WORKING FREE MODEL
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'deepseek-chat',
-  'qwen-3.5-flash': 'deepseek-chat',
-  'ministral-3-8b': 'deepseek-chat',
-  'mistral-small-4': 'deepseek-chat',
-  'deepseek-chat': 'deepseek-chat',
-  'gemini-3-flash': 'deepseek-chat',
-  'gpt-4o-mini': 'deepseek-chat',
-  'claude-haiku-4.5': 'deepseek-chat',
-  'mistral-small': 'deepseek-chat',
-  'gpt-4.1': 'deepseek-chat',
-  'claude-sonnet-4.0': 'deepseek-chat',
-  'gpt-5.4': 'deepseek-chat',
-  'gemini-3-pro-preview': 'deepseek-chat',
-  'grok-3-mini': 'deepseek-chat',
-  'codestral': 'deepseek-chat',
-  'gpt-5.6-terra': 'deepseek-chat',
-  'grok-4.5': 'deepseek-chat',
-  'nova-premier-1.0': 'deepseek-chat',
-  'perplexity-sonar': 'deepseek-chat',
-  'gpt-5.6-luna': 'deepseek-chat',
-  'deepseek-reasoner': 'deepseek-chat',
+  'gpt-5.4-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'qwen-3.5-flash': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'ministral-3-8b': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'mistral-small-4': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'deepseek-chat': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gemini-3-flash': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-4o-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'claude-haiku-4.5': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'mistral-small': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-4.1': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'claude-sonnet-4.0': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-5.4': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gemini-3-pro-preview': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'grok-3-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'codestral': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-5.6-terra': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'grok-4.5': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'nova-premier-1.0': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'perplexity-sonar': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-5.6-luna': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'deepseek-reasoner': 'microsoft/phi-3.5-mini-128k-instruct:free',
 }
 
 // ============================================
@@ -54,25 +54,28 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const modelId = 'deepseek-chat'
-    const modelName = 'DeepSeek Chat'
+    // USING WORKING FREE MODEL
+    const modelId = 'microsoft/phi-3.5-mini-128k-instruct:free'
+    const modelName = 'Phi-3.5 Mini (Free)'
 
-    console.log('🤖 Using DeepSeek Model:', modelId)
+    console.log('🤖 Using Free Model:', modelId)
 
     // ============================================
-    // CALL DEEPSEEK API
+    // CALL OPENROUTER API
     // ============================================
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${API_KEY}`,
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/Bhavyashree15/AIOS',
+        'X-Title': 'AIOS',
       },
       body: JSON.stringify({
         model: modelId,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 50,
+        max_tokens: 200,
       }),
     })
 
@@ -82,23 +85,23 @@ export async function POST(req: NextRequest) {
     // HANDLE API ERRORS
     // ============================================
     if (!response.ok) {
-      console.error('❌ DeepSeek API Error:', JSON.stringify(data, null, 2))
+      console.error('❌ OpenRouter API Error:', JSON.stringify(data, null, 2))
       
-      if (data.error?.message?.includes('quota') || data.error?.message?.includes('insufficient') || data.error?.message?.includes('balance')) {
+      if (data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
         return NextResponse.json({
-          consensus: `⚠️ Insufficient balance. Add funds at https://platform.deepseek.com/billing`,
+          consensus: `⚠️ Free model daily limit reached. Try again later.`,
           consensus_score: 0,
           confidence: 0,
-          error: 'insufficient_balance',
+          error: 'free_model_limit',
         })
       }
       
-      if (data.error?.message?.includes('API key') || data.error?.message?.includes('invalid')) {
+      if (data.error?.message?.includes('unavailable for free')) {
         return NextResponse.json({
-          consensus: `⚠️ Invalid API key. Please check your API key.`,
+          consensus: `⚠️ This free model is currently unavailable. Try again later.`,
           consensus_score: 0,
           confidence: 0,
-          error: 'invalid_key',
+          error: 'model_unavailable',
         })
       }
       
@@ -113,9 +116,8 @@ export async function POST(req: NextRequest) {
     // GET THE AI RESPONSE
     // ============================================
     const aiResponse = data.choices?.[0]?.message?.content || 'No response from AI'
-    const tokensUsed = data.usage?.total_tokens || 0
 
-    console.log('✅ Success! Tokens used:', tokensUsed)
+    console.log('✅ Success! Response length:', aiResponse.length)
 
     return NextResponse.json({
       success: true,
@@ -123,7 +125,7 @@ export async function POST(req: NextRequest) {
       consensus_score: 85,
       confidence: 80,
       model_used: modelName,
-      tokens_used: tokensUsed,
+      is_free: true,
     })
 
   } catch (error) {
@@ -139,5 +141,6 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     balance: 0,
+    is_free: true,
   })
 }
