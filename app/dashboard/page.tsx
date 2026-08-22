@@ -12,7 +12,7 @@ import {
   Copy, Check, ThumbsUp, ThumbsDown, Heart,
   Clock, Moon, Sun, Download, Search as SearchIcon,
   Reply, Pencil, Square, RotateCw,
-  Sparkles as SparklesIcon
+  Sparkles as SparklesIcon, RefreshCw
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -87,7 +87,7 @@ const saveChats = (chats: ChatType[]) => {
 type ChatType = {
   id: string
   title: string
-  messages: { role: 'user' | 'assistant', content: string, timestamp?: string, reactions?: { like: number, dislike: number, heart: number } }[]
+  messages: { role: 'user' | 'assistant', content: string, timestamp?: string, reactions?: { like: number, dislike: number, heart: number }, model_used?: string }[]
   timestamp: string
   model?: string
   unread?: boolean
@@ -146,6 +146,7 @@ export default function DashboardPage() {
   const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(null)
   const [editingText, setEditingText] = useState('')
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null)
+  const [modelUsed, setModelUsed] = useState<string | null>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -358,6 +359,7 @@ export default function DashboardPage() {
     setEditingMessageIndex(null)
     setSidebarOpen(false)
     setUnreadCount(0)
+    setModelUsed(null)
     saveChats([newChat, ...chats])
   }
 
@@ -373,6 +375,7 @@ export default function DashboardPage() {
       setReplyToIndex(null)
       setEditingMessageIndex(null)
       setSidebarOpen(false)
+      setModelUsed(null)
       setChats(prev => prev.map(c => 
         c.id === chatId ? { ...c, unread: false } : c
       ))
@@ -696,6 +699,10 @@ export default function DashboardPage() {
         if (data.wallet_balance !== undefined) {
           setWalletBalance(data.wallet_balance)
         }
+        // Store which model was used
+        if (data.model_used) {
+          setModelUsed(data.model_used)
+        }
       } else {
         assistantContent = '⚠️ No response from AI. Please try again.'
       }
@@ -704,7 +711,8 @@ export default function DashboardPage() {
         role: 'assistant', 
         content: assistantContent, 
         timestamp: new Date().toISOString(),
-        reactions: { like: 0, dislike: 0, heart: 0 }
+        reactions: { like: 0, dislike: 0, heart: 0 },
+        model_used: data.model_used || modelUsed || 'Gemini 3.6 Flash'
       }
       
       const finalMessages = [...updatedMessages, assistantMsg]
@@ -744,6 +752,15 @@ export default function DashboardPage() {
     }
     setIsLoading(false)
     abortControllerRef.current = null
+  }
+
+  const askAnotherAI = () => {
+    // Get the last user message and regenerate with a different model
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+    if (lastUserMsg) {
+      setPrompt(lastUserMsg.content)
+      setTimeout(() => handleSubmit(), 100)
+    }
   }
 
   const addFunds = () => {
@@ -1029,7 +1046,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - CHATGPT STYLE ===== */}
+        {/* ===== MESSAGES - CHATGPT STYLE WITH MODEL NAME ===== */}
         <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
@@ -1143,43 +1160,67 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       ) : (
-                        <div 
-                          className={`px-4 py-3 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
-                          style={{
-                            backgroundColor: msg.role === 'user' 
-                              ? (isDark ? '#2563EB' : '#0A7CFF')
-                              : 'transparent',
-                            color: msg.role === 'user' 
-                              ? '#ffffff'
-                              : (isDark ? '#e5e5e5' : '#1a1a1a'),
-                            borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '0px',
-                            maxWidth: msg.role === 'user' ? 'auto' : '100%',
-                            width: msg.role === 'assistant' ? '100%' : 'auto',
-                            wordWrap: 'break-word',
-                            fontSize: '16px',
-                            lineHeight: '1.6',
-                          }}
-                        >
-                          {msg.role === 'assistant' ? (
-                            <div className="prose prose-sm max-w-none dark:prose-invert">
-                              <MarkdownContent content={isTyping && i === messages.length - 1 && isAI && !isStopped ? typingText : msg.content} />
+                        <>
+                          <div 
+                            className={`px-4 py-3 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
+                            style={{
+                              backgroundColor: msg.role === 'user' 
+                                ? (isDark ? '#2563EB' : '#0A7CFF')
+                                : 'transparent',
+                              color: msg.role === 'user' 
+                                ? '#ffffff'
+                                : (isDark ? '#e5e5e5' : '#1a1a1a'),
+                              borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '0px',
+                              maxWidth: msg.role === 'user' ? 'auto' : '100%',
+                              width: msg.role === 'assistant' ? '100%' : 'auto',
+                              wordWrap: 'break-word',
+                              fontSize: '16px',
+                              lineHeight: '1.6',
+                            }}
+                          >
+                            {msg.role === 'assistant' ? (
+                              <div className="prose prose-sm max-w-none dark:prose-invert">
+                                <MarkdownContent content={isTyping && i === messages.length - 1 && isAI && !isStopped ? typingText : msg.content} />
+                              </div>
+                            ) : (
+                              <div 
+                                className="whitespace-pre-wrap leading-relaxed"
+                                style={{ 
+                                  color: '#ffffff',
+                                  fontSize: '16px',
+                                  lineHeight: '1.6',
+                                }}
+                              >
+                                {msg.content}
+                              </div>
+                            )}
+                            {isTyping && i === messages.length - 1 && isAI && !isStopped && (
+                              <span className="animate-pulse" style={{ color: isDark ? '#e5e5e5' : '#1a1a1a' }}>|</span>
+                            )}
+                          </div>
+
+                          {/* Model Name Badge - Show which AI model was used */}
+                          {isAI && msg.model_used && (
+                            <div className={`flex items-center gap-1 mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                              <span className="text-[10px]">🤖 {msg.model_used}</span>
                             </div>
-                          ) : (
-                            <div 
-                              className="whitespace-pre-wrap leading-relaxed"
-                              style={{ 
-                                color: '#ffffff',
-                                fontSize: '16px',
-                                lineHeight: '1.6',
-                              }}
+                          )}
+
+                          {/* Ask Another AI Button - Like AI Fiesta */}
+                          {isAI && (
+                            <button
+                              onClick={askAnotherAI}
+                              className={`flex items-center gap-1.5 mt-1 text-xs px-2 py-1 rounded-lg transition-all ${
+                                isDark 
+                                  ? 'bg-[#2a2a2a] hover:bg-[#333] text-gray-300' 
+                                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                              }`}
                             >
-                              {msg.content}
-                            </div>
+                              <RefreshCw className="h-3 w-3" />
+                              <span>Ask Another AI</span>
+                            </button>
                           )}
-                          {isTyping && i === messages.length - 1 && isAI && !isStopped && (
-                            <span className="animate-pulse" style={{ color: isDark ? '#e5e5e5' : '#1a1a1a' }}>|</span>
-                          )}
-                        </div>
+                        </>
                       )}
 
                       {!isEditing && (
