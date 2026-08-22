@@ -1,36 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// GEMINI API KEY - YOUR GOOGLE AI STUDIO KEY
+// GEMINI API KEY - YOUR KEY
 // ============================================
-const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || 'AQ.Ab8RN6LF7WDE4OWgIdNSjLlLLfcrOG5-peE47twcAQKBsxm1LA'
+// From: AI Studio - Free tier
+const GEMINI_API_KEY = 'AQ.Ab8RN6Lbnzr8Lf_O4d9RVFNbL2kcw5LeHwsYGLiSd6-AZ5VlHg'
 
 // ============================================
-// MODEL MAPPING - UPDATED TO NEW MODEL
+// MODEL MAPPING - Gemini Models
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  // ALL models now use the new Gemini 3.6 Flash
-  'gpt-5.4-mini': 'gemini-3.6-flash',
-  'qwen-3.5-flash': 'gemini-3.6-flash',
-  'ministral-3-8b': 'gemini-3.6-flash',
-  'mistral-small-4': 'gemini-3.6-flash',
-  'deepseek-chat': 'gemini-3.6-flash',
-  'gemini-3-flash': 'gemini-3.6-flash',
-  'gpt-4o-mini': 'gemini-3.6-flash',
-  'claude-haiku-4.5': 'gemini-3.6-flash',
-  'mistral-small': 'gemini-3.6-flash',
-  'gpt-4.1': 'gemini-3.6-flash',
-  'claude-sonnet-4.0': 'gemini-3.6-flash',
-  'gpt-5.4': 'gemini-3.6-flash',
-  'gemini-3-pro-preview': 'gemini-3.6-flash',
-  'grok-3-mini': 'gemini-3.6-flash',
-  'codestral': 'gemini-3.6-flash',
-  'gpt-5.6-terra': 'gemini-3.6-flash',
-  'grok-4.5': 'gemini-3.6-flash',
-  'nova-premier-1.0': 'gemini-3.6-flash',
-  'perplexity-sonar': 'gemini-3.6-flash',
-  'gpt-5.6-luna': 'gemini-3.6-flash',
-  'deepseek-reasoner': 'gemini-3.6-flash',
+  'gpt-5.4-mini': 'gemini-2.0-flash',
+  'qwen-3.5-flash': 'gemini-2.0-flash',
+  'ministral-3-8b': 'gemini-2.0-flash',
+  'mistral-small-4': 'gemini-2.0-flash',
+  'deepseek-chat': 'gemini-2.0-flash',
+  'gemini-3-flash': 'gemini-2.0-flash',
+  'gpt-4o-mini': 'gemini-2.0-flash',
+  'claude-haiku-4.5': 'gemini-2.0-flash',
+  'mistral-small': 'gemini-2.0-flash',
+  'gpt-4.1': 'gemini-2.0-flash',
+  'claude-sonnet-4.0': 'gemini-2.0-flash',
+  'gpt-5.4': 'gemini-2.0-flash',
+  'gemini-3-pro-preview': 'gemini-2.0-flash',
+  'grok-3-mini': 'gemini-2.0-flash',
+  'codestral': 'gemini-2.0-flash',
+  'gpt-5.6-terra': 'gemini-2.0-flash',
+  'grok-4.5': 'gemini-2.0-flash',
+  'nova-premier-1.0': 'gemini-2.0-flash',
+  'perplexity-sonar': 'gemini-2.0-flash',
+  'gpt-5.6-luna': 'gemini-2.0-flash',
+  'deepseek-reasoner': 'gemini-2.0-flash',
 }
 
 // ============================================
@@ -55,13 +55,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // USING NEW MODEL NAME
-    const modelId = 'gemini-3.6-flash'
+    const modelId = MODEL_MAP[models[0]] || 'gemini-2.0-flash'
+    const modelName = models[0] || 'Gemini 2.0 Flash'
 
     console.log('🤖 Using Gemini Model:', modelId)
+    console.log('🔑 Using API Key:', GEMINI_API_KEY.substring(0, 20) + '...')
 
     // ============================================
-    // CALL GEMINI API WITH NEW MODEL
+    // CALL GEMINI API
     // ============================================
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
           ],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 200,
+            maxOutputTokens: 100,
             topP: 0.95,
             topK: 40,
           }
@@ -94,16 +95,6 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       console.error('❌ Gemini API Error:', JSON.stringify(data, null, 2))
       
-      // Check for model availability errors
-      if (data.error?.message?.includes('no longer available')) {
-        return NextResponse.json({
-          consensus: `⚠️ Model updated. Please restart the app.`,
-          consensus_score: 0,
-          confidence: 0,
-          error: 'model_updated',
-        })
-      }
-      
       if (data.error?.message?.includes('quota') || data.error?.message?.includes('limit') || data.error?.message?.includes('exceeded')) {
         return NextResponse.json({
           consensus: `⚠️ Free tier quota exceeded. Try again later.`,
@@ -113,12 +104,21 @@ export async function POST(req: NextRequest) {
         })
       }
       
-      if (data.error?.message?.includes('API key')) {
+      if (data.error?.message?.includes('API key') || data.error?.message?.includes('authentication') || data.error?.message?.includes('credentials')) {
         return NextResponse.json({
           consensus: `⚠️ Invalid API key. Please check your Google API key.`,
           consensus_score: 0,
           confidence: 0,
           error: 'invalid_key',
+        })
+      }
+      
+      if (data.error?.message?.includes('model') || data.error?.message?.includes('not found')) {
+        return NextResponse.json({
+          consensus: `⚠️ Model not found. Using gemini-1.5-flash instead.`,
+          consensus_score: 0,
+          confidence: 0,
+          error: 'model_not_found',
         })
       }
       
@@ -134,12 +134,14 @@ export async function POST(req: NextRequest) {
     // ============================================
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from AI'
 
+    console.log('✅ Success! Response length:', aiResponse.length)
+
     return NextResponse.json({
       success: true,
       consensus: aiResponse,
       consensus_score: 85,
       confidence: 80,
-      model_used: modelId,
+      model_used: modelName,
       is_free: true,
     })
 
