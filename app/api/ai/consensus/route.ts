@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// OPENAI API KEY - YOUR NEW KEY
+// OPENAI API KEY - YOUR VALID KEY
 // ============================================
 const OPENAI_API_KEY = 'sk-285ee6afb0ed4a2b8ca2be990396ac1f'
 
@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
     const modelName = models[0] || 'GPT-4o Mini'
 
     console.log('🤖 Using OpenAI Model:', modelId)
+    console.log('🔑 Key:', OPENAI_API_KEY.substring(0, 10) + '...')
 
     // ============================================
     // CALL OPENAI API
@@ -84,21 +85,21 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       console.error('❌ OpenAI API Error:', JSON.stringify(data, null, 2))
       
-      if (data.error?.message?.includes('quota') || data.error?.message?.includes('insufficient') || data.error?.message?.includes('billing')) {
+      if (data.error?.type === 'invalid_request_error' && data.error?.message?.includes('API key')) {
         return NextResponse.json({
-          consensus: `⚠️ Insufficient quota. Please add payment method at https://platform.openai.com/settings/billing`,
-          consensus_score: 0,
-          confidence: 0,
-          error: 'insufficient_quota',
-        })
-      }
-      
-      if (data.error?.message?.includes('Invalid API key')) {
-        return NextResponse.json({
-          consensus: `⚠️ Invalid API key. Please check your OpenAI API key.`,
+          consensus: `⚠️ API key error: ${data.error?.message || 'Invalid API key'}`,
           consensus_score: 0,
           confidence: 0,
           error: 'invalid_key',
+        })
+      }
+      
+      if (data.error?.message?.includes('quota') || data.error?.message?.includes('insufficient') || data.error?.message?.includes('billing')) {
+        return NextResponse.json({
+          consensus: `⚠️ Insufficient quota. Please add billing at https://platform.openai.com/settings/billing`,
+          consensus_score: 0,
+          confidence: 0,
+          error: 'insufficient_quota',
         })
       }
       
