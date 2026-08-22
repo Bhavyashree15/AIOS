@@ -6,10 +6,9 @@ import { NextRequest, NextResponse } from 'next/server'
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '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'
 
 // ============================================
-// MODEL MAPPING - CONFIRMED WORKING MODELS
+// CONFIRMED WORKING FREE MODELS
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  // Using ONLY confirmed working models
   'gpt-5.4-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
   'qwen-3.5-flash': 'microsoft/phi-3.5-mini-128k-instruct:free',
   'ministral-3-8b': 'microsoft/phi-3.5-mini-128k-instruct:free',
@@ -42,12 +41,7 @@ function calculateCost(modelId: string, tokens: number): number {
   if (modelId.includes(':free')) {
     return 0
   }
-  const rates: Record<string, number> = {
-    'openai/gpt-4o': 0.005,
-    'anthropic/claude-3.5-sonnet': 0.003,
-  }
-  const rate = rates[modelId] || 0.001
-  return (tokens / 1000) * rate * 1.2
+  return 0
 }
 
 // ============================================
@@ -72,7 +66,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Use a hardcoded working model
+    // ONLY USE THIS MODEL - CONFIRMED WORKING
     const modelId = 'microsoft/phi-3.5-mini-128k-instruct:free'
 
     // ============================================
@@ -90,7 +84,7 @@ export async function POST(req: NextRequest) {
         model: modelId,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 200,
+        max_tokens: 300,
       }),
     })
 
@@ -109,6 +103,16 @@ export async function POST(req: NextRequest) {
           confidence: 0,
           wallet_balance: walletBalance,
           error: 'insufficient_credits',
+        })
+      }
+      
+      if (data.error?.message?.includes('No endpoints found')) {
+        return NextResponse.json({
+          consensus: `⚠️ Free model currently unavailable. Please try again later.`,
+          consensus_score: 0,
+          confidence: 0,
+          wallet_balance: walletBalance,
+          error: 'model_unavailable',
         })
       }
       
