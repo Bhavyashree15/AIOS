@@ -677,7 +677,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ 
           prompt: currentPrompt, 
           models: selectedModels,
-          max_tokens: 30
+          max_tokens: 20  // ← CHANGED TO 20
         }),
         signal: abortControllerRef.current.signal
       })
