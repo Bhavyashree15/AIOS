@@ -11,8 +11,12 @@ import {
   Paperclip, File, Mic, MicOff,
   Copy, Check, ThumbsUp, ThumbsDown, Heart,
   Clock, Moon, Sun, Download, Search as SearchIcon,
-  Reply, Pencil, Square
+  Reply, Pencil, Square, RotateCw,
+  Sparkles as SparklesIcon
 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const ALL_MODELS = {
   free: [
@@ -53,11 +57,11 @@ const getAllModels = () => {
   )
 }
 
-const QUICK_ACTIONS = [
-  { icon: Image, label: 'Create an Image', prompt: 'Create a detailed description of a futuristic city' },
-  { icon: GitBranch, label: 'Compare answers', prompt: 'Compare these concepts:' },
-  { icon: Globe, label: 'Web Search', prompt: 'Search for the latest information about' },
-  { icon: FileText, label: 'Create Document', prompt: 'Write a professional document about' },
+const SUGGESTIONS = [
+  { icon: '🎨', label: 'Create an image', prompt: 'Create a detailed description of a futuristic city' },
+  { icon: '📊', label: 'Compare ideas', prompt: 'Compare these concepts:' },
+  { icon: '🔍', label: 'Search the web', prompt: 'Search for the latest information about' },
+  { icon: '📝', label: 'Write a document', prompt: 'Write a professional document about' },
 ]
 
 const STORAGE_KEY = 'aios_chats'
@@ -139,6 +143,9 @@ export default function DashboardPage() {
   const [showExportMenu, setShowExportMenu] = useState(false)
   const [replyToMessage, setReplyToMessage] = useState<any>(null)
   const [replyToIndex, setReplyToIndex] = useState<number | null>(null)
+  const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(null)
+  const [editingText, setEditingText] = useState('')
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -348,6 +355,7 @@ export default function DashboardPage() {
     setUploadedFiles([])
     setReplyToMessage(null)
     setReplyToIndex(null)
+    setEditingMessageIndex(null)
     setSidebarOpen(false)
     setUnreadCount(0)
     saveChats([newChat, ...chats])
@@ -363,6 +371,7 @@ export default function DashboardPage() {
       setUploadedFiles([])
       setReplyToMessage(null)
       setReplyToIndex(null)
+      setEditingMessageIndex(null)
       setSidebarOpen(false)
       setChats(prev => prev.map(c => 
         c.id === chatId ? { ...c, unread: false } : c
@@ -389,8 +398,11 @@ export default function DashboardPage() {
     setChats(prev => prev.map(c => {
       if (c.id === chatId) {
         let title = c.title
-        if (newMessages.length === 1 && newMessages[0].role === 'user') {
-          title = newMessages[0].content.slice(0, 30) + (newMessages[0].content.length > 30 ? '...' : '')
+        const firstUserMsg = newMessages.find(m => m.role === 'user')
+        if (firstUserMsg) {
+          title = firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '')
+        } else if (newMessages.length === 0) {
+          title = 'New Chat'
         }
         return { ...c, messages: newMessages, title }
       }
@@ -400,8 +412,11 @@ export default function DashboardPage() {
       saveChats(chats.map(c => {
         if (c.id === chatId) {
           let title = c.title
-          if (newMessages.length === 1 && newMessages[0].role === 'user') {
-            title = newMessages[0].content.slice(0, 30) + (newMessages[0].content.length > 30 ? '...' : '')
+          const firstUserMsg = newMessages.find(m => m.role === 'user')
+          if (firstUserMsg) {
+            title = firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '')
+          } else if (newMessages.length === 0) {
+            title = 'New Chat'
           }
           return { ...c, messages: newMessages, title }
         }
@@ -422,24 +437,18 @@ export default function DashboardPage() {
     fetchWallet()
   }, [])
 
-  // ===== MODEL SELECTION LOGIC =====
   const toggleModel = (id: string) => {
     const isPaid = getAllModels().find(m => m.id === id)?.tier === 'pro'
     
     if (selectedModels.includes(id)) {
-      // For paid models: only deselect if it's not the last selected
       if (isPaid && selectedModels.length === 1) {
-        return // Can't deselect the last paid model
+        return
       }
-      // For free models: can deselect freely
       setSelectedModels(selectedModels.filter(m => m !== id))
     } else {
-      // Adding a model
       if (isPaid) {
-        // Paid: replace all selected with just this one
         setSelectedModels([id])
       } else {
-        // Free: add to selection
         setSelectedModels([...selectedModels, id])
       }
     }
@@ -453,7 +462,6 @@ export default function DashboardPage() {
     return models
   }
 
-  // Auto select - picks the best free model
   const handleAutoSelect = () => {
     setSelectedModels(['gpt-5.4-mini'])
     setShowModelPicker(false)
@@ -552,6 +560,51 @@ export default function DashboardPage() {
   const cancelReply = () => {
     setReplyToMessage(null)
     setReplyToIndex(null)
+  }
+
+  const startEditing = (message: any, index: number) => {
+    setEditingMessageIndex(index)
+    setEditingText(message.content)
+  }
+
+  const cancelEditing = () => {
+    setEditingMessageIndex(null)
+    setEditingText('')
+  }
+
+  const saveEditing = (index: number) => {
+    if (editingText.trim()) {
+      const updatedMessages = [...messages]
+      updatedMessages[index] = { ...updatedMessages[index], content: editingText.trim() }
+      setMessages(updatedMessages)
+      if (currentChatId) {
+        updateChatMessages(currentChatId, updatedMessages)
+      }
+      setEditingMessageIndex(null)
+      setEditingText('')
+    }
+  }
+
+  const regenerateResponse = (index: number) => {
+    // Find the user message before this AI response
+    let userPrompt = ''
+    for (let i = index - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        userPrompt = messages[i].content
+        break
+      }
+    }
+    if (userPrompt) {
+      // Remove this AI message and regenerate
+      const updatedMessages = messages.slice(0, index)
+      setMessages(updatedMessages)
+      if (currentChatId) {
+        updateChatMessages(currentChatId, updatedMessages)
+      }
+      // Resubmit the prompt
+      setPrompt(userPrompt)
+      setTimeout(() => handleSubmit(), 100)
+    }
   }
 
   const stopGeneration = () => {
@@ -708,8 +761,8 @@ export default function DashboardPage() {
     }
   }
 
-  const handleQuickAction = (actionPrompt: string) => {
-    setPrompt(actionPrompt)
+  const handleSuggestionClick = (promptText: string) => {
+    setPrompt(promptText)
     setTimeout(() => {
       handleSubmit()
     }, 100)
@@ -727,8 +780,70 @@ export default function DashboardPage() {
     return 'text-red-600'
   }
 
+  // Custom Markdown renderer with syntax highlighting
+  const MarkdownContent = ({ content }: { content: string }) => {
+    return (
+      <ReactMarkdown
+        components={{
+          code({ node, inline, className, children, ...props }: any) {
+            const match = /language-(\w+)/.exec(className || '')
+            return !inline && match ? (
+              <SyntaxHighlighter
+                style={isDark ? vscDarkPlus : vs}
+                language={match[1]}
+                PreTag="div"
+                {...props}
+              >
+                {String(children).replace(/\n$/, '')}
+              </SyntaxHighlighter>
+            ) : (
+              <code className={`${className} ${isDark ? 'bg-[#2a2a2a] text-[#e5e5e5]' : 'bg-gray-100 text-gray-800'} px-1.5 py-0.5 rounded text-sm`} {...props}>
+                {children}
+              </code>
+            )
+          },
+          p({ children }: any) {
+            return <p className="mb-2 last:mb-0">{children}</p>
+          },
+          strong({ children }: any) {
+            return <strong className="font-bold">{children}</strong>
+          },
+          em({ children }: any) {
+            return <em className="italic">{children}</em>
+          },
+          ul({ children }: any) {
+            return <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>
+          },
+          ol({ children }: any) {
+            return <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>
+          },
+          li({ children }: any) {
+            return <li>{children}</li>
+          },
+          blockquote({ children }: any) {
+            return <blockquote className={`border-l-4 ${isDark ? 'border-gray-600' : 'border-gray-300'} pl-3 my-2 italic`}>{children}</blockquote>
+          },
+          h1({ children }: any) {
+            return <h1 className="text-2xl font-bold mb-2">{children}</h1>
+          },
+          h2({ children }: any) {
+            return <h2 className="text-xl font-bold mb-2">{children}</h2>
+          },
+          h3({ children }: any) {
+            return <h3 className="text-lg font-bold mb-2">{children}</h3>
+          },
+          a({ href, children }: any) {
+            return <a href={href} className="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">{children}</a>
+          },
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    )
+  }
+
   return (
-    <div className={`flex h-screen ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'} ${isDark ? 'text-white' : 'text-gray-800'} overflow-hidden`}>
+    <div className={`flex h-screen ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'} ${isDark ? 'text-white' : 'text-gray-800'} overflow-hidden font-sans`}>
       
       <AnimatePresence>
         {sidebarOpen && (
@@ -917,39 +1032,87 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - CHATGPT STYLE ===== */}
-        <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-2 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
+        {/* ===== MESSAGES - CHATGPT STYLE WITH MARKDOWN ===== */}
+        <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
-                <div className="w-16 h-16 rounded-full bg-[#25D366] flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-4">AI</div>
-                <h2 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Hi User, how can I help you today?</h2>
-                <p className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-sm mt-1`}>Ask me anything, upload a file, or use voice input 🎤</p>
-                <div className="flex flex-wrap gap-2 mt-4 justify-center">
-                  {QUICK_ACTIONS.map((action, i) => (
-                    <button key={i} onClick={() => handleQuickAction(action.prompt)} className={`flex items-center gap-1.5 px-3 py-2 ${isDark ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'} border rounded-lg text-sm transition-all shadow-sm`}>
-                      <action.icon className="h-3.5 w-3.5" />
-                      {action.label}
+              <div className="h-full flex flex-col items-center justify-center text-center max-w-3xl mx-auto">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="w-16 h-16 rounded-full bg-[#25D366] flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-6"
+                >
+                  AI
+                </motion.div>
+                <motion.h2 
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className={`text-3xl font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}
+                >
+                  Hi User, how can I help you today?
+                </motion.h2>
+                <motion.p 
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-sm mt-2`}
+                >
+                  Ask me anything, upload a file, or use voice input 🎤
+                </motion.p>
+                
+                <motion.div 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="grid grid-cols-2 gap-3 mt-6 w-full max-w-2xl"
+                >
+                  {SUGGESTIONS.map((suggestion, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSuggestionClick(suggestion.prompt)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
+                        isDark 
+                          ? 'bg-[#2a2a2a] hover:bg-[#333] border-gray-700' 
+                          : 'bg-white hover:bg-gray-50 border-gray-200'
+                      } border shadow-sm`}
+                    >
+                      <span className="text-xl">{suggestion.icon}</span>
+                      <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {suggestion.label}
+                      </span>
                     </button>
                   ))}
-                </div>
-                <div className={`mt-6 flex items-center gap-4 text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                </motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className={`mt-6 flex items-center gap-4 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}
+                >
                   <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {selectedModels.length} model</span>
                   <span className="flex items-center gap-1"><Wallet className="h-3 w-3" /> ₹{walletBalance.toFixed(2)}</span>
                   <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> Upload</span>
                   <span className="flex items-center gap-1"><Mic className="h-3 w-3" /> Voice</span>
-                </div>
+                </motion.div>
               </div>
             ) : (
               messages.map((msg: any, i: number) => {
                 const isAI = msg.role === 'assistant'
+                const isEditing = editingMessageIndex === i
+                const msgId = `msg-${i}`
+                
                 return (
                   <motion.div 
                     key={i}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}
+                    onMouseEnter={() => setHoveredMessageId(msgId)}
+                    onMouseLeave={() => setHoveredMessageId(null)}
                   >
                     <div className={`relative max-w-[100%] w-full flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                       {msg.replyTo && (
@@ -959,57 +1122,116 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      <div 
-                        className={`px-4 py-3 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
-                        style={{
-                          backgroundColor: msg.role === 'user' 
-                            ? (isDark ? '#2563EB' : '#0A7CFF')
-                            : 'transparent',
-                          color: msg.role === 'user' 
-                            ? '#ffffff'
-                            : (isDark ? '#e5e5e5' : '#1a1a1a'),
-                          borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '0px',
-                          maxWidth: msg.role === 'user' ? 'auto' : '100%',
-                          width: msg.role === 'assistant' ? '100%' : 'auto',
-                          wordWrap: 'break-word',
-                          fontSize: '16px',
-                          lineHeight: '1.6',
-                        }}
-                      >
+                      {/* Edit mode for user messages */}
+                      {isEditing && msg.role === 'user' ? (
+                        <div className="w-full flex flex-col gap-2">
+                          <textarea
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className={`w-full p-3 rounded-lg text-sm ${isDark ? 'bg-[#2a2a2a] text-white border-gray-700' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:border-emerald-500 resize-none`}
+                            rows={3}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveEditing(i)}
+                              className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 transition-all"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className={`px-3 py-1 rounded-lg text-xs font-medium ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} transition-all`}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
                         <div 
-                          className="whitespace-pre-wrap leading-relaxed"
-                          style={{ 
+                          className={`px-4 py-3 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
+                          style={{
+                            backgroundColor: msg.role === 'user' 
+                              ? (isDark ? '#2563EB' : '#0A7CFF')
+                              : 'transparent',
                             color: msg.role === 'user' 
                               ? '#ffffff'
                               : (isDark ? '#e5e5e5' : '#1a1a1a'),
+                            borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '0px',
+                            maxWidth: msg.role === 'user' ? 'auto' : '100%',
+                            width: msg.role === 'assistant' ? '100%' : 'auto',
+                            wordWrap: 'break-word',
                             fontSize: '16px',
                             lineHeight: '1.6',
                           }}
                         >
-                          {isTyping && i === messages.length - 1 && isAI && !isStopped
-                            ? typingText 
-                            : msg.content
-                          }
+                          {msg.role === 'assistant' ? (
+                            <div className="prose prose-sm max-w-none dark:prose-invert">
+                              <MarkdownContent content={isTyping && i === messages.length - 1 && isAI && !isStopped ? typingText : msg.content} />
+                            </div>
+                          ) : (
+                            <div 
+                              className="whitespace-pre-wrap leading-relaxed"
+                              style={{ 
+                                color: '#ffffff',
+                                fontSize: '16px',
+                                lineHeight: '1.6',
+                              }}
+                            >
+                              {msg.content}
+                            </div>
+                          )}
                           {isTyping && i === messages.length - 1 && isAI && !isStopped && (
                             <span className="animate-pulse" style={{ color: isDark ? '#e5e5e5' : '#1a1a1a' }}>|</span>
                           )}
                         </div>
-                      </div>
+                      )}
 
-                      {isAI && (
-                        <div className="flex items-center gap-0.5 mt-1" style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>
+                      {/* Actions - visible on hover or always for AI */}
+                      {!isEditing && (
+                        <div className={`flex items-center gap-0.5 mt-1 transition-opacity duration-200 ${
+                          msg.role === 'assistant' ? 'opacity-100' : hoveredMessageId === msgId ? 'opacity-100' : 'opacity-0'
+                        }`} style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>
+                          {/* Timestamp on hover */}
+                          <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'} mr-1`}>
+                            {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          
                           <button
-                            onClick={() => copyMessage(msg.content, `msg-${i}`)}
+                            onClick={() => copyMessage(msg.content, msgId)}
                             className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
                             style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
-                            {copiedMessageId === `msg-${i}` ? (
+                            {copiedMessageId === msgId ? (
                               <Check className="h-3.5 w-3.5 text-green-500" />
                             ) : (
                               <Copy className="h-3.5 w-3.5" />
                             )}
                             <span className="text-[10px]">Copy</span>
                           </button>
+                          
+                          {/* Edit button - only for user messages */}
+                          {msg.role === 'user' && (
+                            <button
+                              onClick={() => startEditing(msg, i)}
+                              className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
+                              style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              <span className="text-[10px]">Edit</span>
+                            </button>
+                          )}
+                          
+                          {/* Regenerate - only for AI messages */}
+                          {msg.role === 'assistant' && (
+                            <button
+                              onClick={() => regenerateResponse(i)}
+                              className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
+                              style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
+                            >
+                              <RotateCw className="h-3.5 w-3.5" />
+                              <span className="text-[10px]">Regenerate</span>
+                            </button>
+                          )}
                           
                           <button
                             onClick={() => addReaction(i, 'like')}
@@ -1106,13 +1328,12 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* ===== MODEL SELECTOR - PROFESSIONAL ===== */}
           <div className="relative">
             <button 
               onClick={() => setShowModelPicker(!showModelPicker)} 
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs w-full justify-between ${
                 isDark ? 'bg-[#2a2a2a] hover:bg-[#333] border-gray-700' : 'bg-white hover:bg-gray-50 border-gray-200'
-              } border transition-all`}
+              } border transition-all mb-2`}
             >
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-1">
@@ -1146,7 +1367,6 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                {/* Tabs */}
                 <div className="flex gap-1 mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                   {['auto', 'free', 'paid'].map((tab) => (
                     <button
@@ -1163,7 +1383,6 @@ export default function DashboardPage() {
                   ))}
                 </div>
 
-                {/* Search */}
                 <div className="relative mb-3">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                   <input
@@ -1177,7 +1396,6 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                {/* Auto Mode */}
                 {modelTab === 'auto' && (
                   <button
                     onClick={handleAutoSelect}
@@ -1196,7 +1414,6 @@ export default function DashboardPage() {
                   </button>
                 )}
 
-                {/* Model List */}
                 <div className="text-[10px] text-gray-400 mb-2">
                   {modelTab === 'free' && 'Select multiple free models'}
                   {modelTab === 'paid' && 'Select one paid model'}
@@ -1206,15 +1423,12 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-2 gap-1">
                   {getCurrentModels().map((model) => {
                     const isSelected = selectedModels.includes(model.id)
-                    const isPaid = model.tier === 'pro'
-                    const canSelect = !isPaid || selectedModels.length === 0 || (isPaid && selectedModels.length === 1 && selectedModels[0] === model.id)
                     
                     return (
                       <button
                         key={model.id}
                         onClick={() => {
                           if (modelTab === 'auto') {
-                            // In auto mode, clicking selects just that model
                             setSelectedModels([model.id])
                           } else {
                             toggleModel(model.id)
@@ -1351,6 +1565,8 @@ export default function DashboardPage() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .prose pre { background: transparent !important; padding: 0 !important; }
+        .prose code { font-size: 0.875em; }
       `}</style>
     </div>
   )
