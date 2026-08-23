@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// OPENROUTER API KEY - YOUR KEY
+// OPENROUTER API KEY - YOUR NEW KEY
 // ============================================
-const OPENROUTER_API_KEY = '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'
+const OPENROUTER_API_KEY = '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'
 
 // ============================================
-// MODEL MAPPING - ALL USE WORKING FREE MODEL
+// MODEL MAPPING - ALL TO GPT-4o-mini
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'qwen-3.5-flash': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'ministral-3-8b': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'mistral-small-4': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'deepseek-chat': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gemini-3-flash': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gpt-4o-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'claude-haiku-4.5': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'mistral-small': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gpt-4.1': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'claude-sonnet-4.0': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gpt-5.4': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gemini-3-pro-preview': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'grok-3-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'codestral': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gpt-5.6-terra': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'grok-4.5': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'nova-premier-1.0': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'perplexity-sonar': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gpt-5.6-luna': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'deepseek-reasoner': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-5.4-mini': 'openai/gpt-4o-mini',
+  'qwen-3.5-flash': 'openai/gpt-4o-mini',
+  'ministral-3-8b': 'openai/gpt-4o-mini',
+  'mistral-small-4': 'openai/gpt-4o-mini',
+  'deepseek-chat': 'openai/gpt-4o-mini',
+  'gemini-3-flash': 'openai/gpt-4o-mini',
+  'gpt-4o-mini': 'openai/gpt-4o-mini',
+  'claude-haiku-4.5': 'openai/gpt-4o-mini',
+  'mistral-small': 'openai/gpt-4o-mini',
+  'gpt-4.1': 'openai/gpt-4o-mini',
+  'claude-sonnet-4.0': 'openai/gpt-4o-mini',
+  'gpt-5.4': 'openai/gpt-4o-mini',
+  'gemini-3-pro-preview': 'openai/gpt-4o-mini',
+  'grok-3-mini': 'openai/gpt-4o-mini',
+  'codestral': 'openai/gpt-4o-mini',
+  'gpt-5.6-terra': 'openai/gpt-4o-mini',
+  'grok-4.5': 'openai/gpt-4o-mini',
+  'nova-premier-1.0': 'openai/gpt-4o-mini',
+  'perplexity-sonar': 'openai/gpt-4o-mini',
+  'gpt-5.6-luna': 'openai/gpt-4o-mini',
+  'deepseek-reasoner': 'openai/gpt-4o-mini',
 }
 
 // ============================================
@@ -54,11 +54,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // USING WORKING FREE MODEL
-    const modelId = 'microsoft/phi-3.5-mini-128k-instruct:free'
-    const modelName = 'Phi-3.5 Mini (Free)'
+    const modelId = 'openai/gpt-4o-mini'
+    const modelName = 'GPT-4o Mini'
 
-    console.log('🤖 Using Free Model:', modelId)
+    console.log('🤖 Using OpenRouter Model:', modelId)
 
     // ============================================
     // CALL OPENROUTER API
@@ -75,7 +74,7 @@ export async function POST(req: NextRequest) {
         model: modelId,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 200,
+        max_tokens: 30, // LOW TO SAVE CREDITS
       }),
     })
 
@@ -87,21 +86,21 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       console.error('❌ OpenRouter API Error:', JSON.stringify(data, null, 2))
       
-      if (data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
+      if (response.status === 402 || data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
         return NextResponse.json({
-          consensus: `⚠️ Free model daily limit reached. Try again later.`,
+          consensus: `⚠️ Insufficient credits. Add $5 at https://openrouter.ai/settings/creds`,
           consensus_score: 0,
           confidence: 0,
-          error: 'free_model_limit',
+          error: 'insufficient_credits',
         })
       }
       
-      if (data.error?.message?.includes('unavailable for free')) {
+      if (data.error?.message?.includes('API key') || data.error?.message?.includes('invalid')) {
         return NextResponse.json({
-          consensus: `⚠️ This free model is currently unavailable. Try again later.`,
+          consensus: `⚠️ Invalid API key. Please check your key.`,
           consensus_score: 0,
           confidence: 0,
-          error: 'model_unavailable',
+          error: 'invalid_key',
         })
       }
       
@@ -116,8 +115,9 @@ export async function POST(req: NextRequest) {
     // GET THE AI RESPONSE
     // ============================================
     const aiResponse = data.choices?.[0]?.message?.content || 'No response from AI'
+    const tokensUsed = data.usage?.total_tokens || 0
 
-    console.log('✅ Success! Response length:', aiResponse.length)
+    console.log('✅ Success! Tokens used:', tokensUsed)
 
     return NextResponse.json({
       success: true,
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
       consensus_score: 85,
       confidence: 80,
       model_used: modelName,
-      is_free: true,
+      tokens_used: tokensUsed,
     })
 
   } catch (error) {
@@ -141,6 +141,5 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     balance: 0,
-    is_free: true,
   })
 }
