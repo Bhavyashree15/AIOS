@@ -12,7 +12,7 @@ import {
   Copy, Check, ThumbsUp, ThumbsDown, Heart,
   Clock, Moon, Sun, Download, Search as SearchIcon,
   Reply, Pencil, Square, RotateCw,
-  Sparkles as SparklesIcon
+  Sparkles as SparklesIcon, RefreshCw, PanelLeftClose
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -87,7 +87,7 @@ const saveChats = (chats: ChatType[]) => {
 type ChatType = {
   id: string
   title: string
-  messages: { role: 'user' | 'assistant', content: string, timestamp?: string, reactions?: { like: number, dislike: number, heart: number } }[]
+  messages: { role: 'user' | 'assistant', content: string, timestamp?: string, reactions?: { like: number, dislike: number, heart: number }, model_used?: string }[]
   timestamp: string
   model?: string
   unread?: boolean
@@ -146,6 +146,7 @@ export default function DashboardPage() {
   const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(null)
   const [editingText, setEditingText] = useState('')
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null)
+  const [modelUsed, setModelUsed] = useState<string | null>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -358,6 +359,7 @@ export default function DashboardPage() {
     setEditingMessageIndex(null)
     setSidebarOpen(false)
     setUnreadCount(0)
+    setModelUsed(null)
     saveChats([newChat, ...chats])
   }
 
@@ -373,6 +375,7 @@ export default function DashboardPage() {
       setReplyToIndex(null)
       setEditingMessageIndex(null)
       setSidebarOpen(false)
+      setModelUsed(null)
       setChats(prev => prev.map(c => 
         c.id === chatId ? { ...c, unread: false } : c
       ))
@@ -615,6 +618,14 @@ export default function DashboardPage() {
     setTypingText('')
   }
 
+  const askAnotherAI = () => {
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+    if (lastUserMsg) {
+      setPrompt(lastUserMsg.content)
+      setTimeout(() => handleSubmit(), 100)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!prompt.trim() && uploadedFiles.length === 0) {
       return
@@ -684,10 +695,14 @@ export default function DashboardPage() {
       const data = await res.json()
       let assistantContent: string
       
-      if (data.error === 'quota_exceeded') {
-        assistantContent = `⚠️ Free tier quota exceeded. Try again later.`
-      } else if (data.error === 'invalid_key') {
-        assistantContent = `⚠️ Invalid API key. Please check your Google API key.`
+      if (data.error === 'insufficient_credits') {
+        assistantContent = `⚠️ Insufficient credits. Please add funds at https://openrouter.ai/settings/creds`
+      } else if (data.error === 'free_model_limit') {
+        assistantContent = `⚠️ Free model daily limit reached. Try again later.`
+      } else if (data.error === 'model_unavailable') {
+        assistantContent = `⚠️ Model currently unavailable. Try again later.`
+      } else if (data.error === 'all_models_failed') {
+        assistantContent = `⚠️ All free models are currently unavailable. Try again later or add credits.`
       } else if (data.error) {
         assistantContent = `⚠️ ${data.error}`
       } else if (data.consensus) {
@@ -695,6 +710,9 @@ export default function DashboardPage() {
         assistantContent = data.consensus
         if (data.wallet_balance !== undefined) {
           setWalletBalance(data.wallet_balance)
+        }
+        if (data.model_used) {
+          setModelUsed(data.model_used)
         }
       } else {
         assistantContent = '⚠️ No response from AI. Please try again.'
@@ -704,7 +722,8 @@ export default function DashboardPage() {
         role: 'assistant', 
         content: assistantContent, 
         timestamp: new Date().toISOString(),
-        reactions: { like: 0, dislike: 0, heart: 0 }
+        reactions: { like: 0, dislike: 0, heart: 0 },
+        model_used: data.model_used || modelUsed || 'AI Assistant'
       }
       
       const finalMessages = [...updatedMessages, assistantMsg]
@@ -860,29 +879,29 @@ export default function DashboardPage() {
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className={`fixed left-0 top-0 h-full z-50 w-72 ${isDark ? 'bg-[#1a1a1a]' : 'bg-white'} border-r ${isDark ? 'border-gray-700' : 'border-gray-200'} flex flex-col overflow-hidden shadow-xl`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0 bg-[#075E54] text-white">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0 bg-gradient-to-r from-[#075E54] to-[#128C7E] text-white">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">AI</div>
+            <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white font-bold text-sm">AI</div>
             <div>
-              <div className="font-bold text-sm">AIOS</div>
-              <div className="text-[8px] text-white/70">OS</div>
+              <div className="font-bold text-sm tracking-tight">AIOS</div>
+              <div className="text-[8px] text-white/70">Operating System</div>
             </div>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="text-white/80 hover:text-white">
+          <button onClick={() => setSidebarOpen(false)} className="text-white/80 hover:text-white transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="p-3 flex-shrink-0 bg-[#f0f0f0]">
-          <button onClick={createNewChat} className="w-full bg-[#25D366] text-white px-3 py-2 rounded-lg font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm">
+        <div className="p-3 flex-shrink-0 bg-[#f0f0f0] dark:bg-[#1e1e1e]">
+          <button onClick={createNewChat} className="w-full bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white px-3 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm">
             <Pencil className="h-4 w-4" />
             New Chat
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 bg-white">
+        <div className="flex-1 overflow-y-auto px-2 bg-white dark:bg-[#1a1a1a]">
           {navItems.map((item) => (
-            <button key={item.id} onClick={() => { setActivePage(item.id); if (item.id !== 'chat') setMessages([{ role: 'assistant', content: `📌 ${item.label} coming soon!` }]); setSidebarOpen(false) }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-sm ${activePage === item.id ? 'bg-[#E8F5E9] text-[#075E54]' : 'text-gray-700 hover:bg-gray-100'}`}>
+            <button key={item.id} onClick={() => { setActivePage(item.id); if (item.id !== 'chat') setMessages([{ role: 'assistant', content: `📌 ${item.label} coming soon!` }]); setSidebarOpen(false) }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activePage === item.id ? 'bg-[#E8F5E9] dark:bg-[#2a2a2a] text-[#075E54] dark:text-emerald-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'}`}>
               <item.icon className="h-4 w-4" />
               {item.label}
             </button>
@@ -890,13 +909,13 @@ export default function DashboardPage() {
           
           <div className="mt-4 px-2">
             <div className="relative">
-              <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search chats..."
                 value={chatSearchQuery}
                 onChange={(e) => setChatSearchQuery(e.target.value)}
-                className="w-full bg-gray-100 rounded-lg pl-8 pr-3 py-1.5 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-emerald-500"
+                className="w-full bg-gray-100 dark:bg-[#2a2a2a] rounded-xl pl-9 pr-3 py-2 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all"
               />
             </div>
           </div>
@@ -916,10 +935,10 @@ export default function DashboardPage() {
                   <div key={chat.id} className="group relative flex items-center">
                     <button 
                       onClick={() => loadChat(chat.id)}
-                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all truncate flex items-center gap-2 ${
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all truncate flex items-center gap-2 ${
                         currentChatId === chat.id 
-                          ? 'bg-[#E8F5E9] text-[#075E54]' 
-                          : 'text-gray-700 hover:bg-gray-100'
+                          ? 'bg-[#E8F5E9] dark:bg-[#2a2a2a] text-[#075E54] dark:text-emerald-400' 
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'
                       }`}
                     >
                       <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
@@ -933,7 +952,7 @@ export default function DashboardPage() {
                     </button>
                     <button 
                       onClick={(e) => deleteChat(chat.id, e)}
-                      className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500"
+                      className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -948,18 +967,18 @@ export default function DashboardPage() {
           ) : null}
         </div>
 
-        <div className={`p-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'} flex-shrink-0 bg-[#f0f0f0]`}>
+        <div className={`p-4 border-t ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-[#f0f0f0]'} flex-shrink-0`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#075E54] flex items-center justify-center text-white text-[10px] font-bold">U</div>
-              <div><div className="text-sm font-medium text-gray-800">User</div><div className="text-[10px] text-gray-500">Free Plan</div></div>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#075E54] to-[#128C7E] flex items-center justify-center text-white text-[10px] font-bold">U</div>
+              <div><div className="text-sm font-medium text-gray-800 dark:text-gray-200">User</div><div className="text-[10px] text-gray-500">Free Plan</div></div>
             </div>
-            <button className="text-gray-400 hover:text-gray-600"><Settings className="h-4 w-4" /></button>
+            <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"><Settings className="h-4 w-4" /></button>
           </div>
-          <div className="mt-2 p-2.5 bg-[#FEF3C7] border border-[#F59E0B]/30 rounded-lg">
-            <div className="text-[10px] text-amber-600 font-medium uppercase">Free Plan</div>
-            <div className="text-xs text-gray-600">0 / 10 messages used</div>
-            <button className="mt-1.5 w-full text-xs bg-[#25D366] text-white py-1.5 rounded-lg font-medium hover:shadow-lg transition-all">Upgrade Now</button>
+          <div className="mt-2 p-2.5 bg-[#FEF3C7] dark:bg-[#2a2a2a] border border-[#F59E0B]/30 rounded-xl">
+            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium uppercase">Free Plan</div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">0 / 10 messages used</div>
+            <button className="mt-1.5 w-full text-xs bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white py-1.5 rounded-lg font-medium hover:shadow-lg transition-all">Upgrade Now</button>
           </div>
         </div>
       </motion.div>
@@ -968,7 +987,7 @@ export default function DashboardPage() {
         
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-white'} flex-shrink-0 shadow-sm min-h-[60px]`}>
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <button onClick={() => setSidebarOpen(true)} className={`${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'}`}>
+            <button onClick={() => setSidebarOpen(true)} className={`${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'} transition-colors`}>
               <Menu className="h-5 w-5 flex-shrink-0" />
             </button>
             <div className="flex items-center gap-2 min-w-0">
@@ -1029,8 +1048,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ===== MESSAGES - CHATGPT STYLE ===== */}
-        <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
+        {/* ===== BEAUTIFUL MESSAGES UI ===== */}
+        <div className={`flex-1 overflow-y-auto px-4 py-6 space-y-6 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
           <AnimatePresence>
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center max-w-3xl mx-auto">
@@ -1038,7 +1057,7 @@ export default function DashboardPage() {
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.5 }}
-                  className="w-16 h-16 rounded-full bg-[#25D366] flex items-center justify-center text-3xl font-bold text-white shadow-lg mb-6"
+                  className="w-20 h-20 rounded-full bg-gradient-to-r from-[#25D366] to-[#128C7E] flex items-center justify-center text-4xl font-bold text-white shadow-xl mb-6"
                 >
                   AI
                 </motion.div>
@@ -1048,7 +1067,7 @@ export default function DashboardPage() {
                   transition={{ delay: 0.1 }}
                   className={`text-3xl font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}
                 >
-                  Hi User, how can I help you today?
+                  How can I help you today?
                 </motion.h2>
                 <motion.p 
                   initial={{ y: 10, opacity: 0 }}
@@ -1069,14 +1088,14 @@ export default function DashboardPage() {
                     <button
                       key={i}
                       onClick={() => handleSuggestionClick(suggestion.prompt)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
+                      className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all ${
                         isDark 
-                          ? 'bg-[#2a2a2a] hover:bg-[#333] border-gray-700' 
-                          : 'bg-white hover:bg-gray-50 border-gray-200'
-                      } border shadow-sm`}
+                          ? 'bg-[#2a2a2a] hover:bg-[#333] border border-gray-700 hover:border-gray-600' 
+                          : 'bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
+                      } border shadow-sm hover:shadow-md`}
                     >
                       <span className="text-xl">{suggestion.icon}</span>
-                      <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                         {suggestion.label}
                       </span>
                     </button>
@@ -1100,6 +1119,7 @@ export default function DashboardPage() {
                 const isAI = msg.role === 'assistant'
                 const isEditing = editingMessageIndex === i
                 const msgId = `msg-${i}`
+                const isHovered = hoveredMessageId === msgId
                 
                 return (
                   <motion.div 
@@ -1124,75 +1144,99 @@ export default function DashboardPage() {
                           <textarea
                             value={editingText}
                             onChange={(e) => setEditingText(e.target.value)}
-                            className={`w-full p-3 rounded-lg text-sm ${isDark ? 'bg-[#2a2a2a] text-white border-gray-700' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:border-emerald-500 resize-none`}
+                            className={`w-full p-3 rounded-xl text-sm ${isDark ? 'bg-[#2a2a2a] text-white border-gray-700' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none`}
                             rows={3}
                           />
                           <div className="flex gap-2">
                             <button
                               onClick={() => saveEditing(i)}
-                              className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 transition-all"
+                              className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 transition-all"
                             >
                               Save
                             </button>
                             <button
                               onClick={cancelEditing}
-                              className={`px-3 py-1 rounded-lg text-xs font-medium ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} transition-all`}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} transition-all`}
                             >
                               Cancel
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <div 
-                          className={`px-4 py-3 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
-                          style={{
-                            backgroundColor: msg.role === 'user' 
-                              ? (isDark ? '#2563EB' : '#0A7CFF')
-                              : 'transparent',
-                            color: msg.role === 'user' 
-                              ? '#ffffff'
-                              : (isDark ? '#e5e5e5' : '#1a1a1a'),
-                            borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '0px',
-                            maxWidth: msg.role === 'user' ? 'auto' : '100%',
-                            width: msg.role === 'assistant' ? '100%' : 'auto',
-                            wordWrap: 'break-word',
-                            fontSize: '16px',
-                            lineHeight: '1.6',
-                          }}
-                        >
-                          {msg.role === 'assistant' ? (
-                            <div className="prose prose-sm max-w-none dark:prose-invert">
-                              <MarkdownContent content={isTyping && i === messages.length - 1 && isAI && !isStopped ? typingText : msg.content} />
+                        <>
+                          <div 
+                            className={`px-4 py-3 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
+                            style={{
+                              backgroundColor: msg.role === 'user' 
+                                ? (isDark ? '#2563EB' : '#0A7CFF')
+                                : 'transparent',
+                              color: msg.role === 'user' 
+                                ? '#ffffff'
+                                : (isDark ? '#e5e5e5' : '#1a1a1a'),
+                              borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '0px',
+                              maxWidth: msg.role === 'user' ? 'auto' : '100%',
+                              width: msg.role === 'assistant' ? '100%' : 'auto',
+                              wordWrap: 'break-word',
+                              fontSize: '16px',
+                              lineHeight: '1.6',
+                            }}
+                          >
+                            {msg.role === 'assistant' ? (
+                              <div className="prose prose-sm max-w-none dark:prose-invert">
+                                <MarkdownContent content={isTyping && i === messages.length - 1 && isAI && !isStopped ? typingText : msg.content} />
+                              </div>
+                            ) : (
+                              <div 
+                                className="whitespace-pre-wrap leading-relaxed"
+                                style={{ 
+                                  color: '#ffffff',
+                                  fontSize: '16px',
+                                  lineHeight: '1.6',
+                                }}
+                              >
+                                {msg.content}
+                              </div>
+                            )}
+                            {isTyping && i === messages.length - 1 && isAI && !isStopped && (
+                              <span className="animate-pulse" style={{ color: isDark ? '#e5e5e5' : '#1a1a1a' }}>|</span>
+                            )}
+                          </div>
+
+                          {isAI && msg.model_used && (
+                            <div className={`flex items-center gap-1 mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                              <span className="text-[11px]">✨ {msg.model_used}</span>
                             </div>
-                          ) : (
-                            <div 
-                              className="whitespace-pre-wrap leading-relaxed"
-                              style={{ 
-                                color: '#ffffff',
-                                fontSize: '16px',
-                                lineHeight: '1.6',
-                              }}
+                          )}
+
+                          {isAI && (
+                            <button
+                              onClick={askAnotherAI}
+                              className={`flex items-center gap-1.5 mt-1.5 text-xs px-3 py-1.5 rounded-lg transition-all ${
+                                isDark 
+                                  ? 'bg-[#2a2a2a] hover:bg-[#333] text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600' 
+                                  : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 hover:border-gray-300'
+                              } border shadow-sm hover:shadow-md`}
                             >
-                              {msg.content}
-                            </div>
+                              <RefreshCw className="h-3.5 w-3.5" />
+                              <span>Ask Another AI</span>
+                            </button>
                           )}
-                          {isTyping && i === messages.length - 1 && isAI && !isStopped && (
-                            <span className="animate-pulse" style={{ color: isDark ? '#e5e5e5' : '#1a1a1a' }}>|</span>
-                          )}
-                        </div>
+                        </>
                       )}
 
                       {!isEditing && (
-                        <div className={`flex items-center gap-0.5 mt-1 transition-opacity duration-200 ${
-                          msg.role === 'assistant' ? 'opacity-100' : hoveredMessageId === msgId ? 'opacity-100' : 'opacity-0'
-                        }`} style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>
+                        <div className={`flex items-center gap-1 mt-2 ${
+                          msg.role === 'assistant' ? 'opacity-100' : isHovered ? 'opacity-100' : 'opacity-0'
+                        } transition-opacity duration-200`} style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>
                           <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'} mr-1`}>
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           
                           <button
                             onClick={() => copyMessage(msg.content, msgId)}
-                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
+                            className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
+                              isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
+                            }`}
                             style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             {copiedMessageId === msgId ? (
@@ -1203,21 +1247,12 @@ export default function DashboardPage() {
                             <span className="text-[10px]">Copy</span>
                           </button>
                           
-                          {msg.role === 'user' && (
-                            <button
-                              onClick={() => startEditing(msg, i)}
-                              className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
-                              style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              <span className="text-[10px]">Edit</span>
-                            </button>
-                          )}
-                          
                           {msg.role === 'assistant' && (
                             <button
                               onClick={() => regenerateResponse(i)}
-                              className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
+                              className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
+                                isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
+                              }`}
                               style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                             >
                               <RotateCw className="h-3.5 w-3.5" />
@@ -1226,8 +1261,34 @@ export default function DashboardPage() {
                           )}
                           
                           <button
+                            onClick={() => handleReplyClick(msg, i)}
+                            className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
+                              isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
+                            }`}
+                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
+                          >
+                            <Reply className="h-3.5 w-3.5" />
+                            <span className="text-[10px]">Reply</span>
+                          </button>
+                          
+                          {msg.role === 'user' && (
+                            <button
+                              onClick={() => startEditing(msg, i)}
+                              className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
+                                isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
+                              }`}
+                              style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              <span className="text-[10px]">Edit</span>
+                            </button>
+                          )}
+                          
+                          <button
                             onClick={() => addReaction(i, 'like')}
-                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
+                            className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
+                              isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
+                            }`}
                             style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <ThumbsUp className="h-3.5 w-3.5" />
@@ -1236,7 +1297,9 @@ export default function DashboardPage() {
                           
                           <button
                             onClick={() => addReaction(i, 'dislike')}
-                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
+                            className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
+                              isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
+                            }`}
                             style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <ThumbsDown className="h-3.5 w-3.5" />
@@ -1245,20 +1308,13 @@ export default function DashboardPage() {
                           
                           <button
                             onClick={() => addReaction(i, 'heart')}
-                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
+                            className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
+                              isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
+                            }`}
                             style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
                           >
                             <Heart className="h-3.5 w-3.5" />
                             <span className="text-[10px]">{msg.reactions?.heart || 0}</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleReplyClick(msg, i)}
-                            className="p-1 rounded transition-colors hover:bg-gray-100 hover:text-gray-700 flex items-center gap-1 text-[11px]"
-                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
-                          >
-                            <Reply className="h-3.5 w-3.5" />
-                            <span className="text-[10px]">Reply</span>
                           </button>
                         </div>
                       )}
@@ -1285,12 +1341,12 @@ export default function DashboardPage() {
           
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-white p-3 rounded-2xl rounded-bl-sm shadow-sm border border-gray-200">
+              <div className="bg-white dark:bg-[#2a2a2a] p-3 rounded-2xl rounded-bl-sm shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
-                  <span className="text-xs text-gray-500 ml-2">Getting response...</span>
+                  <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} ml-2`}>Getting response...</span>
                 </div>
               </div>
             </div>
@@ -1298,8 +1354,8 @@ export default function DashboardPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ===== INPUT AREA ===== */}
-        <div className={`border-t ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-[#f0f0f0]'} p-3 flex-shrink-0`}>
+        {/* ===== INPUT AREA - ELEGANT ===== */}
+        <div className={`border-t ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-white'} p-3 flex-shrink-0`}>
           
           {uploadedFiles.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-2">
@@ -1323,8 +1379,8 @@ export default function DashboardPage() {
           <div className="relative">
             <button 
               onClick={() => setShowModelPicker(!showModelPicker)} 
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs w-full justify-between ${
-                isDark ? 'bg-[#2a2a2a] hover:bg-[#333] border-gray-700' : 'bg-white hover:bg-gray-50 border-gray-200'
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs w-full justify-between ${
+                isDark ? 'bg-[#2a2a2a] hover:bg-[#333] border-gray-700' : 'bg-gray-100 hover:bg-gray-200 border-gray-200'
               } border transition-all mb-2`}
             >
               <div className="flex items-center gap-2">
@@ -1384,7 +1440,7 @@ export default function DashboardPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className={`w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border ${
                       isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400'
-                    } outline-none focus:border-emerald-500`}
+                    } outline-none focus:ring-2 focus:ring-emerald-500/30`}
                   />
                 </div>
 
@@ -1465,7 +1521,7 @@ export default function DashboardPage() {
               value={prompt} 
               onChange={(e) => setPrompt(e.target.value)} 
               placeholder={replyToMessage ? `Reply to ${replyToMessage.role}...` : isListening ? '🎤 Listening...' : 'Type, upload, or speak...'} 
-              className={`w-full min-h-[44px] max-h-[100px] ${isDark ? 'bg-[#2a2a2a] border-gray-700 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'} border rounded-lg p-2.5 pr-36 outline-none focus:border-emerald-500 resize-none text-sm`} 
+              className={`w-full min-h-[44px] max-h-[100px] ${isDark ? 'bg-[#2a2a2a] border-gray-700 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'} border rounded-xl p-2.5 pr-36 outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none text-sm transition-all`} 
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
               rows={1}
             />
@@ -1525,7 +1581,7 @@ export default function DashboardPage() {
                 <button 
                   onClick={handleSubmit} 
                   disabled={(!prompt.trim() && uploadedFiles.length === 0) || selectedModels.length === 0} 
-                  className="bg-[#25D366] text-white p-2 rounded-lg disabled:opacity-50 hover:shadow-lg transition-all"
+                  className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white p-2 rounded-lg disabled:opacity-50 hover:shadow-lg transition-all"
                 >
                   <Send className="h-4 w-4" />
                 </button>
