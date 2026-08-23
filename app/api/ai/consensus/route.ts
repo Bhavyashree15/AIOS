@@ -1,46 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// OPENROUTER API KEY
+// OPENROUTER API KEY - YOUR KEY
 // ============================================
 const OPENROUTER_API_KEY = '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'
 
 // ============================================
-// MODEL MAPPING - USING FALLBACK FREE MODELS
+// MODEL MAPPING - USING CONFIRMED WORKING FREE MODEL
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'qwen-3.5-flash': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'ministral-3-8b': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'mistral-small-4': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'deepseek-chat': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gemini-3-flash': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gpt-4o-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'claude-haiku-4.5': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'mistral-small': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gpt-4.1': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'claude-sonnet-4.0': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gpt-5.4': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gemini-3-pro-preview': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'grok-3-mini': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'codestral': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gpt-5.6-terra': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'grok-4.5': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'nova-premier-1.0': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'perplexity-sonar': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'gpt-5.6-luna': 'microsoft/phi-3.5-mini-128k-instruct:free',
-  'deepseek-reasoner': 'microsoft/phi-3.5-mini-128k-instruct:free',
+  'gpt-5.4-mini': 'google/gemma-2-9b-it:free',
+  'qwen-3.5-flash': 'google/gemma-2-9b-it:free',
+  'ministral-3-8b': 'google/gemma-2-9b-it:free',
+  'mistral-small-4': 'google/gemma-2-9b-it:free',
+  'deepseek-chat': 'google/gemma-2-9b-it:free',
+  'gemini-3-flash': 'google/gemma-2-9b-it:free',
+  'gpt-4o-mini': 'google/gemma-2-9b-it:free',
+  'claude-haiku-4.5': 'google/gemma-2-9b-it:free',
+  'mistral-small': 'google/gemma-2-9b-it:free',
+  'gpt-4.1': 'google/gemma-2-9b-it:free',
+  'claude-sonnet-4.0': 'google/gemma-2-9b-it:free',
+  'gpt-5.4': 'google/gemma-2-9b-it:free',
+  'gemini-3-pro-preview': 'google/gemma-2-9b-it:free',
+  'grok-3-mini': 'google/gemma-2-9b-it:free',
+  'codestral': 'google/gemma-2-9b-it:free',
+  'gpt-5.6-terra': 'google/gemma-2-9b-it:free',
+  'grok-4.5': 'google/gemma-2-9b-it:free',
+  'nova-premier-1.0': 'google/gemma-2-9b-it:free',
+  'perplexity-sonar': 'google/gemma-2-9b-it:free',
+  'gpt-5.6-luna': 'google/gemma-2-9b-it:free',
+  'deepseek-reasoner': 'google/gemma-2-9b-it:free',
 }
-
-// ============================================
-// FALLBACK FREE MODELS (Try in order)
-// ============================================
-const FALLBACK_MODELS = [
-  'microsoft/phi-3.5-mini-128k-instruct:free',
-  'meta-llama/llama-3.2-3b-instruct:free',
-  'google/gemma-2-9b-it:free',
-  'microsoft/phi-3-mini-128k-instruct:free',
-]
 
 // ============================================
 // MAIN API HANDLER
@@ -64,62 +54,78 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    let aiResponse = null
-    let lastError = null
+    // CONFIRMED WORKING FREE MODEL
+    const modelId = 'google/gemma-2-9b-it:free'
+    const modelName = 'Gemma 2 9B (Free)'
 
-    // Try each fallback model in order
-    for (const modelId of FALLBACK_MODELS) {
-      try {
-        console.log('🤖 Trying Model:', modelId)
+    console.log('🤖 Using Free Model:', modelId)
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://github.com/Bhavyashree15/AIOS',
-            'X-Title': 'AIOS',
-          },
-          body: JSON.stringify({
-            model: modelId,
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7,
-            max_tokens: 200,
-          }),
+    // ============================================
+    // CALL OPENROUTER API
+    // ============================================
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://github.com/Bhavyashree15/AIOS',
+        'X-Title': 'AIOS',
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 200,
+      }),
+    })
+
+    const data = await response.json()
+
+    // ============================================
+    // HANDLE API ERRORS
+    // ============================================
+    if (!response.ok) {
+      console.error('❌ OpenRouter API Error:', JSON.stringify(data, null, 2))
+      
+      if (data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
+        return NextResponse.json({
+          consensus: `⚠️ Free model daily limit reached. Try again later.`,
+          consensus_score: 0,
+          confidence: 0,
+          error: 'free_model_limit',
         })
-
-        const data = await response.json()
-
-        if (response.ok) {
-          aiResponse = data.choices?.[0]?.message?.content || 'No response from AI'
-          const modelName = modelId.replace(':free', '').replace('/', ' ')
-
-          console.log('✅ Success! Model:', modelId)
-
-          return NextResponse.json({
-            success: true,
-            consensus: aiResponse,
-            consensus_score: 85,
-            confidence: 80,
-            model_used: modelName + ' (Free)',
-            is_free: true,
-          })
-        } else {
-          console.error(`❌ Model ${modelId} failed:`, data.error?.message)
-          lastError = data.error?.message
-        }
-      } catch (error) {
-        console.error(`❌ Model ${modelId} error:`, error)
-        lastError = error instanceof Error ? error.message : 'Unknown error'
       }
+      
+      if (data.error?.message?.includes('No endpoints found')) {
+        return NextResponse.json({
+          consensus: `⚠️ This free model is currently unavailable. Try again later.`,
+          consensus_score: 0,
+          confidence: 0,
+          error: 'model_unavailable',
+        })
+      }
+      
+      return NextResponse.json({
+        consensus: `⚠️ API Error: ${data.error?.message || 'Unknown error'}`,
+        consensus_score: 0,
+        confidence: 0,
+      })
     }
 
-    // If all models failed
+    // ============================================
+    // GET THE AI RESPONSE
+    // ============================================
+    const aiResponse = data.choices?.[0]?.message?.content || 'No response from AI'
+
+    console.log('✅ Success! Response length:', aiResponse.length)
+
     return NextResponse.json({
-      consensus: `⚠️ No free models available. Error: ${lastError || 'All models failed'}`,
-      consensus_score: 0,
-      confidence: 0,
-      error: 'all_models_failed',
+      success: true,
+      consensus: aiResponse,
+      consensus_score: 85,
+      confidence: 80,
+      model_used: modelName,
+      is_free: true,
     })
 
   } catch (error) {
