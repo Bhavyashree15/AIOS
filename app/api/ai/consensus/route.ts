@@ -5,9 +5,19 @@ import { NextRequest, NextResponse } from 'next/server'
 // ============================================
 // Get your key from: https://aistudio.google.com/app/apikey
 // Key must start with "AIza"
+// Supports both naming conventions
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.Gemini_API_Key
+
+// ============================================
+// DEBUG LOGGING (Remove after fixing)
+// ============================================
+console.log('🔍 Environment Variables Check:')
+console.log('  - GOOGLE_API_KEY exists?', !!process.env.GOOGLE_API_KEY)
+console.log('  - Gemini_API_Key exists?', !!process.env.Gemini_API_Key)
+console.log('  - GEMINI_API_KEY value:', GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 10) + '...' : 'NOT FOUND')
+
 if (!GEMINI_API_KEY) {
-  console.warn('⚠️ GOOGLE_API_KEY environment variable is not set')
+  console.warn('⚠️ GOOGLE_API_KEY or Gemini_API_Key environment variable is not set')
 }
 
 // ============================================
@@ -63,8 +73,9 @@ export async function POST(req: NextRequest) {
 
     // Check if API key is configured
     if (!GEMINI_API_KEY) {
+      console.error('❌ API key missing in POST request')
       return NextResponse.json({
-        consensus: '⚠️ API key not configured. Please set GOOGLE_API_KEY environment variable.',
+        consensus: '⚠️ API key not configured. Please set GOOGLE_API_KEY or Gemini_API_Key environment variable.',
         consensus_score: 0,
         confidence: 0,
         error: 'missing_api_key',
@@ -178,9 +189,17 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// ============================================
+// GET ENDPOINT - For checking status
+// ============================================
 export async function GET() {
+  // Check if API key is configured
+  const hasKey = !!process.env.GOOGLE_API_KEY || !!process.env.Gemini_API_Key
+  
   return NextResponse.json({
+    has_api_key: hasKey,
     balance: 100,
     is_free: true,
+    // Don't expose the actual key for security!
   })
 }
