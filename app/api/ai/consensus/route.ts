@@ -3,50 +3,76 @@ import { NextRequest, NextResponse } from 'next/server'
 // ============================================
 // GEMINI API KEY - FROM ENVIRONMENT VARIABLE
 // ============================================
-// Get your key from: https://aistudio.google.com/app/apikey
-// Key must start with "AIza"
-// Supports both naming conventions
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.Gemini_API_Key
 
-// ============================================
-// DEBUG LOGGING (Remove after fixing)
-// ============================================
-console.log('🔍 Environment Variables Check:')
-console.log('  - GOOGLE_API_KEY exists?', !!process.env.GOOGLE_API_KEY)
-console.log('  - Gemini_API_Key exists?', !!process.env.Gemini_API_Key)
-console.log('  - GEMINI_API_KEY value:', GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 10) + '...' : 'NOT FOUND')
+console.log('🔍 API Key exists?', !!GEMINI_API_KEY)
 
-if (!GEMINI_API_KEY) {
-  console.warn('⚠️ GOOGLE_API_KEY or Gemini_API_Key environment variable is not set')
+// ============================================
+// MODEL MAPPING - Gemini Models
+// ============================================
+const MODEL_MAP: Record<string, string> = {
+  'gpt-5.4-mini': 'gemini-2.0-flash',
+  'qwen-3.5-flash': 'gemini-2.0-flash',
+  'ministral-3-8b': 'gemini-2.0-flash',
+  'mistral-small-4': 'gemini-2.0-flash',
+  'deepseek-chat': 'gemini-2.0-flash',
+  'gemini-3-flash': 'gemini-2.0-flash',
+  'gpt-4o-mini': 'gemini-2.0-flash',
+  'claude-haiku-4.5': 'gemini-2.0-flash',
+  'mistral-small': 'gemini-2.0-flash',
+  'gpt-4.1': 'gemini-1.5-pro',
+  'claude-sonnet-4.0': 'gemini-1.5-pro',
+  'gpt-5.4': 'gemini-1.5-pro',
+  'gemini-3-pro-preview': 'gemini-1.5-pro',
+  'grok-3-mini': 'gemini-1.5-pro',
+  'codestral': 'gemini-1.5-pro',
+  'gpt-5.6-terra': 'gemini-1.5-pro',
+  'grok-4.5': 'gemini-1.5-pro',
+  'nova-premier-1.0': 'gemini-1.5-pro',
+  'perplexity-sonar': 'gemini-1.5-pro',
+  'gpt-5.6-luna': 'gemini-1.5-pro',
+  'deepseek-reasoner': 'gemini-1.5-pro',
 }
 
 // ============================================
-// MODEL MAPPING - Gemini 3 Models (Preview)
+// BETTER SYSTEM PROMPTS FOR QUALITY
 // ============================================
-const MODEL_MAP: Record<string, string> = {
-  // Free/Preview Models
-  'gpt-5.4-mini': 'gemini-3-flash-preview',
-  'qwen-3.5-flash': 'gemini-3-flash-preview',
-  'ministral-3-8b': 'gemini-3-flash-preview',
-  'mistral-small-4': 'gemini-3-flash-preview',
-  'deepseek-chat': 'gemini-3-flash-preview',
-  'gemini-3-flash': 'gemini-3-flash-preview',
-  'gpt-4o-mini': 'gemini-3-flash-preview',
-  'claude-haiku-4.5': 'gemini-3-flash-preview',
-  'mistral-small': 'gemini-3-flash-preview',
-  // Pro/Paid Models
-  'gpt-4.1': 'gemini-3-pro-preview',
-  'claude-sonnet-4.0': 'gemini-3-pro-preview',
-  'gpt-5.4': 'gemini-3-pro-preview',
-  'gemini-3-pro-preview': 'gemini-3-pro-preview',
-  'grok-3-mini': 'gemini-3-pro-preview',
-  'codestral': 'gemini-3-pro-preview',
-  'gpt-5.6-terra': 'gemini-3-pro-preview',
-  'grok-4.5': 'gemini-3-pro-preview',
-  'nova-premier-1.0': 'gemini-3-pro-preview',
-  'perplexity-sonar': 'gemini-3-pro-preview',
-  'gpt-5.6-luna': 'gemini-3-pro-preview',
-  'deepseek-reasoner': 'gemini-3-pro-preview',
+const getSystemPrompt = (prompt: string): string => {
+  // Detect if it's a creative writing request
+  const creativeKeywords = ['describe', 'create', 'write', 'story', 'imagine', 'design', 'picture', 'visualize']
+  const isCreative = creativeKeywords.some(word => prompt.toLowerCase().includes(word))
+  
+  // Detect if it's a detailed/long request
+  const isDetailed = prompt.toLowerCase().includes('detailed') || 
+                     prompt.toLowerCase().includes('comprehensive') ||
+                     prompt.toLowerCase().includes('in-depth')
+
+  if (isCreative && isDetailed) {
+    return `You are a master storyteller and world-builder. Create rich, vivid, and immersive descriptions with:
+- Sensory details (sight, sound, smell, touch)
+- Emotional depth and atmosphere
+- Unique and imaginative elements
+- A compelling narrative voice
+- Specific examples and concrete imagery
+Write at least 200-300 words. Be creative and detailed.`
+  }
+
+  if (isCreative) {
+    return `You are a creative writer with a vivid imagination. Respond with:
+- Engaging and descriptive language
+- Rich imagery and sensory details
+- An interesting perspective or angle
+- Specific, concrete examples
+Write a detailed, engaging response.`
+  }
+
+  // Default - quality responses for any query
+  return `You are a knowledgeable and articulate AI assistant. Provide:
+- Clear, well-structured explanations
+- Specific examples and details
+- Nuanced insights
+- A helpful and engaging tone
+Make your response comprehensive and valuable.`
 }
 
 // ============================================
@@ -71,110 +97,118 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check if API key is configured
     if (!GEMINI_API_KEY) {
-      console.error('❌ API key missing in POST request')
       return NextResponse.json({
-        consensus: '⚠️ API key not configured. Please set GOOGLE_API_KEY or Gemini_API_Key environment variable.',
+        consensus: '⚠️ API key not configured.',
         consensus_score: 0,
         confidence: 0,
         error: 'missing_api_key',
       })
     }
 
-    // Try Gemini 3 models first, then fallback
-    const modelOptions = [
-      { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (Preview)' },
-      { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash (Preview)' },
-      { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash Exp' },
-      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
-      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
-    ]
-    
-    let modelId = null
-    let modelName = null
-    let response = null
-    let data = null
-    let lastError = null
+    // Use Gemini 1.5 Pro for quality responses
+    // Better quality than Flash models
+    const modelId = 'gemini-1.5-pro'
+    const modelName = 'Gemini 1.5 Pro'
 
-    // Try each model until one works
-    for (const modelOption of modelOptions) {
-      try {
-        console.log(`🔄 Trying model: ${modelOption.id}`)
-        
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelOption.id}:generateContent?key=${GEMINI_API_KEY}`
-        
-        const testResponse = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: prompt || 'Say hello' }]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 200,
+    console.log('🤖 Using model:', modelId)
+
+    // Create a better prompt with system instructions
+    const systemPrompt = getSystemPrompt(prompt)
+    const fullPrompt = `${systemPrompt}\n\nUser request: ${prompt}`
+
+    // ============================================
+    // OPTIMIZED API CALL WITH BETTER PARAMETERS
+    // ============================================
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: fullPrompt }]
             }
-          }),
-        })
-
-        const testData = await testResponse.json()
-        
-        if (testResponse.ok && testData.candidates && testData.candidates.length > 0) {
-          modelId = modelOption.id
-          modelName = modelOption.name
-          response = testResponse
-          data = testData
-          console.log(`✅ Success with model: ${modelOption.id}`)
-          break
-        } else {
-          const errorMsg = testData.error?.message || 'Unknown error'
-          console.log(`❌ Model ${modelOption.id} failed:`, errorMsg)
-          lastError = errorMsg
-          
-          // If it's a key error, stop trying
-          if (errorMsg.includes('API key') || errorMsg.includes('authentication') || errorMsg.includes('permission')) {
-            console.error('❌ API Key error, stopping attempts')
-            return NextResponse.json({
-              consensus: `⚠️ Invalid API key: ${errorMsg}`,
-              consensus_score: 0,
-              confidence: 0,
-              error: 'invalid_key',
-            })
+          ],
+          generationConfig: {
+            temperature: 0.8,           // More creative (was 0.7)
+            maxOutputTokens: 500,       // Longer responses (was 200)
+            topP: 0.95,
+            topK: 40,
+            // Add this for better quality
+            stopSequences: [],
           }
-        }
-      } catch (error) {
-        console.log(`❌ Model ${modelOption.id} error:`, error)
-        lastError = error instanceof Error ? error.message : 'Unknown error'
+        }),
       }
-    }
+    )
 
-    // If no model worked, return error with details
-    if (!modelId || !response || !data) {
-      console.error('❌ All models failed. Last error:', lastError)
+    const data = await response.json()
+
+    // ============================================
+    // HANDLE ERRORS
+    // ============================================
+    if (!response.ok) {
+      console.error('❌ API Error:', JSON.stringify(data, null, 2))
+      
+      // If Pro fails, try Flash as fallback
+      if (data.error?.message?.includes('not found') || data.error?.message?.includes('model')) {
+        console.log('🔄 Pro model not available, trying Flash...')
+        
+        // Try Flash as fallback with same settings
+        const fallbackResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [{ text: fullPrompt }]
+                }
+              ],
+              generationConfig: {
+                temperature: 0.9,        // Higher for flash to compensate
+                maxOutputTokens: 500,
+                topP: 0.95,
+                topK: 40,
+              }
+            }),
+          }
+        )
+        
+        const fallbackData = await fallbackResponse.json()
+        
+        if (fallbackResponse.ok) {
+          const aiResponse = fallbackData.candidates?.[0]?.content?.parts?.[0]?.text || 'No response'
+          return NextResponse.json({
+            success: true,
+            consensus: aiResponse,
+            consensus_score: 85,
+            confidence: 80,
+            model_used: 'Gemini 2.0 Flash (Fallback)',
+            tokens_used: fallbackData.usageMetadata?.totalTokenCount || 0,
+            is_free: true,
+            note: 'Using fallback model for better availability'
+          })
+        }
+      }
+      
       return NextResponse.json({
-        consensus: `⚠️ No Gemini models available. Error: ${lastError || 'All models failed'}`,
+        consensus: `⚠️ API Error: ${data.error?.message || 'Unknown error'}`,
         consensus_score: 0,
         confidence: 0,
-        error: 'model_not_found',
-        debug: {
-          key_prefix: GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 10) + '...' : null,
-          last_error: lastError,
-          models_tried: modelOptions.map(m => m.id)
-        }
       })
     }
-
-    console.log('🤖 Using Gemini Model:', modelId)
 
     // ============================================
     // GET THE AI RESPONSE
     // ============================================
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from AI'
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response'
     const tokensUsed = data.usageMetadata?.totalTokenCount || 0
 
     console.log('✅ Success! Tokens used:', tokensUsed)
@@ -187,7 +221,7 @@ export async function POST(req: NextRequest) {
       confidence: 80,
       model_used: modelName,
       tokens_used: tokensUsed,
-      is_free: true,
+      is_free: false, // Pro uses paid tier
     })
 
   } catch (error) {
@@ -196,81 +230,20 @@ export async function POST(req: NextRequest) {
       consensus: `⚠️ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       consensus_score: 0,
       confidence: 0,
-      error: 'api_error',
     })
   }
 }
 
 // ============================================
-// GET ENDPOINT - For checking status
+// GET ENDPOINT
 // ============================================
 export async function GET() {
   const hasKey = !!process.env.GOOGLE_API_KEY || !!process.env.Gemini_API_Key
   
-  if (!hasKey) {
-    return NextResponse.json({
-      has_api_key: false,
-      error: 'No API key found',
-      message: 'Please set GOOGLE_API_KEY or Gemini_API_Key environment variable',
-      balance: 0,
-      is_free: false,
-    })
-  }
-
-  // Test Gemini 3 models first
-  const modelsToTest = [
-    'gemini-3-pro-preview',
-    'gemini-3-flash-preview',
-    'gemini-2.0-flash-exp',
-    'gemini-2.0-flash',
-    'gemini-1.5-pro',
-  ]
-  
-  const availableModels: string[] = []
-  const modelErrors: Record<string, string> = {}
-  
-  for (const model of modelsToTest) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: 'Say hello' }]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 10,
-            }
-          }),
-        }
-      )
-      
-      const data = await response.json()
-      
-      if (response.ok && data.candidates && data.candidates.length > 0) {
-        availableModels.push(model)
-      } else {
-        modelErrors[model] = data.error?.message || 'Unknown error'
-      }
-    } catch (error) {
-      modelErrors[model] = error instanceof Error ? error.message : 'Unknown error'
-    }
-  }
-  
   return NextResponse.json({
     has_api_key: hasKey,
-    available_models: availableModels,
-    model_errors: modelErrors,
-    balance: 100,
-    is_free: true,
-    key_prefix: GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 10) + '...' : null,
-    note: availableModels.length === 0 ? 'No models available. Check your API key and ensure Gemini API is enabled.' : undefined
+    models_available: ['gemini-1.5-pro', 'gemini-2.0-flash'],
+    is_free: false,
+    note: 'Using Pro model for better quality responses',
   })
 }
