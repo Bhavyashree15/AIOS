@@ -21,32 +21,32 @@ if (!GEMINI_API_KEY) {
 }
 
 // ============================================
-// MODEL MAPPING - Gemini Models
+// MODEL MAPPING - Gemini Models (Updated with correct names)
 // ============================================
 const MODEL_MAP: Record<string, string> = {
   // Free Models (Gemini Flash)
-  'gpt-5.4-mini': 'gemini-2.0-flash',
-  'qwen-3.5-flash': 'gemini-2.0-flash',
-  'ministral-3-8b': 'gemini-2.0-flash',
-  'mistral-small-4': 'gemini-2.0-flash',
-  'deepseek-chat': 'gemini-2.0-flash',
-  'gemini-3-flash': 'gemini-2.0-flash',
-  'gpt-4o-mini': 'gemini-2.0-flash',
-  'claude-haiku-4.5': 'gemini-2.0-flash',
-  'mistral-small': 'gemini-2.0-flash',
+  'gpt-5.4-mini': 'gemini-2.0-flash-exp',
+  'qwen-3.5-flash': 'gemini-2.0-flash-exp',
+  'ministral-3-8b': 'gemini-2.0-flash-exp',
+  'mistral-small-4': 'gemini-2.0-flash-exp',
+  'deepseek-chat': 'gemini-2.0-flash-exp',
+  'gemini-3-flash': 'gemini-2.0-flash-exp',
+  'gpt-4o-mini': 'gemini-2.0-flash-exp',
+  'claude-haiku-4.5': 'gemini-2.0-flash-exp',
+  'mistral-small': 'gemini-2.0-flash-exp',
   // Paid/Pro Models (Gemini Pro)
-  'gpt-4.1': 'gemini-2.0-flash',
-  'claude-sonnet-4.0': 'gemini-2.0-flash',
-  'gpt-5.4': 'gemini-2.0-flash',
-  'gemini-3-pro-preview': 'gemini-2.0-flash',
-  'grok-3-mini': 'gemini-2.0-flash',
-  'codestral': 'gemini-2.0-flash',
-  'gpt-5.6-terra': 'gemini-2.0-flash',
-  'grok-4.5': 'gemini-2.0-flash',
-  'nova-premier-1.0': 'gemini-2.0-flash',
-  'perplexity-sonar': 'gemini-2.0-flash',
-  'gpt-5.6-luna': 'gemini-2.0-flash',
-  'deepseek-reasoner': 'gemini-2.0-flash',
+  'gpt-4.1': 'gemini-1.5-pro',
+  'claude-sonnet-4.0': 'gemini-1.5-pro',
+  'gpt-5.4': 'gemini-1.5-pro',
+  'gemini-3-pro-preview': 'gemini-1.5-pro',
+  'grok-3-mini': 'gemini-1.5-pro',
+  'codestral': 'gemini-1.5-pro',
+  'gpt-5.6-terra': 'gemini-1.5-pro',
+  'grok-4.5': 'gemini-1.5-pro',
+  'nova-premier-1.0': 'gemini-1.5-pro',
+  'perplexity-sonar': 'gemini-1.5-pro',
+  'gpt-5.6-luna': 'gemini-1.5-pro',
+  'deepseek-reasoner': 'gemini-1.5-pro',
 }
 
 // ============================================
@@ -82,40 +82,80 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Use Gemini 2.0 Flash (Free tier)
-    const modelId = 'gemini-2.0-flash'
-    const modelName = 'Gemini 2.0 Flash'
+    // Try multiple model names if one fails
+    const modelOptions = [
+      'gemini-2.0-flash-exp',    // Latest flash model
+      'gemini-2.0-flash',        // Regular flash
+      'gemini-1.5-flash',        // Older flash
+      'gemini-1.5-pro',          // Pro model
+    ]
+    
+    let lastError = null
+    let modelId = null
+    let modelName = null
+    let response = null
+    let data = null
+
+    // Try each model until one works
+    for (const tryModel of modelOptions) {
+      try {
+        console.log(`🔄 Trying model: ${tryModel}`)
+        
+        const testResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${tryModel}:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [{ text: prompt || 'Hello' }]
+                }
+              ],
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 100,
+                topP: 0.95,
+                topK: 40,
+              }
+            }),
+          }
+        )
+
+        const testData = await testResponse.json()
+        
+        if (testResponse.ok) {
+          modelId = tryModel
+          modelName = tryModel
+          response = testResponse
+          data = testData
+          console.log(`✅ Success with model: ${tryModel}`)
+          break
+        } else {
+          console.log(`❌ Model ${tryModel} failed:`, testData.error?.message || 'Unknown error')
+          lastError = testData.error?.message || 'Model not available'
+        }
+      } catch (error) {
+        console.log(`❌ Model ${tryModel} error:`, error)
+        lastError = error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+
+    // If no model worked, return error
+    if (!modelId || !response || !data) {
+      console.error('❌ All models failed. Last error:', lastError)
+      return NextResponse.json({
+        consensus: `⚠️ No Gemini models available. Error: ${lastError || 'All models failed'}`,
+        consensus_score: 0,
+        confidence: 0,
+        error: 'model_not_found',
+      })
+    }
 
     console.log('🤖 Using Gemini Model:', modelId)
     console.log('🔑 API Key:', GEMINI_API_KEY.substring(0, 10) + '...')
-
-    // ============================================
-    // CALL GEMINI API
-    // ============================================
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: prompt }]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 200,
-            topP: 0.95,
-            topK: 40,
-          }
-        }),
-      }
-    )
-
-    const data = await response.json()
 
     // ============================================
     // HANDLE API ERRORS
@@ -140,16 +180,6 @@ export async function POST(req: NextRequest) {
           consensus_score: 0,
           confidence: 0,
           error: 'invalid_key',
-        })
-      }
-      
-      // Check for model errors
-      if (data.error?.message?.includes('model') || data.error?.message?.includes('not found')) {
-        return NextResponse.json({
-          consensus: `⚠️ Model not found. Using fallback model.`,
-          consensus_score: 0,
-          confidence: 0,
-          error: 'model_not_found',
         })
       }
       
@@ -196,10 +226,35 @@ export async function GET() {
   // Check if API key is configured
   const hasKey = !!process.env.GOOGLE_API_KEY || !!process.env.Gemini_API_Key
   
+  // Test which models are available
+  const modelsToTest = [
+    'gemini-2.0-flash-exp',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+  ]
+  
+  const availableModels: string[] = []
+  
+  for (const model of modelsToTest) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}?key=${GEMINI_API_KEY || ''}`,
+        { method: 'GET' }
+      )
+      if (response.ok) {
+        availableModels.push(model)
+      }
+    } catch (error) {
+      // Model not available
+    }
+  }
+  
   return NextResponse.json({
     has_api_key: hasKey,
+    available_models: availableModels,
     balance: 100,
     is_free: true,
-    // Don't expose the actual key for security!
+    note: availableModels.length === 0 ? 'No models available. Check your API key and permissions.' : undefined
   })
 }
