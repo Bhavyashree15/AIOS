@@ -3,10 +3,56 @@ import { NextRequest, NextResponse } from 'next/server'
 // ============================================
 // GEMINI API KEY
 // ============================================
+// Get your key from: https://aistudio.google.com/app/apikey
+// Key must start with "AIza"
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.Gemini_API_Key
 
+console.log('🔍 Gemini API Key exists?', !!GEMINI_API_KEY)
+
 // ============================================
-// SIMPLE POST HANDLER
+// WORKING GEMINI MODELS (Updated as of 2026)
+// ============================================
+// These are the current stable models that work for new API keys:
+// - gemini-3.5-flash    ✅ Most stable, recommended
+// - gemini-2.5-pro      ✅ Good for complex tasks
+// - gemini-2.5-flash    ⚠️ Restricted for new accounts
+
+const MODELS_TO_TRY = [
+  'gemini-3.5-flash',      // ✅ RECOMMENDED - Stable
+  'gemini-2.5-pro',        // ✅ Good quality
+  'gemini-3-flash-preview', // ⚠️ Preview access required
+  'gemini-3.1-pro-preview', // ⚠️ Preview access required
+]
+
+// ============================================
+// MODEL MAPPING
+// ============================================
+const MODEL_MAP: Record<string, string> = {
+  'gpt-5.4-mini': 'gemini-3.5-flash',
+  'qwen-3.5-flash': 'gemini-3.5-flash',
+  'ministral-3-8b': 'gemini-3.5-flash',
+  'mistral-small-4': 'gemini-3.5-flash',
+  'deepseek-chat': 'gemini-3.5-flash',
+  'gemini-3-flash': 'gemini-3.5-flash',
+  'gpt-4o-mini': 'gemini-3.5-flash',
+  'claude-haiku-4.5': 'gemini-3.5-flash',
+  'mistral-small': 'gemini-3.5-flash',
+  'gpt-4.1': 'gemini-2.5-pro',
+  'claude-sonnet-4.0': 'gemini-2.5-pro',
+  'gpt-5.4': 'gemini-2.5-pro',
+  'gemini-3-pro-preview': 'gemini-2.5-pro',
+  'grok-3-mini': 'gemini-2.5-pro',
+  'codestral': 'gemini-2.5-pro',
+  'gpt-5.6-terra': 'gemini-2.5-pro',
+  'grok-4.5': 'gemini-2.5-pro',
+  'nova-premier-1.0': 'gemini-2.5-pro',
+  'perplexity-sonar': 'gemini-2.5-pro',
+  'gpt-5.6-luna': 'gemini-2.5-pro',
+  'deepseek-reasoner': 'gemini-2.5-pro',
+}
+
+// ============================================
+// POST HANDLER
 // ============================================
 export async function POST(req: NextRequest) {
   try {
@@ -20,79 +66,122 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    if (!models || models.length === 0) {
+      return NextResponse.json(
+        { error: 'Please select at least one model.' },
+        { status: 400 }
+      )
+    }
+
     if (!GEMINI_API_KEY) {
-      console.error('❌ No API key found')
+      console.error('❌ No Gemini API key found')
       return NextResponse.json({
-        consensus: '⚠️ API key not configured.',
+        consensus: '⚠️ API key not configured. Please set GOOGLE_API_KEY or Gemini_API_Key environment variable.',
         consensus_score: 0,
         confidence: 0,
         error: 'missing_api_key',
       })
     }
 
-    console.log('🔑 Using API Key prefix:', GEMINI_API_KEY.substring(0, 10) + '...')
+    console.log('🔑 API Key prefix:', GEMINI_API_KEY.substring(0, 10) + '...')
     console.log('📝 Prompt:', prompt)
 
-    // Try the simplest working model
-    const modelId = 'gemini-pro'
-    
-    const requestBody = {
-      contents: [
-        {
-          parts: [
+    // Enhanced prompt for better quality
+    const enhancedPrompt = `You are a helpful AI assistant. Provide detailed, comprehensive, and engaging responses with:
+- Rich details and specific examples
+- Clear structure and organization
+- Creative and thoughtful insights
+- A helpful and informative tone
+
+User request: ${prompt}`
+
+    let lastError = null
+    let successResponse = null
+
+    // Try each model until one works
+    for (const modelId of MODELS_TO_TRY) {
+      try {
+        console.log(`🔄 Trying model: ${modelId}`)
+
+        const requestBody = {
+          contents: [
             {
-              text: prompt
+              parts: [{ text: enhancedPrompt }]
             }
-          ]
+          ],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 600,
+            topP: 0.95,
+            topK: 40,
+          }
         }
-      ],
-      generationConfig: {
-        temperature: 0.9,
-        maxOutputTokens: 500,
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+          }
+        )
+
+        const data = await response.json()
+
+        console.log(`📊 ${modelId} status:`, response.status)
+
+        if (response.ok && data.candidates && data.candidates.length > 0) {
+          const aiResponse = data.candidates[0].content.parts[0].text
+          console.log(`✅ Success with model: ${modelId}`)
+          console.log(`📝 Response length: ${aiResponse.length}`)
+
+          return NextResponse.json({
+            success: true,
+            consensus: aiResponse,
+            consensus_score: 85,
+            confidence: 80,
+            model_used: modelId,
+            tokens_used: data.usageMetadata?.totalTokenCount || 0,
+            is_free: true,
+          })
+        } else {
+          const errorMsg = data.error?.message || 'Unknown error'
+          console.log(`❌ ${modelId} failed:`, errorMsg)
+          lastError = errorMsg
+
+          // If it's a key error, stop trying
+          if (errorMsg.includes('API key') || 
+              errorMsg.includes('authentication') || 
+              errorMsg.includes('permission') ||
+              errorMsg.includes('invalid')) {
+            console.error('❌ API Key error, stopping attempts')
+            return NextResponse.json({
+              consensus: `⚠️ Invalid API key: ${errorMsg}`,
+              consensus_score: 0,
+              confidence: 0,
+              error: 'invalid_key',
+            })
+          }
+        }
+      } catch (error) {
+        console.log(`❌ ${modelId} error:`, error)
+        lastError = error instanceof Error ? error.message : 'Unknown error'
       }
     }
 
-    console.log('📤 Request body:', JSON.stringify(requestBody, null, 2))
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      }
-    )
-
-    console.log('📊 Response status:', response.status)
-    
-    const data = await response.json()
-    console.log('📊 Response data:', JSON.stringify(data, null, 2))
-
-    if (!response.ok) {
-      return NextResponse.json({
-        consensus: `⚠️ API Error: ${data.error?.message || 'Unknown error'}`,
-        consensus_score: 0,
-        confidence: 0,
-        error: 'api_error',
-        debug: {
-          status: response.status,
-          error: data.error,
-        }
-      })
-    }
-
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response'
-
+    // If all models failed
+    console.error('❌ All models failed. Last error:', lastError)
     return NextResponse.json({
-      success: true,
-      consensus: aiResponse,
-      consensus_score: 85,
-      confidence: 80,
-      model_used: modelId,
-      tokens_used: data.usageMetadata?.totalTokenCount || 0,
-      is_free: true,
+      consensus: `⚠️ No available models. Last error: ${lastError}`,
+      consensus_score: 0,
+      confidence: 0,
+      error: 'model_not_found',
+      debug: {
+        models_tried: MODELS_TO_TRY,
+        last_error: lastError,
+      }
     })
 
   } catch (error) {
@@ -102,51 +191,109 @@ export async function POST(req: NextRequest) {
       consensus_score: 0,
       confidence: 0,
       error: 'api_error',
-      debug: {
-        error: error instanceof Error ? error.message : 'Unknown',
-      }
     })
   }
 }
 
 // ============================================
-// SIMPLE GET ENDPOINT
+// GET ENDPOINT - List available models
 // ============================================
 export async function GET() {
   const hasKey = !!process.env.GOOGLE_API_KEY || !!process.env.Gemini_API_Key
-  
+
   if (!hasKey) {
     return NextResponse.json({
       has_api_key: false,
-      message: 'No API key found. Please set GOOGLE_API_KEY or Gemini_API_Key.',
+      error: 'No Gemini API key found',
+      message: 'Please set GOOGLE_API_KEY or Gemini_API_Key environment variable',
     })
   }
 
-  // Simple test to see if API works
   try {
-    const testResponse = await fetch(
+    // First, list all available models
+    const listResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`,
-      {
-        method: 'GET',
-      }
+      { method: 'GET' }
     )
-    
-    const testData = await testResponse.json()
-    
+
+    const listData = await listResponse.json()
+
+    // Then test each model with a simple request
+    const modelsToTest = [
+      'gemini-3.5-flash',
+      'gemini-2.5-pro',
+      'gemini-2.5-flash',
+      'gemini-3-flash-preview',
+      'gemini-3.1-pro-preview',
+    ]
+
+    const results: Record<string, any> = {}
+    const workingModels: string[] = []
+
+    for (const model of modelsToTest) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [{ text: 'Say hello in one word' }]
+                }
+              ],
+              generationConfig: {
+                maxOutputTokens: 5,
+              }
+            }),
+          }
+        )
+
+        const data = await response.json()
+
+        results[model] = {
+          status: response.status,
+          ok: response.ok,
+          error: data.error?.message || null,
+          has_candidates: !!(data.candidates && data.candidates.length > 0),
+        }
+
+        if (response.ok && data.candidates && data.candidates.length > 0) {
+          workingModels.push(model)
+          console.log(`✅ ${model} works!`)
+        } else {
+          console.log(`❌ ${model} failed:`, data.error?.message || 'Unknown')
+        }
+      } catch (error) {
+        results[model] = {
+          status: 'error',
+          ok: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          has_candidates: false,
+        }
+      }
+    }
+
     return NextResponse.json({
       has_api_key: true,
       key_prefix: GEMINI_API_KEY.substring(0, 10) + '...',
-      api_status: testResponse.ok ? 'connected' : 'error',
-      models_response: testData,
-      note: testResponse.ok ? 'API is working. Check models list above.' : 'API error - check your key.',
+      all_models_from_api: listData.models?.map((m: any) => m.name) || [],
+      working_models: workingModels,
+      test_results: results,
+      recommended_model: workingModels.length > 0 ? workingModels[0] : 'None found',
+      note: workingModels.length === 0 
+        ? '❌ No working models. Try: 1) Check API key is valid 2) Enable Gemini API in Google Cloud Console 3) Check if Gemini is available in your region' 
+        : `✅ Using: ${workingModels[0]}`,
     })
   } catch (error) {
     return NextResponse.json({
       has_api_key: true,
       key_prefix: GEMINI_API_KEY.substring(0, 10) + '...',
-      api_status: 'error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      note: 'Failed to connect to Gemini API. Check your internet and API key.',
+      note: 'Failed to connect to Gemini API. Check your internet connection and API key.',
     })
   }
 }
