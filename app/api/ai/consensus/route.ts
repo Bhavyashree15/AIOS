@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // ============================================
-// OPENROUTER API KEY - YOUR NEW KEY
+// OPENROUTER API KEY - YOUR KEY
 // ============================================
 const OPENROUTER_API_KEY = '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'
 
 // ============================================
-// MODEL MAPPING - ALL TO GPT-4o-mini
+// MODEL MAPPING - USING CONFIRMED WORKING FREE MODEL
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'openai/gpt-4o-mini',
-  'qwen-3.5-flash': 'openai/gpt-4o-mini',
-  'ministral-3-8b': 'openai/gpt-4o-mini',
-  'mistral-small-4': 'openai/gpt-4o-mini',
-  'deepseek-chat': 'openai/gpt-4o-mini',
-  'gemini-3-flash': 'openai/gpt-4o-mini',
-  'gpt-4o-mini': 'openai/gpt-4o-mini',
-  'claude-haiku-4.5': 'openai/gpt-4o-mini',
-  'mistral-small': 'openai/gpt-4o-mini',
-  'gpt-4.1': 'openai/gpt-4o-mini',
-  'claude-sonnet-4.0': 'openai/gpt-4o-mini',
-  'gpt-5.4': 'openai/gpt-4o-mini',
-  'gemini-3-pro-preview': 'openai/gpt-4o-mini',
-  'grok-3-mini': 'openai/gpt-4o-mini',
-  'codestral': 'openai/gpt-4o-mini',
-  'gpt-5.6-terra': 'openai/gpt-4o-mini',
-  'grok-4.5': 'openai/gpt-4o-mini',
-  'nova-premier-1.0': 'openai/gpt-4o-mini',
-  'perplexity-sonar': 'openai/gpt-4o-mini',
-  'gpt-5.6-luna': 'openai/gpt-4o-mini',
-  'deepseek-reasoner': 'openai/gpt-4o-mini',
+  'gpt-5.4-mini': 'google/gemma-2-9b-it:free',
+  'qwen-3.5-flash': 'google/gemma-2-9b-it:free',
+  'ministral-3-8b': 'google/gemma-2-9b-it:free',
+  'mistral-small-4': 'google/gemma-2-9b-it:free',
+  'deepseek-chat': 'google/gemma-2-9b-it:free',
+  'gemini-3-flash': 'google/gemma-2-9b-it:free',
+  'gpt-4o-mini': 'google/gemma-2-9b-it:free',
+  'claude-haiku-4.5': 'google/gemma-2-9b-it:free',
+  'mistral-small': 'google/gemma-2-9b-it:free',
+  'gpt-4.1': 'google/gemma-2-9b-it:free',
+  'claude-sonnet-4.0': 'google/gemma-2-9b-it:free',
+  'gpt-5.4': 'google/gemma-2-9b-it:free',
+  'gemini-3-pro-preview': 'google/gemma-2-9b-it:free',
+  'grok-3-mini': 'google/gemma-2-9b-it:free',
+  'codestral': 'google/gemma-2-9b-it:free',
+  'gpt-5.6-terra': 'google/gemma-2-9b-it:free',
+  'grok-4.5': 'google/gemma-2-9b-it:free',
+  'nova-premier-1.0': 'google/gemma-2-9b-it:free',
+  'perplexity-sonar': 'google/gemma-2-9b-it:free',
+  'gpt-5.6-luna': 'google/gemma-2-9b-it:free',
+  'deepseek-reasoner': 'google/gemma-2-9b-it:free',
 }
 
 // ============================================
@@ -54,10 +54,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const modelId = 'openai/gpt-4o-mini'
-    const modelName = 'GPT-4o Mini'
+    // CONFIRMED WORKING FREE MODEL
+    const modelId = 'google/gemma-2-9b-it:free'
+    const modelName = 'Gemma 2 9B (Free)'
 
-    console.log('🤖 Using OpenRouter Model:', modelId)
+    console.log('🤖 Using Free Model:', modelId)
 
     // ============================================
     // CALL OPENROUTER API
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
         model: modelId,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 30, // LOW TO SAVE CREDITS
+        max_tokens: 200,
       }),
     })
 
@@ -86,21 +87,21 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       console.error('❌ OpenRouter API Error:', JSON.stringify(data, null, 2))
       
-      if (response.status === 402 || data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
+      if (data.error?.message?.includes('credits') || data.error?.message?.includes('insufficient')) {
         return NextResponse.json({
-          consensus: `⚠️ Insufficient credits. Add $5 at https://openrouter.ai/settings/creds`,
+          consensus: `⚠️ Free model daily limit reached. Try again later.`,
           consensus_score: 0,
           confidence: 0,
-          error: 'insufficient_credits',
+          error: 'free_model_limit',
         })
       }
       
-      if (data.error?.message?.includes('API key') || data.error?.message?.includes('invalid')) {
+      if (data.error?.message?.includes('No endpoints found')) {
         return NextResponse.json({
-          consensus: `⚠️ Invalid API key. Please check your key.`,
+          consensus: `⚠️ This free model is currently unavailable. Try again later.`,
           consensus_score: 0,
           confidence: 0,
-          error: 'invalid_key',
+          error: 'model_unavailable',
         })
       }
       
@@ -115,9 +116,8 @@ export async function POST(req: NextRequest) {
     // GET THE AI RESPONSE
     // ============================================
     const aiResponse = data.choices?.[0]?.message?.content || 'No response from AI'
-    const tokensUsed = data.usage?.total_tokens || 0
 
-    console.log('✅ Success! Tokens used:', tokensUsed)
+    console.log('✅ Success! Response length:', aiResponse.length)
 
     return NextResponse.json({
       success: true,
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
       consensus_score: 85,
       confidence: 80,
       model_used: modelName,
-      tokens_used: tokensUsed,
+      is_free: true,
     })
 
   } catch (error) {
@@ -141,5 +141,6 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     balance: 0,
+    is_free: true,
   })
 }
