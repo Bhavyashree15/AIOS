@@ -8,7 +8,7 @@ const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.Gemini_API_Key
 console.log('🔍 API Key exists?', !!GEMINI_API_KEY)
 
 // ============================================
-// MODEL MAPPING - Gemini Models
+// MODEL MAPPING - Use only working models
 // ============================================
 const MODEL_MAP: Record<string, string> = {
   'gpt-5.4-mini': 'gemini-2.0-flash',
@@ -20,59 +20,70 @@ const MODEL_MAP: Record<string, string> = {
   'gpt-4o-mini': 'gemini-2.0-flash',
   'claude-haiku-4.5': 'gemini-2.0-flash',
   'mistral-small': 'gemini-2.0-flash',
-  'gpt-4.1': 'gemini-1.5-pro',
-  'claude-sonnet-4.0': 'gemini-1.5-pro',
-  'gpt-5.4': 'gemini-1.5-pro',
-  'gemini-3-pro-preview': 'gemini-1.5-pro',
-  'grok-3-mini': 'gemini-1.5-pro',
-  'codestral': 'gemini-1.5-pro',
-  'gpt-5.6-terra': 'gemini-1.5-pro',
-  'grok-4.5': 'gemini-1.5-pro',
-  'nova-premier-1.0': 'gemini-1.5-pro',
-  'perplexity-sonar': 'gemini-1.5-pro',
-  'gpt-5.6-luna': 'gemini-1.5-pro',
-  'deepseek-reasoner': 'gemini-1.5-pro',
+  'gpt-4.1': 'gemini-2.0-flash',
+  'claude-sonnet-4.0': 'gemini-2.0-flash',
+  'gpt-5.4': 'gemini-2.0-flash',
+  'gemini-3-pro-preview': 'gemini-2.0-flash',
+  'grok-3-mini': 'gemini-2.0-flash',
+  'codestral': 'gemini-2.0-flash',
+  'gpt-5.6-terra': 'gemini-2.0-flash',
+  'grok-4.5': 'gemini-2.0-flash',
+  'nova-premier-1.0': 'gemini-2.0-flash',
+  'perplexity-sonar': 'gemini-2.0-flash',
+  'gpt-5.6-luna': 'gemini-2.0-flash',
+  'deepseek-reasoner': 'gemini-2.0-flash',
 }
 
 // ============================================
-// BETTER SYSTEM PROMPTS FOR QUALITY
+// QUALITY OPTIMIZATION: Better system prompts
 // ============================================
-const getSystemPrompt = (prompt: string): string => {
-  // Detect if it's a creative writing request
-  const creativeKeywords = ['describe', 'create', 'write', 'story', 'imagine', 'design', 'picture', 'visualize']
-  const isCreative = creativeKeywords.some(word => prompt.toLowerCase().includes(word))
-  
-  // Detect if it's a detailed/long request
-  const isDetailed = prompt.toLowerCase().includes('detailed') || 
-                     prompt.toLowerCase().includes('comprehensive') ||
-                     prompt.toLowerCase().includes('in-depth')
+const enhancePrompt = (prompt: string): string => {
+  // Detect the type of request
+  const isCreative = /describe|create|write|story|imagine|design|picture|visualize|generate|make|develop|craft/.test(prompt.toLowerCase())
+  const isDetailed = /detailed|comprehensive|in-depth|extensive|thorough|complete|full|rich|vivid|elaborate/.test(prompt.toLowerCase())
+  const isLong = prompt.length > 30
 
-  if (isCreative && isDetailed) {
-    return `You are a master storyteller and world-builder. Create rich, vivid, and immersive descriptions with:
-- Sensory details (sight, sound, smell, touch)
-- Emotional depth and atmosphere
-- Unique and imaginative elements
-- A compelling narrative voice
+  // For creative/detailed prompts - add quality boosters
+  if (isCreative && (isDetailed || isLong)) {
+    return `IMPORTANT: Provide a RICH, VIVID, and DETAILED response with:
+- At least 200-300 words
+- Sensory details (sight, sound, smell, touch, taste)
 - Specific examples and concrete imagery
-Write at least 200-300 words. Be creative and detailed.`
+- Emotional depth and atmosphere
+- Unique and creative elements
+- Engaging storytelling or descriptive style
+
+Write as if you're an award-winning author crafting immersive prose.
+
+${prompt}`
   }
 
+  // For creative prompts
   if (isCreative) {
-    return `You are a creative writer with a vivid imagination. Respond with:
-- Engaging and descriptive language
-- Rich imagery and sensory details
-- An interesting perspective or angle
-- Specific, concrete examples
-Write a detailed, engaging response.`
+    return `Provide a CREATIVE and ENGAGING response with:
+- Rich descriptive language
+- Specific details and examples
+- An interesting perspective
+- Vivid imagery
+
+${prompt}`
   }
 
-  // Default - quality responses for any query
-  return `You are a knowledgeable and articulate AI assistant. Provide:
-- Clear, well-structured explanations
-- Specific examples and details
-- Nuanced insights
-- A helpful and engaging tone
-Make your response comprehensive and valuable.`
+  // For analytical/educational prompts
+  if (/explain|what|how|why|define|compare|analyze/.test(prompt.toLowerCase())) {
+    return `Provide a COMPREHENSIVE and CLEAR response with:
+- Well-structured explanation
+- Specific examples
+- Key details and nuance
+- Practical insights
+
+${prompt}`
+  }
+
+  // Default - enhance all prompts
+  return `Provide a thorough, detailed, and valuable response to this query. Include specific examples, clear explanations, and thoughtful insights.
+
+${prompt}`
 }
 
 // ============================================
@@ -106,19 +117,18 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Use Gemini 1.5 Pro for quality responses
-    // Better quality than Flash models
-    const modelId = 'gemini-1.5-pro'
-    const modelName = 'Gemini 1.5 Pro'
+    // Use working model: gemini-2.0-flash
+    const modelId = 'gemini-2.0-flash'
+    const modelName = 'Gemini 2.0 Flash'
 
     console.log('🤖 Using model:', modelId)
 
-    // Create a better prompt with system instructions
-    const systemPrompt = getSystemPrompt(prompt)
-    const fullPrompt = `${systemPrompt}\n\nUser request: ${prompt}`
+    // Enhance the prompt for better quality
+    const enhancedPrompt = enhancePrompt(prompt)
+    console.log('📝 Enhanced prompt length:', enhancedPrompt.length)
 
     // ============================================
-    // OPTIMIZED API CALL WITH BETTER PARAMETERS
+    // OPTIMIZED API CALL WITH MAXIMUM QUALITY
     // ============================================
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
@@ -130,16 +140,14 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           contents: [
             {
-              parts: [{ text: fullPrompt }]
+              parts: [{ text: enhancedPrompt }]
             }
           ],
           generationConfig: {
-            temperature: 0.8,           // More creative (was 0.7)
-            maxOutputTokens: 500,       // Longer responses (was 200)
+            temperature: 0.9,           // Higher = more creative
+            maxOutputTokens: 800,       // Much longer responses
             topP: 0.95,
             topK: 40,
-            // Add this for better quality
-            stopSequences: [],
           }
         }),
       }
@@ -153,13 +161,12 @@ export async function POST(req: NextRequest) {
     if (!response.ok) {
       console.error('❌ API Error:', JSON.stringify(data, null, 2))
       
-      // If Pro fails, try Flash as fallback
+      // Try with gemini-2.0-flash-exp as fallback
       if (data.error?.message?.includes('not found') || data.error?.message?.includes('model')) {
-        console.log('🔄 Pro model not available, trying Flash...')
+        console.log('🔄 Trying fallback model...')
         
-        // Try Flash as fallback with same settings
         const fallbackResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
             headers: {
@@ -168,12 +175,12 @@ export async function POST(req: NextRequest) {
             body: JSON.stringify({
               contents: [
                 {
-                  parts: [{ text: fullPrompt }]
+                  parts: [{ text: enhancedPrompt }]
                 }
               ],
               generationConfig: {
-                temperature: 0.9,        // Higher for flash to compensate
-                maxOutputTokens: 500,
+                temperature: 0.9,
+                maxOutputTokens: 800,
                 topP: 0.95,
                 topK: 40,
               }
@@ -190,10 +197,9 @@ export async function POST(req: NextRequest) {
             consensus: aiResponse,
             consensus_score: 85,
             confidence: 80,
-            model_used: 'Gemini 2.0 Flash (Fallback)',
+            model_used: 'Gemini 2.0 Flash Exp',
             tokens_used: fallbackData.usageMetadata?.totalTokenCount || 0,
             is_free: true,
-            note: 'Using fallback model for better availability'
           })
         }
       }
@@ -202,6 +208,7 @@ export async function POST(req: NextRequest) {
         consensus: `⚠️ API Error: ${data.error?.message || 'Unknown error'}`,
         consensus_score: 0,
         confidence: 0,
+        error: 'api_error',
       })
     }
 
@@ -213,15 +220,21 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ Success! Tokens used:', tokensUsed)
     console.log('📝 Response length:', aiResponse.length)
+    console.log('📄 Response preview:', aiResponse.substring(0, 100) + '...')
+
+    // Check if response seems too short
+    const isShort = aiResponse.length < 100
+    const qualityNote = isShort ? 'Response seems short. Try asking for more details.' : undefined
 
     return NextResponse.json({
       success: true,
       consensus: aiResponse,
-      consensus_score: 85,
-      confidence: 80,
+      consensus_score: isShort ? 70 : 85,
+      confidence: isShort ? 65 : 80,
       model_used: modelName,
       tokens_used: tokensUsed,
-      is_free: false, // Pro uses paid tier
+      is_free: true,
+      note: qualityNote,
     })
 
   } catch (error) {
@@ -230,20 +243,50 @@ export async function POST(req: NextRequest) {
       consensus: `⚠️ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       consensus_score: 0,
       confidence: 0,
+      error: 'api_error',
     })
   }
 }
 
 // ============================================
-// GET ENDPOINT
+// GET ENDPOINT - Show available models
 // ============================================
 export async function GET() {
   const hasKey = !!process.env.GOOGLE_API_KEY || !!process.env.Gemini_API_Key
   
+  // Test which models actually work
+  const modelsToTest = [
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-exp',
+    'gemini-1.5-flash',
+  ]
+  
+  const workingModels: string[] = []
+  
+  for (const model of modelsToTest) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}?key=${GEMINI_API_KEY}`,
+        { method: 'GET' }
+      )
+      if (response.ok) {
+        workingModels.push(model)
+      }
+    } catch (error) {
+      // Skip
+    }
+  }
+  
   return NextResponse.json({
     has_api_key: hasKey,
-    models_available: ['gemini-1.5-pro', 'gemini-2.0-flash'],
-    is_free: false,
-    note: 'Using Pro model for better quality responses',
+    working_models: workingModels,
+    current_model: 'gemini-2.0-flash',
+    quality_settings: {
+      temperature: 0.9,
+      max_tokens: 800,
+      prompt_enhancement: true,
+    },
+    is_free: true,
+    note: workingModels.length > 0 ? 'Model available' : 'No models available - check API key',
   })
 }
