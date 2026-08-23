@@ -5,8 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // ============================================
 // Get your key from: https://aistudio.google.com/app/apikey
 // Key must start with "AIza"
-const GEMINI_API_KEY = process.env.GOOGLE_API_KEY
-
+const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.Gemini_API_Key
 if (!GEMINI_API_KEY) {
   console.warn('⚠️ GOOGLE_API_KEY environment variable is not set')
 }
