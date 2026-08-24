@@ -58,37 +58,6 @@ const getAllModels = () => {
   )
 }
 
-// ============================================
-// WORKING GEMINI MODEL MAP (2026)
-// ============================================
-const getWorkingModel = (modelId: string): string => {
-  // Map frontend model IDs to actual working Gemini models
-  const modelMap: Record<string, string> = {
-    'gpt-5.4-mini': 'gemini-3.5-flash',
-    'qwen-3.5-flash': 'gemini-3.5-flash',
-    'ministral-3-8b': 'gemini-3.5-flash',
-    'mistral-small-4': 'gemini-3.5-flash',
-    'deepseek-chat': 'gemini-3.5-flash',
-    'gemini-3-flash': 'gemini-3.5-flash',
-    'gpt-4o-mini': 'gemini-3.5-flash',
-    'claude-haiku-4.5': 'gemini-3.5-flash',
-    'mistral-small': 'gemini-3.5-flash',
-    'gpt-4.1': 'gemini-2.5-pro',
-    'claude-sonnet-4.0': 'gemini-2.5-pro',
-    'gpt-5.4': 'gemini-2.5-pro',
-    'gemini-3-pro-preview': 'gemini-2.5-pro',
-    'grok-3-mini': 'gemini-2.5-pro',
-    'codestral': 'gemini-2.5-pro',
-    'gpt-5.6-terra': 'gemini-2.5-pro',
-    'grok-4.5': 'gemini-2.5-pro',
-    'nova-premier-1.0': 'gemini-2.5-pro',
-    'perplexity-sonar': 'gemini-2.5-pro',
-    'gpt-5.6-luna': 'gemini-2.5-pro',
-    'deepseek-reasoner': 'gemini-2.5-pro',
-  }
-  return modelMap[modelId] || 'gemini-3.5-flash'
-}
-
 const SUGGESTIONS = [
   { icon: '🎨', label: 'Create an image', prompt: 'Create a detailed description of a futuristic city' },
   { icon: '📊', label: 'Compare ideas', prompt: 'Compare these concepts:' },
@@ -654,9 +623,7 @@ export default function DashboardPage() {
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
     if (lastUserMsg) {
       setPrompt(lastUserMsg.content)
-      setTimeout(() => {
-        handleSubmit()
-      }, 100)
+      setTimeout(() => handleSubmit(), 100)
     }
   }
 
@@ -727,15 +694,12 @@ export default function DashboardPage() {
     abortControllerRef.current = new AbortController()
 
     try {
-      // Map selected models to working Gemini models
-      const mappedModels = selectedModels.map(id => getWorkingModel(id))
-      
       const res = await fetch('/api/ai/consensus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt: currentPrompt, 
-          models: mappedModels
+          models: selectedModels
         }),
         signal: abortControllerRef.current.signal
       })
@@ -744,15 +708,13 @@ export default function DashboardPage() {
       let assistantContent: string
       
       if (data.error === 'insufficient_credits') {
-        assistantContent = `⚠️ Insufficient credits. Please add funds.`
+        assistantContent = `⚠️ Insufficient credits. Please add funds at https://openrouter.ai/settings/creds`
       } else if (data.error === 'free_model_limit') {
         assistantContent = `⚠️ Free model daily limit reached. Try again later.`
       } else if (data.error === 'model_unavailable') {
         assistantContent = `⚠️ Model currently unavailable. Try again later.`
       } else if (data.error === 'all_models_failed') {
-        assistantContent = `⚠️ All models are currently unavailable. Try again later.`
-      } else if (data.error === 'missing_api_key') {
-        assistantContent = `⚠️ API key not configured. Please add your Gemini API key.`
+        assistantContent = `⚠️ All free models are currently unavailable. Try again later or add credits.`
       } else if (data.error) {
         assistantContent = `⚠️ ${data.error}`
       } else if (data.consensus) {
@@ -778,12 +740,7 @@ export default function DashboardPage() {
       
       const finalMessages = [...updatedMessages, assistantMsg]
       setMessages(finalMessages)
-      
-      if (!data.error && assistantContent.length > 0) {
-        simulateTyping(assistantContent)
-      } else {
-        setIsLoading(false)
-      }
+      simulateTyping(assistantContent)
       
       if (currentChatId) {
         updateChatMessages(currentChatId, finalMessages)
@@ -839,6 +796,12 @@ export default function DashboardPage() {
       handleSubmit()
     }, 100)
   }
+
+  const navItems = [
+    { id: 'image', icon: Image, label: 'Image Studio' },
+    { id: 'experts', icon: Users, label: 'Experts' },
+    { id: 'projects', icon: FolderOpen, label: 'Projects' },
+  ]
 
   const MarkdownContent = ({ content }: { content: string }) => {
     return (
@@ -905,7 +868,7 @@ export default function DashboardPage() {
     <div className={`flex h-screen ${isDark ? 'dark bg-[#343541]' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
       
       {/* ==========================================
-          SIDEBAR
+          SIDEBAR - EXACTLY LIKE CHATGPT
           ========================================== */}
       {sidebarOpen && (
         <div 
@@ -921,7 +884,7 @@ export default function DashboardPage() {
         flex flex-col transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* New Chat Button */}
+        {/* New Chat Button - TOP */}
         <div className="p-3 border-b border-[#4a4b5a]/20 dark:border-[#4a4b5a]">
           <button 
             onClick={createNewChat} 
@@ -932,7 +895,7 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Search */}
+        {/* Chat History with Search */}
         <div className="px-3 py-2">
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8e8ea0]" />
@@ -946,7 +909,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Chat List */}
+        {/* Chat History List */}
         <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
           {filteredChats.slice(0, 50).map((chat: any) => (
             <div key={chat.id} className="group relative flex items-center">
@@ -963,6 +926,7 @@ export default function DashboardPage() {
                 <MessageSquare className="h-4 w-4 flex-shrink-0 opacity-60" />
                 <span className="truncate text-sm">{chat.title}</span>
               </button>
+              {/* Dustbin icon - ALWAYS VISIBLE on hover */}
               <button 
                 onClick={(e) => deleteChat(chat.id, e)}
                 className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-red-500/10 text-gray-400 hover:text-red-500"
@@ -973,7 +937,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* User */}
+        {/* Bottom - User */}
         <div className={`border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} p-3`}>
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-200/20 dark:hover:bg-white/5 cursor-pointer transition-colors">
             <div className="w-7 h-7 rounded-full bg-[#10a37f] flex items-center justify-center text-white text-xs font-bold">
@@ -1277,10 +1241,12 @@ export default function DashboardPage() {
 
                       {!editingMessageIndex || editingMessageIndex !== i ? (
                         <div className={`flex items-center gap-2 mt-1.5 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
+                          {/* Timestamp */}
                           <span className="text-[10px] opacity-60">
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           
+                          {/* Copy - BOLD icon */}
                           <button
                             onClick={() => copyMessage(msg.content, msgId)}
                             className={`p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors`}
@@ -1292,24 +1258,25 @@ export default function DashboardPage() {
                             )}
                           </button>
 
+                          {/* Regenerate - BOLD icon (only for AI) */}
                           {msg.role === 'assistant' && (
-                            <>
-                              <button
-                                onClick={() => regenerateResponse(i)}
-                                className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                              >
-                                <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
-                              </button>
-                              <button
-                                onClick={askAnotherAI}
-                                className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all bg-[#10a37f]/10 hover:bg-[#10a37f]/20 text-[#10a37f]"
-                              >
-                                <RefreshCw className="h-3 w-3 stroke-[2.5]" />
-                                <span>Ask Another AI</span>
-                              </button>
-                            </>
+                            <button
+                              onClick={() => regenerateResponse(i)}
+                              className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                            >
+                              <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                            </button>
                           )}
 
+                          {/* Reply - BOLD icon */}
+                          <button
+                            onClick={() => handleReplyClick(msg, i)}
+                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                          >
+                            <Reply className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                          </button>
+
+                          {/* Edit - BOLD icon (only for user) */}
                           {msg.role === 'user' && (
                             <button
                               onClick={() => startEditing(msg, i)}
@@ -1319,12 +1286,16 @@ export default function DashboardPage() {
                             </button>
                           )}
 
-                          <button
-                            onClick={() => handleReplyClick(msg, i)}
-                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                          >
-                            <Reply className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
-                          </button>
+                          {/* Ask Another AI - Restored! */}
+                          {msg.role === 'assistant' && (
+                            <button
+                              onClick={askAnotherAI}
+                              className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all bg-[#10a37f]/10 hover:bg-[#10a37f]/20 text-[#10a37f]"
+                            >
+                              <RefreshCw className="h-3 w-3 stroke-[2.5]" />
+                              <span>Ask Another AI</span>
+                            </button>
+                          )}
                         </div>
                       ) : null}
                     </div>
@@ -1335,13 +1306,10 @@ export default function DashboardPage() {
             
             {isLoading && (
               <div className="flex justify-start">
-                <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'bg-[#2a2b32]' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}>
-                  <div className="flex items-center gap-2">
-                    <div className="typing-dot"></div>
-                    <div className="typing-dot"></div>
-                    <div className="typing-dot"></div>
-                  </div>
-                  <span className={`text-xs ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>Generating response...</span>
+                <div className={`flex items-center gap-2 px-4 py-2 ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
+                  <div className="typing-dot"></div>
+                  <div className="typing-dot"></div>
+                  <div className="typing-dot"></div>
                 </div>
               </div>
             )}
