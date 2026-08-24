@@ -971,7 +971,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header */}
+        {/* Header - With Three Dots solid background */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#10B981]/10' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1000,10 +1000,13 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 text-[#8e8ea0]" /> : <Moon className="h-4 w-4 text-[#8e8ea0]" />}
             </button>
 
-            {/* Three Dots with proper click outside */}
+            {/* ✅ Three Dots - Solid background, click outside to close */}
             <div className="relative">
               <button
-                onClick={() => setShowExportMenu(!showExportMenu)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowExportMenu(!showExportMenu)
+                }}
                 className={`p-1.5 rounded-xl transition-colors ${isDark ? 'hover:bg-[#ffffff08]' : 'hover:bg-[#f7f7f8]'}`}
               >
                 <MoreVertical className="h-4 w-4 text-[#8e8ea0]" />
@@ -1013,39 +1016,44 @@ export default function DashboardPage() {
                 <>
                   <div 
                     className="fixed inset-0 z-10" 
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
                       setShowExportMenu(false)
                     }}
                   />
-                  <div className={`absolute right-0 mt-1 w-56 z-20 ${isDark ? 'glass bg-[#0B0F17]/90 border-[#10B981]/20' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} rounded-2xl shadow-2xl border overflow-hidden`}>
-                    <div className={`px-4 py-2.5 border-b ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} flex items-center justify-between`}>
+                  <div className={`absolute right-0 mt-1 w-56 z-20 ${
+                    isDark 
+                      ? 'bg-[#2a2b32] border-[#4a4b5a]' 
+                      : 'bg-white border-[#e5e5e5]'
+                  } rounded-2xl shadow-2xl border overflow-hidden`}>
+                    <div className={`px-4 py-2.5 border-b ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} flex items-center justify-between`}>
                       <span className={`text-sm ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>Balance</span>
-                      <span className={`text-sm font-semibold gradient-text`}>₹{walletBalance.toFixed(2)}</span>
+                      <span className={`text-sm font-semibold ${isDark ? 'text-[#10B981]' : 'text-[#10B981]'}`}>₹{walletBalance.toFixed(2)}</span>
                     </div>
                     <button
                       onClick={() => { addFunds(); setShowExportMenu(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#ffffff08]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'} flex items-center gap-2 transition-colors`}
+                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'} flex items-center gap-2 transition-colors`}
                     >
                       <Plus className="h-4 w-4" />
                       Add Funds
                     </button>
                     <button
                       onClick={() => { exportChat('txt'); setShowExportMenu(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#ffffff08]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'} flex items-center gap-2 border-t ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} transition-colors`}
+                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'} flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} transition-colors`}
                     >
                       <Download className="h-4 w-4" />
                       Export as TXT
                     </button>
                     <button
                       onClick={() => { exportChat('md'); setShowExportMenu(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#ffffff08]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'} flex items-center gap-2 border-t ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} transition-colors`}
+                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'} flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} transition-colors`}
                     >
                       <FileText className="h-4 w-4" />
                       Export as MD
                     </button>
                     <button
                       onClick={() => { handleClearChat(); setShowExportMenu(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-2 border-t ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} transition-colors`}
+                      className={`w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} transition-colors`}
                     >
                       <Trash2 className="h-4 w-4" />
                       Clear Chat
@@ -1168,7 +1176,7 @@ export default function DashboardPage() {
 
         {/* Messages - FULL WIDTH */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
-          <div className="px-4 py-6 space-y-6 w-full">
+          <div className="px-6 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center min-h-[60vh] text-center">
                 <div className="w-20 h-20 rounded-2xl glass flex items-center justify-center text-4xl font-bold text-white shadow-2xl mb-6 border border-[#10B981]/20">
@@ -1331,6 +1339,7 @@ export default function DashboardPage() {
               })
             )}
             
+            {/* Loading - Shows during generation */}
             {isLoading && (
               <div className="flex justify-start">
                 <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'glass border-[#10B981]/20' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'}`}>
@@ -1434,7 +1443,7 @@ export default function DashboardPage() {
                   <Paperclip className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
                 </label>
                 
-                {/* ✅ STOP button - Shows during generation */}
+                {/* ✅ STOP button - Always visible during generation */}
                 {isLoading ? (
                   <button 
                     onClick={stopGeneration} 
