@@ -3,40 +3,32 @@ import { NextRequest, NextResponse } from 'next/server'
 // ============================================
 // GEMINI API KEY
 // ============================================
-// Get your key from: https://aistudio.google.com/app/apikey
-// Key must start with "AIza"
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.Gemini_API_Key
 
 console.log('🔍 Gemini API Key exists?', !!GEMINI_API_KEY)
 
 // ============================================
-// WORKING GEMINI MODELS (Updated as of 2026)
+// WORKING MODELS FROM YOUR API KEY
 // ============================================
-// These are the current stable models that work for new API keys:
-// - gemini-3.5-flash    ✅ Most stable, recommended
-// - gemini-2.5-pro      ✅ Good for complex tasks
-// - gemini-2.5-flash    ⚠️ Restricted for new accounts
-
 const MODELS_TO_TRY = [
-  'gemini-3.5-flash',      // ✅ RECOMMENDED - Stable
-  'gemini-2.5-pro',        // ✅ Good quality
-  'gemini-3-flash-preview', // ⚠️ Preview access required
-  'gemini-3.1-pro-preview', // ⚠️ Preview access required
+  'gemini-2.5-flash',      // ✅ Your API has this
+  'gemini-2.5-pro',        // ✅ Your API has this
+  'gemini-flash-latest',   // ✅ Your API has this
 ]
 
 // ============================================
 // MODEL MAPPING
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'gemini-3.5-flash',
-  'qwen-3.5-flash': 'gemini-3.5-flash',
-  'ministral-3-8b': 'gemini-3.5-flash',
-  'mistral-small-4': 'gemini-3.5-flash',
-  'deepseek-chat': 'gemini-3.5-flash',
-  'gemini-3-flash': 'gemini-3.5-flash',
-  'gpt-4o-mini': 'gemini-3.5-flash',
-  'claude-haiku-4.5': 'gemini-3.5-flash',
-  'mistral-small': 'gemini-3.5-flash',
+  'gpt-5.4-mini': 'gemini-2.5-flash',
+  'qwen-3.5-flash': 'gemini-2.5-flash',
+  'ministral-3-8b': 'gemini-2.5-flash',
+  'mistral-small-4': 'gemini-2.5-flash',
+  'deepseek-chat': 'gemini-2.5-flash',
+  'gemini-3-flash': 'gemini-2.5-flash',
+  'gpt-4o-mini': 'gemini-2.5-flash',
+  'claude-haiku-4.5': 'gemini-2.5-flash',
+  'mistral-small': 'gemini-2.5-flash',
   'gpt-4.1': 'gemini-2.5-pro',
   'claude-sonnet-4.0': 'gemini-2.5-pro',
   'gpt-5.4': 'gemini-2.5-pro',
@@ -86,7 +78,6 @@ export async function POST(req: NextRequest) {
     console.log('🔑 API Key prefix:', GEMINI_API_KEY.substring(0, 10) + '...')
     console.log('📝 Prompt:', prompt)
 
-    // Enhanced prompt for better quality
     const enhancedPrompt = `You are a helpful AI assistant. Provide detailed, comprehensive, and engaging responses with:
 - Rich details and specific examples
 - Clear structure and organization
@@ -96,22 +87,16 @@ export async function POST(req: NextRequest) {
 User request: ${prompt}`
 
     let lastError = null
-    let successResponse = null
 
-    // Try each model until one works
     for (const modelId of MODELS_TO_TRY) {
       try {
         console.log(`🔄 Trying model: ${modelId}`)
 
         const requestBody = {
-          contents: [
-            {
-              parts: [{ text: enhancedPrompt }]
-            }
-          ],
+          contents: [{ parts: [{ text: enhancedPrompt }] }],
           generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 600,
+            temperature: 0.9,
+            maxOutputTokens: 800,
             topP: 0.95,
             topK: 40,
           }
@@ -121,9 +106,7 @@ User request: ${prompt}`
           `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody),
           }
         )
@@ -151,7 +134,6 @@ User request: ${prompt}`
           console.log(`❌ ${modelId} failed:`, errorMsg)
           lastError = errorMsg
 
-          // If it's a key error, stop trying
           if (errorMsg.includes('API key') || 
               errorMsg.includes('authentication') || 
               errorMsg.includes('permission') ||
@@ -171,7 +153,6 @@ User request: ${prompt}`
       }
     }
 
-    // If all models failed
     console.error('❌ All models failed. Last error:', lastError)
     return NextResponse.json({
       consensus: `⚠️ No available models. Last error: ${lastError}`,
@@ -196,7 +177,7 @@ User request: ${prompt}`
 }
 
 // ============================================
-// GET ENDPOINT - List available models
+// GET ENDPOINT
 // ============================================
 export async function GET() {
   const hasKey = !!process.env.GOOGLE_API_KEY || !!process.env.Gemini_API_Key
@@ -210,7 +191,6 @@ export async function GET() {
   }
 
   try {
-    // First, list all available models
     const listResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`,
       { method: 'GET' }
@@ -218,13 +198,10 @@ export async function GET() {
 
     const listData = await listResponse.json()
 
-    // Then test each model with a simple request
     const modelsToTest = [
-      'gemini-3.5-flash',
-      'gemini-2.5-pro',
       'gemini-2.5-flash',
-      'gemini-3-flash-preview',
-      'gemini-3.1-pro-preview',
+      'gemini-2.5-pro',
+      'gemini-flash-latest',
     ]
 
     const results: Record<string, any> = {}
@@ -236,18 +213,10 @@ export async function GET() {
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              contents: [
-                {
-                  parts: [{ text: 'Say hello in one word' }]
-                }
-              ],
-              generationConfig: {
-                maxOutputTokens: 5,
-              }
+              contents: [{ parts: [{ text: 'Say hello in one word' }] }],
+              generationConfig: { maxOutputTokens: 5 },
             }),
           }
         )
@@ -285,7 +254,7 @@ export async function GET() {
       test_results: results,
       recommended_model: workingModels.length > 0 ? workingModels[0] : 'None found',
       note: workingModels.length === 0 
-        ? '❌ No working models. Try: 1) Check API key is valid 2) Enable Gemini API in Google Cloud Console 3) Check if Gemini is available in your region' 
+        ? '❌ No working models. Check your API key.' 
         : `✅ Using: ${workingModels[0]}`,
     })
   } catch (error) {
@@ -293,7 +262,7 @@ export async function GET() {
       has_api_key: true,
       key_prefix: GEMINI_API_KEY.substring(0, 10) + '...',
       error: error instanceof Error ? error.message : 'Unknown error',
-      note: 'Failed to connect to Gemini API. Check your internet connection and API key.',
+      note: 'Failed to connect to Gemini API.',
     })
   }
 }
