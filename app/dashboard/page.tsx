@@ -900,14 +900,14 @@ export default function DashboardPage() {
 
       <div className={`
         fixed lg:relative inset-y-0 left-0 z-50 w-64 
-        ${isDark ? 'glass bg-[#0B0F17]/80 border-[#ffffff0a]' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} 
+        ${isDark ? 'glass bg-[#0B0F17]/90 border-[#10B981]/20' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} 
         border-r flex flex-col transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="p-3 border-b border-[#ffffff0a]">
+        <div className="p-3 border-b border-[#10B981]/10">
           <button 
             onClick={createNewChat} 
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 bg-gradient-to-r from-[#10B981] to-[#06B6D4] hover:shadow-lg hover:shadow-[#10B981]/20 text-white"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 bg-gradient-to-r from-[#10B981] to-[#06B6D4] hover:shadow-lg hover:shadow-[#10B981]/30 text-white"
           >
             <Plus className="h-4 w-4" />
             <span>New chat</span>
@@ -922,7 +922,7 @@ export default function DashboardPage() {
               placeholder="Search chats..."
               value={chatSearchQuery}
               onChange={(e) => setChatSearchQuery(e.target.value)}
-              className={`w-full pl-9 pr-3 py-1.5 rounded-xl text-sm ${isDark ? 'bg-[#ffffff08] text-[#ececec] placeholder-[#8e8ea0] border-[#ffffff0a]' : 'bg-[#f7f7f8] text-[#2d2d2d] placeholder-[#8e8ea0] border-[#e5e5e5]'} border outline-none focus:ring-2 focus:ring-[#10B981]/30 transition-all`}
+              className={`w-full pl-9 pr-3 py-1.5 rounded-xl text-sm ${isDark ? 'bg-[#ffffff08] text-[#ececec] placeholder-[#8e8ea0] border-[#ffffff0a]' : 'bg-[#f7f7f8] text-[#2d2d2d] placeholder-[#8e8ea0] border-[#e5e5e5]'} border outline-none focus:ring-2 focus:ring-[#10B981]/50 transition-all`}
             />
           </div>
         </div>
@@ -935,7 +935,7 @@ export default function DashboardPage() {
                 className={`
                   w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all duration-200 truncate flex items-center gap-3
                   ${currentChatId === chat.id 
-                    ? isDark ? 'glass bg-[#10B981]/10 border-[#10B981]/20 text-white' : 'bg-gradient-to-r from-[#10B981]/10 to-transparent text-black' 
+                    ? isDark ? 'glass bg-[#10B981]/20 border-[#10B981]/30 text-white' : 'bg-gradient-to-r from-[#10B981]/20 to-transparent text-black' 
                     : isDark ? 'text-[#ececec] hover:bg-[#ffffff08]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'
                   }
                 `}
@@ -953,7 +953,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <div className={`border-t ${isDark ? 'border-[#ffffff0a]' : 'border-[#e5e5e5]'} p-3`}>
+        <div className={`border-t ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} p-3`}>
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-[#ffffff08] cursor-pointer transition-colors">
             <div className="w-7 h-7 rounded-full bg-gradient-to-r from-[#10B981] to-[#06B6D4] flex items-center justify-center text-white text-xs font-bold">
               U
@@ -972,7 +972,7 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col h-full min-w-0">
         
         {/* Header - With Glass Effect */}
-        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#ffffff0a]' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
+        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#10B981]/10' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setSidebarOpen(true)} 
@@ -1014,8 +1014,8 @@ export default function DashboardPage() {
                     className="fixed inset-0 z-10" 
                     onClick={() => setShowExportMenu(false)}
                   />
-                  <div className={`absolute right-0 mt-1 w-56 z-20 ${isDark ? 'glass bg-[#0B0F17]/90 border-[#ffffff0a]' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} rounded-2xl shadow-2xl border overflow-hidden`}>
-                    <div className={`px-4 py-2.5 border-b ${isDark ? 'border-[#ffffff0a]' : 'border-[#e5e5e5]'} flex items-center justify-between`}>
+                  <div className={`absolute right-0 mt-1 w-56 z-20 ${isDark ? 'glass bg-[#0B0F17]/90 border-[#10B981]/20' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} rounded-2xl shadow-2xl border overflow-hidden`}>
+                    <div className={`px-4 py-2.5 border-b ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} flex items-center justify-between`}>
                       <span className={`text-sm ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>Balance</span>
                       <span className={`text-sm font-semibold gradient-text`}>₹{walletBalance.toFixed(2)}</span>
                     </div>
@@ -1028,21 +1028,21 @@ export default function DashboardPage() {
                     </button>
                     <button
                       onClick={() => { exportChat('txt'); setShowExportMenu(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#ffffff08]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'} flex items-center gap-2 border-t ${isDark ? 'border-[#ffffff0a]' : 'border-[#e5e5e5]'} transition-colors`}
+                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#ffffff08]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'} flex items-center gap-2 border-t ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} transition-colors`}
                     >
                       <Download className="h-4 w-4" />
                       Export as TXT
                     </button>
                     <button
                       onClick={() => { exportChat('md'); setShowExportMenu(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#ffffff08]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'} flex items-center gap-2 border-t ${isDark ? 'border-[#ffffff0a]' : 'border-[#e5e5e5]'} transition-colors`}
+                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#ffffff08]' : 'text-[#2d2d2d] hover:bg-[#f7f7f8]'} flex items-center gap-2 border-t ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} transition-colors`}
                     >
                       <FileText className="h-4 w-4" />
                       Export as MD
                     </button>
                     <button
                       onClick={() => { handleClearChat(); setShowExportMenu(false) }}
-                      className={`w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-2 border-t ${isDark ? 'border-[#ffffff0a]' : 'border-[#e5e5e5]'} transition-colors`}
+                      className={`w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-2 border-t ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} transition-colors`}
                     >
                       <Trash2 className="h-4 w-4" />
                       Clear Chat
@@ -1061,7 +1061,7 @@ export default function DashboardPage() {
               className="fixed inset-0 z-10" 
               onClick={() => setShowModelPicker(false)}
             />
-            <div className={`absolute right-4 bottom-24 z-20 p-3 rounded-2xl shadow-2xl border ${isDark ? 'glass bg-[#0B0F17]/90 border-[#ffffff0a]' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} max-h-[320px] overflow-y-auto w-72`}>
+            <div className={`absolute right-4 bottom-24 z-20 p-3 rounded-2xl shadow-2xl border ${isDark ? 'glass bg-[#0B0F17]/90 border-[#10B981]/20' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} max-h-[320px] overflow-y-auto w-72`}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Select Models</h3>
                 <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600">
@@ -1094,7 +1094,7 @@ export default function DashboardPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={`w-full pl-8 pr-3 py-1.5 text-sm rounded-xl border ${
                     isDark ? 'bg-[#ffffff08] border-[#ffffff0a] text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400'
-                  } outline-none focus:ring-2 focus:ring-[#10B981]/30 transition-all`}
+                  } outline-none focus:ring-2 focus:ring-[#10B981]/50 transition-all`}
                 />
               </div>
 
@@ -1155,7 +1155,7 @@ export default function DashboardPage() {
 
               <button 
                 onClick={() => setShowModelPicker(false)} 
-                className="w-full mt-3 bg-gradient-to-r from-[#10B981] to-[#06B6D4] text-white py-2 rounded-xl font-medium text-xs hover:shadow-lg hover:shadow-[#10B981]/20 transition-all"
+                className="w-full mt-3 bg-gradient-to-r from-[#10B981] to-[#06B6D4] text-white py-2 rounded-xl font-medium text-xs hover:shadow-lg hover:shadow-[#10B981]/30 transition-all"
               >
                 Done
               </button>
@@ -1163,12 +1163,12 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages */}
+        {/* Messages - FULL WIDTH */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
-          <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 w-full">
+          <div className="px-4 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center min-h-[60vh] text-center">
-                <div className="w-20 h-20 rounded-2xl glass flex items-center justify-center text-4xl font-bold text-white shadow-2xl mb-6">
+                <div className="w-20 h-20 rounded-2xl glass flex items-center justify-center text-4xl font-bold text-white shadow-2xl mb-6 border border-[#10B981]/20">
                   <span className="gradient-text text-5xl">AI</span>
                 </div>
                 <h2 className={`text-2xl font-semibold ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
@@ -1184,7 +1184,7 @@ export default function DashboardPage() {
                       onClick={() => handleSuggestionClick(suggestion.prompt)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-300 hover:scale-[1.02] ${
                         isDark 
-                          ? 'glass hover:border-[#10B981]/30 border border-[#ffffff0a]' 
+                          ? 'glass hover:border-[#10B981]/30 border border-[#10B981]/10' 
                           : 'bg-white hover:bg-gray-50 border border-[#e5e5e5] hover:border-[#10B981]/30'
                       } border shadow-sm hover:shadow-md`}
                     >
@@ -1225,13 +1225,13 @@ export default function DashboardPage() {
                           <textarea
                             value={editingText}
                             onChange={(e) => setEditingText(e.target.value)}
-                            className={`w-full p-3 rounded-xl text-sm ${isDark ? 'bg-[#ffffff08] text-[#ececec] border-[#ffffff0a]' : 'bg-white text-[#2d2d2d] border-[#e5e5e5]'} border focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 resize-none`}
+                            className={`w-full p-3 rounded-xl text-sm ${isDark ? 'bg-[#ffffff08] text-[#ececec] border-[#ffffff0a]' : 'bg-white text-[#2d2d2d] border-[#e5e5e5]'} border focus:outline-none focus:ring-2 focus:ring-[#10B981]/50 resize-none`}
                             rows={3}
                           />
                           <div className="flex gap-2">
                             <button
                               onClick={() => saveEditing(i)}
-                              className="px-3 py-1.5 bg-gradient-to-r from-[#10B981] to-[#06B6D4] text-white rounded-lg text-xs font-medium hover:shadow-lg hover:shadow-[#10B981]/20 transition-all"
+                              className="px-3 py-1.5 bg-gradient-to-r from-[#10B981] to-[#06B6D4] text-white rounded-lg text-xs font-medium hover:shadow-lg hover:shadow-[#10B981]/30 transition-all"
                             >
                               Save
                             </button>
@@ -1330,7 +1330,7 @@ export default function DashboardPage() {
             
             {isLoading && (
               <div className="flex justify-start">
-                <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'glass' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#ffffff0a]' : 'border-[#e5e5e5]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'glass border-[#10B981]/20' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'}`}>
                   <div className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-[#10B981] to-[#06B6D4] animate-bounce" style={{ animationDelay: '0ms' }}></span>
                     <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-[#10B981] to-[#06B6D4] animate-bounce" style={{ animationDelay: '150ms' }}></span>
@@ -1346,7 +1346,7 @@ export default function DashboardPage() {
 
         {/* Reply To Indicator */}
         {replyToMessage && (
-          <div className={`flex items-center justify-between px-4 py-2 ${isDark ? 'glass border-[#ffffff0a]' : 'bg-[#f0f0f0] border-[#e5e5e5]'} border-t`}>
+          <div className={`flex items-center justify-between px-4 py-2 ${isDark ? 'glass border-[#10B981]/10' : 'bg-[#f0f0f0] border-[#e5e5e5]'} border-t`}>
             <div className="flex items-center gap-2">
               <Reply className="h-4 w-4 text-[#10B981]" />
               <span className={`text-xs ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
@@ -1360,12 +1360,12 @@ export default function DashboardPage() {
         )}
 
         {/* Input - Fixed at bottom */}
-        <div className={`border-t ${isDark ? 'glass border-[#ffffff0a]' : 'border-[#e5e5e5] bg-white/90 backdrop-blur-xl'} p-3 flex-shrink-0`}>
+        <div className={`border-t ${isDark ? 'glass border-[#10B981]/10' : 'border-[#e5e5e5] bg-white/90 backdrop-blur-xl'} p-3 flex-shrink-0`}>
           <div className="max-w-4xl mx-auto">
             {uploadedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2">
                 {uploadedFiles.map((file, index) => (
-                  <div key={index} className={`flex items-center gap-2 ${isDark ? 'glass border-[#ffffff0a] text-[#ececec]' : 'bg-white border-[#e5e5e5] text-[#2d2d2d]'} border rounded-xl px-3 py-1.5 text-sm`}>
+                  <div key={index} className={`flex items-center gap-2 ${isDark ? 'glass border-[#10B981]/10 text-[#ececec]' : 'bg-white border-[#e5e5e5] text-[#2d2d2d]'} border rounded-xl px-3 py-1.5 text-sm`}>
                     {file.type.startsWith('image/') && file.preview ? (
                       <img src={file.preview} alt={file.name} className="w-8 h-8 rounded object-cover" />
                     ) : (
@@ -1404,8 +1404,8 @@ export default function DashboardPage() {
                 placeholder={replyToMessage ? `Reply to ${replyToMessage.role}...` : isListening ? '🎤 Listening...' : 'Send a message...'} 
                 className={`
                   w-full min-h-[52px] max-h-[150px] 
-                  ${isDark ? 'bg-[#ffffff08] border-[#ffffff0a] text-[#ececec] placeholder-[#8e8ea0]' : 'bg-white border-[#e5e5e5] text-[#2d2d2d] placeholder-[#8e8ea0]'} 
-                  border rounded-xl p-3 pr-24 outline-none focus:ring-2 focus:ring-[#10B981]/30 resize-none text-sm transition-all
+                  ${isDark ? 'bg-[#ffffff08] border-[#10B981]/20 text-[#ececec] placeholder-[#8e8ea0]' : 'bg-white border-[#e5e5e5] text-[#2d2d2d] placeholder-[#8e8ea0]'} 
+                  border rounded-xl p-3 pr-24 outline-none focus:ring-2 focus:ring-[#10B981]/50 resize-none text-sm transition-all
                 `} 
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
                 rows={1}
@@ -1442,7 +1442,7 @@ export default function DashboardPage() {
                   <button 
                     onClick={handleSubmit} 
                     disabled={!prompt.trim() && uploadedFiles.length === 0} 
-                    className={`p-1.5 rounded-xl transition-all duration-300 transform hover:scale-105 ${prompt.trim() || uploadedFiles.length > 0 ? 'bg-gradient-to-r from-[#10B981] to-[#06B6D4] text-white hover:shadow-lg hover:shadow-[#10B981]/30' : isDark ? 'bg-[#ffffff08] text-[#8e8ea0]' : 'bg-[#e5e5e5] text-[#8e8ea0]'}`}
+                    className={`p-1.5 rounded-xl transition-all duration-300 transform hover:scale-105 ${prompt.trim() || uploadedFiles.length > 0 ? 'bg-gradient-to-r from-[#10B981] to-[#06B6D4] text-white hover:shadow-lg hover:shadow-[#10B981]/40' : isDark ? 'bg-[#ffffff08] text-[#8e8ea0]' : 'bg-[#e5e5e5] text-[#8e8ea0]'}`}
                   >
                     <Send className="h-4 w-4" />
                   </button>
@@ -1482,6 +1482,16 @@ export default function DashboardPage() {
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
         .prose pre { background: transparent !important; padding: 0 !important; }
         .prose code { font-size: 0.875em; }
+        .glass {
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .gradient-text {
+          background: linear-gradient(135deg, #10B981, #06B6D4, #8B5CF6);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
       `}</style>
     </div>
   )
