@@ -12,7 +12,8 @@ import {
   Copy, Check, ThumbsUp, ThumbsDown, Heart,
   Clock, Moon, Sun, Download, Search as SearchIcon,
   Reply, Pencil, Square, RotateCw,
-  Sparkles as SparklesIcon, RefreshCw, PanelLeftClose
+  Sparkles as SparklesIcon, RefreshCw, PanelLeftClose,
+  MoreVertical, PanelLeftOpen
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -626,6 +627,17 @@ export default function DashboardPage() {
     }
   }
 
+  const handleClearChat = () => {
+    if (messages.length === 0) return
+    if (confirm('Are you sure you want to clear all messages?')) {
+      setMessages([])
+      if (currentChatId) {
+        updateChatMessages(currentChatId, [])
+      }
+      setResponse(null)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!prompt.trim() && uploadedFiles.length === 0) {
       return
@@ -785,18 +797,6 @@ export default function DashboardPage() {
     }, 100)
   }
 
-  const navItems = [
-    { id: 'image', icon: Image, label: 'Image Studio' },
-    { id: 'experts', icon: Users, label: 'Experts' },
-    { id: 'projects', icon: FolderOpen, label: 'Projects' },
-  ]
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-emerald-600'
-    if (score >= 60) return 'text-amber-600'
-    return 'text-red-600'
-  }
-
   const MarkdownContent = ({ content }: { content: string }) => {
     return (
       <ReactMarkdown
@@ -859,756 +859,316 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={`flex h-screen ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'} ${isDark ? 'text-white' : 'text-gray-800'} overflow-hidden font-sans`}>
+    <div className={`flex h-screen ${isDark ? 'dark bg-[#343541]' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
       
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className={`fixed inset-0 z-40 ${isDark ? 'bg-black/70' : 'bg-black/30'}`}
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      {/* ==========================================
+          SIDEBAR - EXACTLY LIKE CHATGPT
+          ========================================== */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-      <motion.div 
-        initial={false}
-        animate={{ x: sidebarOpen ? 0 : -288 }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className={`fixed left-0 top-0 h-full z-50 w-72 ${isDark ? 'bg-[#1a1a1a]' : 'bg-white'} border-r ${isDark ? 'border-gray-700' : 'border-gray-200'} flex flex-col overflow-hidden shadow-xl`}
-      >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0 bg-gradient-to-r from-[#075E54] to-[#128C7E] text-white">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white font-bold text-sm">AI</div>
-            <div>
-              <div className="font-bold text-sm tracking-tight">AIOS</div>
-              <div className="text-[8px] text-white/70">Operating System</div>
+      <div className={`
+        fixed lg:relative inset-y-0 left-0 z-50 w-64 
+        ${isDark ? 'bg-[#202123]' : 'bg-white'} 
+        border-r ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}
+        flex flex-col transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* New Chat Button - TOP */}
+        <div className="p-3 border-b border-[#4a4b5a]/20 dark:border-[#4a4b5a]">
+          <button 
+            onClick={createNewChat} 
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-[#10a37f] hover:bg-[#0d8b6e] text-white"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New chat</span>
+          </button>
+        </div>
+
+        {/* Chat History */}
+        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
+          {filteredChats.slice(0, 50).map((chat: any) => (
+            <div key={chat.id} className="group relative flex items-center">
+              <button 
+                onClick={() => loadChat(chat.id)}
+                className={`
+                  w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all truncate flex items-center gap-3
+                  ${currentChatId === chat.id 
+                    ? isDark ? 'bg-[#2a2b32] text-white' : 'bg-[#e5e5e5] text-black' 
+                    : isDark ? 'text-[#ececec] hover:bg-[#2a2b32]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'
+                  }
+                `}
+              >
+                <MessageSquare className="h-4 w-4 flex-shrink-0 opacity-60" />
+                <span className="truncate text-sm">{chat.title}</span>
+              </button>
+              <button 
+                onClick={(e) => deleteChat(chat.id, e)}
+                className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-red-500/10 text-gray-400 hover:text-red-500"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
             </div>
-          </div>
-          <button onClick={() => setSidebarOpen(false)} className="text-white/80 hover:text-white transition-colors">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="p-3 flex-shrink-0 bg-[#f0f0f0] dark:bg-[#1e1e1e]">
-          <button onClick={createNewChat} className="w-full bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white px-3 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm">
-            <Pencil className="h-4 w-4" />
-            New Chat
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-2 bg-white dark:bg-[#1a1a1a]">
-          {navItems.map((item) => (
-            <button key={item.id} onClick={() => { setActivePage(item.id); if (item.id !== 'chat') setMessages([{ role: 'assistant', content: `📌 ${item.label} coming soon!` }]); setSidebarOpen(false) }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm ${activePage === item.id ? 'bg-[#E8F5E9] dark:bg-[#2a2a2a] text-[#075E54] dark:text-emerald-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'}`}>
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </button>
           ))}
-          
-          <div className="mt-4 px-2">
-            <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search chats..."
-                value={chatSearchQuery}
-                onChange={(e) => setChatSearchQuery(e.target.value)}
-                className="w-full bg-gray-100 dark:bg-[#2a2a2a] rounded-xl pl-9 pr-3 py-2 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all"
-              />
-            </div>
-          </div>
-
-          {filteredChats.length > 0 ? (
-            <div className="mt-4">
-              <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 px-2 flex items-center justify-between">
-                <span>Recent</span>
-                {unreadCount > 0 && (
-                  <span className="bg-red-500 text-white text-[8px] px-2 py-0.5 rounded-full">
-                    {unreadCount} unread
-                  </span>
-                )}
-              </div>
-              <div className="space-y-0.5">
-                {filteredChats.slice(0, 20).map((chat: any) => (
-                  <div key={chat.id} className="group relative flex items-center">
-                    <button 
-                      onClick={() => loadChat(chat.id)}
-                      className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all truncate flex items-center gap-2 ${
-                        currentChatId === chat.id 
-                          ? 'bg-[#E8F5E9] dark:bg-[#2a2a2a] text-[#075E54] dark:text-emerald-400' 
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a]'
-                      }`}
-                    >
-                      <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
-                      <span className="truncate">{chat.title}</span>
-                      {chat.unread && (
-                        <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0 animate-pulse" />
-                      )}
-                      <span className="text-[8px] text-gray-400 ml-auto flex-shrink-0">
-                        {new Date(chat.timestamp).toLocaleDateString()}
-                      </span>
-                    </button>
-                    <button 
-                      onClick={(e) => deleteChat(chat.id, e)}
-                      className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : chatSearchQuery ? (
-            <div className="mt-4 px-2 text-sm text-gray-500 text-center">
-              No chats found for "{chatSearchQuery}"
-            </div>
-          ) : null}
         </div>
 
-        <div className={`p-4 border-t ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-[#f0f0f0]'} flex-shrink-0`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#075E54] to-[#128C7E] flex items-center justify-center text-white text-[10px] font-bold">U</div>
-              <div><div className="text-sm font-medium text-gray-800 dark:text-gray-200">User</div><div className="text-[10px] text-gray-500">Free Plan</div></div>
+        {/* Bottom - User */}
+        <div className={`border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} p-3`}>
+          <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-200/20 dark:hover:bg-white/5 cursor-pointer transition-colors">
+            <div className="w-7 h-7 rounded-full bg-[#10a37f] flex items-center justify-center text-white text-xs font-bold">
+              U
             </div>
-            <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"><Settings className="h-4 w-4" /></button>
-          </div>
-          <div className="mt-2 p-2.5 bg-[#FEF3C7] dark:bg-[#2a2a2a] border border-[#F59E0B]/30 rounded-xl">
-            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium uppercase">Free Plan</div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">0 / 10 messages used</div>
-            <button className="mt-1.5 w-full text-xs bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white py-1.5 rounded-lg font-medium hover:shadow-lg transition-all">Upgrade Now</button>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium truncate text-[#ececec] dark:text-white">User</div>
+            </div>
+            <Settings className="h-4 w-4 opacity-60" />
           </div>
         </div>
-      </motion.div>
+      </div>
 
+      {/* ==========================================
+          MAIN CHAT - EXACTLY LIKE CHATGPT
+          ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-white'} flex-shrink-0 shadow-sm min-h-[60px]`}>
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <button onClick={() => setSidebarOpen(true)} className={`${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'} transition-colors`}>
-              <Menu className="h-5 w-5 flex-shrink-0" />
+        {/* Header - Minimal */}
+        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#4a4b5a] bg-[#343541]' : 'border-[#e5e5e5] bg-white'} flex-shrink-0`}>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setSidebarOpen(true)} 
+              className={`p-1.5 rounded-lg transition-colors lg:hidden ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
+            >
+              <Menu className="h-5 w-5 opacity-60" />
             </button>
-            <div className="flex items-center gap-2 min-w-0">
-              <h1 className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'New Chat' : 'AIOS Chat'}
-              </h1>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <div className={`w-2 h-2 rounded-full ${onlineStatus ? 'bg-green-500' : 'bg-gray-400'} animate-pulse`} />
-                <span className="text-[9px] text-gray-500 hidden sm:inline">
-                  {onlineStatus ? 'Online' : 'Offline'}
-                </span>
-              </div>
-            </div>
+            <h1 className={`text-sm font-medium truncate ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
+              {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'New Chat' : 'New Chat'}
+            </h1>
+            <button 
+              onClick={createNewChat}
+              className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
+              title="New Chat"
+            >
+              <Pencil className="h-3.5 w-3.5 opacity-60" />
+            </button>
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setIsDark(!isDark)}
-              className={`p-1.5 rounded-lg transition-colors ${isDark ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
             >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {isDark ? <Sun className="h-4 w-4 opacity-60" /> : <Moon className="h-4 w-4 opacity-60" />}
             </button>
 
-            {messages.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowExportMenu(!showExportMenu)}
-                  className={`p-1.5 rounded-lg transition-colors ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-                  title="Export Chat"
-                >
-                  <Download className="h-4 w-4" />
-                </button>
-                {showExportMenu && (
-                  <div className={`absolute right-0 mt-1 w-36 ${isDark ? 'bg-[#2a2a2a] border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-lg border overflow-hidden z-10`}>
-                    <button
-                      onClick={() => exportChat('txt')}
-                      className={`w-full text-left px-3 py-2 text-sm ${isDark ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'} flex items-center gap-2`}
-                    >
-                      Export as TXT
-                    </button>
-                    <button
-                      onClick={() => exportChat('md')}
-                      className={`w-full text-left px-3 py-2 text-sm ${isDark ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'} flex items-center gap-2`}
-                    >
-                      Export as MD
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-200'}`}>
-              <Wallet className="h-3.5 w-3.5 text-emerald-600" />
-              <span className={`${isDark ? 'text-emerald-400' : 'text-emerald-600'} font-mono font-semibold text-xs`}>₹{walletBalance.toFixed(2)}</span>
-              <button onClick={addFunds} className="text-gray-400 hover:text-gray-600"><Plus className="h-2.5 w-2.5" /></button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
+              >
+                <MoreVertical className="h-4 w-4 opacity-60" />
+              </button>
+              
+              {showExportMenu && (
+                <div className={`absolute right-0 mt-1 w-48 ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} rounded-lg shadow-lg border overflow-hidden z-10`}>
+                  <button
+                    onClick={() => { exportChat('txt'); setShowExportMenu(false) }}
+                    className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2`}
+                  >
+                    <Download className="h-4 w-4" />
+                    Export as TXT
+                  </button>
+                  <button
+                    onClick={() => { exportChat('md'); setShowExportMenu(false) }}
+                    className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}
+                  >
+                    <FileText className="h-4 w-4" />
+                    Export as MD
+                  </button>
+                  <button
+                    onClick={() => { handleClearChat(); setShowExportMenu(false) }}
+                    className={`w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Clear Chat
+                  </button>
+                </div>
+              )}
             </div>
-            <button className={`${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}><Settings className="h-4 w-4" /></button>
           </div>
         </div>
 
-        {/* ===== BEAUTIFUL MESSAGES UI ===== */}
-        <div className={`flex-1 overflow-y-auto px-4 py-6 space-y-6 min-h-0 ${isDark ? 'bg-[#1a1a1a]' : 'bg-[#f7f7f8]'}`}>
-          <AnimatePresence>
+        {/* Messages - ChatGPT Style */}
+        <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#343541]' : 'bg-[#f7f7f8]'}`}>
+          <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center max-w-3xl mx-auto">
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="w-20 h-20 rounded-full bg-gradient-to-r from-[#25D366] to-[#128C7E] flex items-center justify-center text-4xl font-bold text-white shadow-xl mb-6"
-                >
-                  AI
-                </motion.div>
-                <motion.h2 
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className={`text-3xl font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}
-                >
-                  How can I help you today?
-                </motion.h2>
-                <motion.p 
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-sm mt-2`}
-                >
-                  Ask me anything, upload a file, or use voice input 🎤
-                </motion.p>
-                
-                <motion.div 
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="grid grid-cols-2 gap-3 mt-6 w-full max-w-2xl"
-                >
-                  {SUGGESTIONS.map((suggestion, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSuggestionClick(suggestion.prompt)}
-                      className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all ${
-                        isDark 
-                          ? 'bg-[#2a2a2a] hover:bg-[#333] border border-gray-700 hover:border-gray-600' 
-                          : 'bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
-                      } border shadow-sm hover:shadow-md`}
-                    >
-                      <span className="text-xl">{suggestion.icon}</span>
-                      <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {suggestion.label}
-                      </span>
-                    </button>
-                  ))}
-                </motion.div>
-                
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className={`mt-6 flex items-center gap-4 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}
-                >
-                  <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> {selectedModels.length} model</span>
-                  <span className="flex items-center gap-1"><Wallet className="h-3 w-3" /> ₹{walletBalance.toFixed(2)}</span>
-                  <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> Upload</span>
-                  <span className="flex items-center gap-1"><Mic className="h-3 w-3" /> Voice</span>
-                </motion.div>
+              <div className="h-full flex flex-col items-center justify-center min-h-[60vh] text-center">
+                <h2 className={`text-3xl font-semibold ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
+                  How can I help?
+                </h2>
+                <p className={`text-sm mt-2 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
+                  Start a conversation by typing below.
+                </p>
               </div>
             ) : (
               messages.map((msg: any, i: number) => {
                 const isAI = msg.role === 'assistant'
-                const isEditing = editingMessageIndex === i
                 const msgId = `msg-${i}`
-                const isHovered = hoveredMessageId === msgId
                 
                 return (
-                  <motion.div 
-                    key={i}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}
-                    onMouseEnter={() => setHoveredMessageId(msgId)}
-                    onMouseLeave={() => setHoveredMessageId(null)}
-                  >
-                    <div className={`relative max-w-[100%] w-full flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                      {msg.replyTo && (
-                        <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-1 flex items-center gap-1`}>
-                          <Reply className="h-3 w-3" />
-                          <span>Replying to {msg.replyTo.role}: "{msg.replyTo.content}"</span>
-                        </div>
-                      )}
-
-                      {isEditing && msg.role === 'user' ? (
-                        <div className="w-full flex flex-col gap-2">
-                          <textarea
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            className={`w-full p-3 rounded-xl text-sm ${isDark ? 'bg-[#2a2a2a] text-white border-gray-700' : 'bg-white text-gray-800 border-gray-300'} border focus:outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none`}
-                            rows={3}
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => saveEditing(i)}
-                              className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 transition-all"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={cancelEditing}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} transition-all`}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div 
-                            className={`px-4 py-3 ${msg.role === 'user' ? 'shadow-sm' : ''}`}
-                            style={{
-                              backgroundColor: msg.role === 'user' 
-                                ? (isDark ? '#2563EB' : '#0A7CFF')
-                                : 'transparent',
-                              color: msg.role === 'user' 
-                                ? '#ffffff'
-                                : (isDark ? '#e5e5e5' : '#1a1a1a'),
-                              borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '0px',
-                              maxWidth: msg.role === 'user' ? 'auto' : '100%',
-                              width: msg.role === 'assistant' ? '100%' : 'auto',
-                              wordWrap: 'break-word',
-                              fontSize: '16px',
-                              lineHeight: '1.6',
-                            }}
-                          >
-                            {msg.role === 'assistant' ? (
-                              <div className="prose prose-sm max-w-none dark:prose-invert">
-                                <MarkdownContent content={isTyping && i === messages.length - 1 && isAI && !isStopped ? typingText : msg.content} />
-                              </div>
-                            ) : (
-                              <div 
-                                className="whitespace-pre-wrap leading-relaxed"
-                                style={{ 
-                                  color: '#ffffff',
-                                  fontSize: '16px',
-                                  lineHeight: '1.6',
-                                }}
-                              >
-                                {msg.content}
-                              </div>
-                            )}
-                            {isTyping && i === messages.length - 1 && isAI && !isStopped && (
-                              <span className="animate-pulse" style={{ color: isDark ? '#e5e5e5' : '#1a1a1a' }}>|</span>
-                            )}
-                          </div>
-
-                          {isAI && msg.model_used && (
-                            <div className={`flex items-center gap-1 mt-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                              <span className="text-[11px]">✨ {msg.model_used}</span>
-                            </div>
+                  <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
+                      <div className={`
+                        px-4 py-3 text-sm leading-relaxed
+                        ${msg.role === 'user' 
+                          ? 'bg-[#10a37f] text-white rounded-2xl rounded-tr-sm' 
+                          : isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'
+                        }
+                      `}>
+                        {msg.role === 'assistant' ? (
+                          <MarkdownContent content={isTyping && i === messages.length - 1 && isAI && !isStopped ? typingText : msg.content} />
+                        ) : (
+                          <div className="whitespace-pre-wrap">{msg.content}</div>
+                        )}
+                        {isTyping && i === messages.length - 1 && isAI && !isStopped && (
+                          <span className="animate-pulse">|</span>
+                        )}
+                      </div>
+                      
+                      {/* Actions - small icons */}
+                      <div className={`flex items-center gap-1 mt-1.5 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
+                        <span className="text-[10px] opacity-60">
+                          {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <button
+                          onClick={() => copyMessage(msg.content, msgId)}
+                          className={`p-0.5 rounded hover:bg-black/5 transition-colors`}
+                        >
+                          {copiedMessageId === msgId ? (
+                            <Check className="h-3 w-3 text-[#10a37f]" />
+                          ) : (
+                            <Copy className="h-3 w-3 opacity-50" />
                           )}
-
-                          {isAI && (
-                            <button
-                              onClick={askAnotherAI}
-                              className={`flex items-center gap-1.5 mt-1.5 text-xs px-3 py-1.5 rounded-lg transition-all ${
-                                isDark 
-                                  ? 'bg-[#2a2a2a] hover:bg-[#333] text-gray-300 hover:text-white border border-gray-700 hover:border-gray-600' 
-                                  : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 hover:border-gray-300'
-                              } border shadow-sm hover:shadow-md`}
-                            >
-                              <RefreshCw className="h-3.5 w-3.5" />
-                              <span>Ask Another AI</span>
-                            </button>
-                          )}
-                        </>
-                      )}
-
-                      {!isEditing && (
-                        <div className={`flex items-center gap-1 mt-2 ${
-                          msg.role === 'assistant' ? 'opacity-100' : isHovered ? 'opacity-100' : 'opacity-0'
-                        } transition-opacity duration-200`} style={{ color: isDark ? '#6b7280' : '#9ca3af' }}>
-                          <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'} mr-1`}>
-                            {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          
-                          <button
-                            onClick={() => copyMessage(msg.content, msgId)}
-                            className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
-                              isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
-                            }`}
-                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
-                          >
-                            {copiedMessageId === msgId ? (
-                              <Check className="h-3.5 w-3.5 text-green-500" />
-                            ) : (
-                              <Copy className="h-3.5 w-3.5" />
-                            )}
-                            <span className="text-[10px]">Copy</span>
-                          </button>
-                          
-                          {msg.role === 'assistant' && (
+                        </button>
+                        {msg.role === 'assistant' && (
+                          <>
                             <button
                               onClick={() => regenerateResponse(i)}
-                              className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
-                                isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
-                              }`}
-                              style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
+                              className="p-0.5 rounded hover:bg-black/5 transition-colors"
                             >
-                              <RotateCw className="h-3.5 w-3.5" />
-                              <span className="text-[10px]">Regenerate</span>
+                              <RotateCw className="h-3 w-3 opacity-50" />
                             </button>
-                          )}
-                          
-                          <button
-                            onClick={() => handleReplyClick(msg, i)}
-                            className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
-                              isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
-                            }`}
-                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
-                          >
-                            <Reply className="h-3.5 w-3.5" />
-                            <span className="text-[10px]">Reply</span>
-                          </button>
-                          
-                          {msg.role === 'user' && (
                             <button
-                              onClick={() => startEditing(msg, i)}
-                              className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
-                                isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
-                              }`}
-                              style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
+                              onClick={askAnotherAI}
+                              className="p-0.5 rounded hover:bg-black/5 transition-colors"
                             >
-                              <Pencil className="h-3.5 w-3.5" />
-                              <span className="text-[10px]">Edit</span>
+                              <RefreshCw className="h-3 w-3 opacity-50" />
                             </button>
-                          )}
-                          
-                          <button
-                            onClick={() => addReaction(i, 'like')}
-                            className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
-                              isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
-                            }`}
-                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
-                          >
-                            <ThumbsUp className="h-3.5 w-3.5" />
-                            <span className="text-[10px]">{msg.reactions?.like || 0}</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => addReaction(i, 'dislike')}
-                            className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
-                              isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
-                            }`}
-                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
-                          >
-                            <ThumbsDown className="h-3.5 w-3.5" />
-                            <span className="text-[10px]">{msg.reactions?.dislike || 0}</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => addReaction(i, 'heart')}
-                            className={`p-1 rounded transition-all flex items-center gap-1 text-[11px] ${
-                              isDark ? 'hover:bg-gray-700 hover:text-gray-300' : 'hover:bg-gray-100 hover:text-gray-700'
-                            }`}
-                            style={{ color: isDark ? '#6b7280' : '#9ca3af' }}
-                          >
-                            <Heart className="h-3.5 w-3.5" />
-                            <span className="text-[10px]">{msg.reactions?.heart || 0}</span>
-                          </button>
-                        </div>
-                      )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )
               })
             )}
-          </AnimatePresence>
-          
-          {replyToMessage && (
-            <div className={`flex items-center justify-between ${isDark ? 'bg-gray-700' : 'bg-gray-100'} p-2 rounded-lg mb-2`}>
-              <div className="flex items-center gap-2">
-                <Reply className="h-4 w-4 text-emerald-500" />
-                <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                  Replying to {replyToMessage.role}: "{replyToMessage.content.slice(0, 50)}..."
-                </span>
-              </div>
-              <button onClick={cancelReply} className="text-gray-400 hover:text-red-500">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-white dark:bg-[#2a2a2a] p-3 rounded-2xl rounded-bl-sm shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2">
+            
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className={`flex items-center gap-2 px-4 py-2 ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
                   <div className="typing-dot"></div>
-                  <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} ml-2`}>Getting response...</span>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
+            )}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
-        {/* ===== INPUT AREA - ELEGANT ===== */}
-        <div className={`border-t ${isDark ? 'border-gray-700 bg-[#1a1a1a]' : 'border-gray-200 bg-white'} p-3 flex-shrink-0`}>
-          
-          {uploadedFiles.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-2">
-              {uploadedFiles.map((file, index) => (
-                <div key={index} className={`flex items-center gap-2 ${isDark ? 'bg-[#2a2a2a] border-gray-700 text-gray-300' : 'bg-white border-gray-200 text-gray-700'} border rounded-lg px-3 py-1.5 text-sm shadow-sm`}>
-                  {file.type.startsWith('image/') && file.preview ? (
-                    <img src={file.preview} alt={file.name} className="w-8 h-8 rounded object-cover" />
-                  ) : (
-                    <File className="h-4 w-4 text-gray-500" />
-                  )}
-                  <span className="truncate max-w-[120px]">{file.name}</span>
-                  <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{formatFileSize(file.size)}</span>
-                  <button onClick={() => removeFile(index)} className="text-gray-400 hover:text-red-500">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="relative">
-            <button 
-              onClick={() => setShowModelPicker(!showModelPicker)} 
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs w-full justify-between ${
-                isDark ? 'bg-[#2a2a2a] hover:bg-[#333] border-gray-700' : 'bg-gray-100 hover:bg-gray-200 border-gray-200'
-              } border transition-all mb-2`}
-            >
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-1">
-                  {selectedModels.slice(0, 3).map(id => {
-                    const model = getAllModels().find(m => m.id === id)
-                    return model ? <span key={id} className="text-sm">{model.icon}</span> : null
-                  })}
-                  {selectedModels.length > 3 && (
-                    <span className={`text-[8px] ${isDark ? 'text-gray-400' : 'text-gray-500'} ml-1`}>
-                      +{selectedModels.length - 3}
-                    </span>
-                  )}
-                </div>
-                <span className={`text-xs font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  {selectedModels.length === 0 ? 'Select model' :
-                   selectedModels.length === 1 ? getAllModels().find(m => m.id === selectedModels[0])?.name || 'Model' :
-                   `${selectedModels.length} models`}
-                </span>
-              </div>
-              <ChevronDown className={`h-3 w-3 ${isDark ? 'text-gray-400' : 'text-gray-400'} transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showModelPicker && (
-              <div className={`absolute bottom-full mb-2 left-0 right-0 z-50 p-3 rounded-xl shadow-xl border ${
-                isDark ? 'bg-[#2a2a2a] border-gray-700' : 'bg-white border-gray-200'
-              } max-h-[320px] overflow-y-auto`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Select Models</h3>
-                  <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-
-                <div className="flex gap-1 mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                  {['auto', 'free', 'paid'].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setModelTab(tab)}
-                      className={`flex-1 px-2 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
-                        modelTab === tab
-                          ? 'bg-emerald-500 text-white'
-                          : isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
-                      }`}
-                    >
-                      {tab === 'auto' ? '✨ Auto' : tab}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="relative mb-3">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search models..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border ${
-                      isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400'
-                    } outline-none focus:ring-2 focus:ring-emerald-500/30`}
-                  />
-                </div>
-
-                {modelTab === 'auto' && (
-                  <button
-                    onClick={handleAutoSelect}
-                    className={`w-full p-3 mb-2 rounded-lg border-2 border-emerald-500/30 bg-emerald-500/5 text-left transition-all hover:bg-emerald-500/10`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">✨</span>
-                      <div>
-                        <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-800'}`}>Auto Mode</div>
-                        <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Automatically picks the best model</div>
-                      </div>
-                      {selectedModels.length === 1 && (
-                        <span className="ml-auto text-emerald-500 text-xs font-medium">✓ Active</span>
-                      )}
-                    </div>
-                  </button>
-                )}
-
-                <div className="text-[10px] text-gray-400 mb-2">
-                  {modelTab === 'free' && 'Select multiple free models'}
-                  {modelTab === 'paid' && 'Select one paid model'}
-                  {modelTab === 'auto' && 'Choose your preferred model'}
-                </div>
-
-                <div className="grid grid-cols-2 gap-1">
-                  {getCurrentModels().map((model) => {
-                    const isSelected = selectedModels.includes(model.id)
-                    
-                    return (
-                      <button
-                        key={model.id}
-                        onClick={() => {
-                          if (modelTab === 'auto') {
-                            setSelectedModels([model.id])
-                          } else {
-                            toggleModel(model.id)
-                          }
-                        }}
-                        className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs transition-all ${
-                          isSelected
-                            ? isDark ? 'bg-emerald-900/30 border-emerald-700/50' : 'bg-emerald-50 border-emerald-300'
-                            : isDark ? 'bg-gray-700/50 hover:bg-gray-600/50 border-transparent' : 'bg-gray-50 hover:bg-gray-100 border-transparent'
-                        } border`}
-                      >
-                        <span className="text-sm">{model.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className={`truncate ${isSelected ? 'text-emerald-400 dark:text-emerald-400' : isDark ? 'text-white' : 'text-gray-700'}`}>
-                            {model.name}
-                          </div>
-                          <div className={`text-[8px] ${model.tier === 'pro' ? 'text-amber-500' : 'text-emerald-500'}`}>
-                            {model.tier === 'pro' ? '⭐ Paid' : 'Free'}
-                          </div>
-                        </div>
-                        {isSelected && (
-                          <span className="text-emerald-500 text-xs">✓</span>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                <button 
-                  onClick={() => setShowModelPicker(false)} 
-                  className="w-full mt-3 bg-emerald-500 text-white py-2 rounded-lg font-medium text-xs hover:bg-emerald-600 transition-all"
-                >
-                  Done
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="relative mt-2">
-            <textarea 
-              id="message-input"
-              value={prompt} 
-              onChange={(e) => setPrompt(e.target.value)} 
-              placeholder={replyToMessage ? `Reply to ${replyToMessage.role}...` : isListening ? '🎤 Listening...' : 'Type, upload, or speak...'} 
-              className={`w-full min-h-[44px] max-h-[100px] ${isDark ? 'bg-[#2a2a2a] border-gray-700 text-white placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'} border rounded-xl p-2.5 pr-36 outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none text-sm transition-all`} 
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
-              rows={1}
-            />
-            
-            {isListening && (
-              <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="text-[10px] text-red-500 font-medium">REC</span>
-              </div>
-            )}
-
-            <div className="absolute right-2 bottom-2 flex items-center gap-1">
-              <button
-                onClick={toggleVoiceInput}
-                className={`p-1.5 rounded-lg transition-all ${
-                  isListening 
-                    ? 'bg-red-500 text-white hover:bg-red-600' 
-                    : isDark ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                }`}
-                title={isListening ? 'Stop recording' : 'Start voice input'}
-              >
-                {isListening ? (
-                  <MicOff className="h-4 w-4" />
-                ) : (
-                  <Mic className="h-4 w-4" />
-                )}
-              </button>
-
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept=".txt,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.webp,.csv,.json,.xml,.md"
-                className="hidden"
-                id="file-upload"
+        {/* Input - ChatGPT Style */}
+        <div className={`border-t ${isDark ? 'border-[#4a4b5a] bg-[#343541]' : 'border-[#e5e5e5] bg-white'} p-3 flex-shrink-0`}>
+          <div className="max-w-3xl mx-auto">
+            <div className="relative flex items-end">
+              <textarea 
+                id="message-input"
+                value={prompt} 
+                onChange={(e) => setPrompt(e.target.value)} 
+                placeholder="Send a message..." 
+                className={`
+                  w-full min-h-[44px] max-h-[120px] 
+                  ${isDark ? 'bg-[#40414f] border-[#4a4b5a] text-[#ececec] placeholder-[#8e8ea0]' : 'bg-white border-[#e5e5e5] text-[#2d2d2d] placeholder-[#8e8ea0]'} 
+                  border rounded-xl p-2.5 pr-20 outline-none focus:ring-1 focus:ring-[#10a37f] resize-none text-sm transition-all
+                `} 
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
+                rows={1}
               />
-              <label 
-                htmlFor="file-upload" 
-                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isUploading ? 'opacity-50' : ''} ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-              >
-                {isUploading ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                ) : (
-                  <Paperclip className={`h-4 w-4 ${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`} />
-                )}
-              </label>
               
-              {isLoading ? (
-                <button 
-                  onClick={stopGeneration}
-                  className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-all shadow-lg"
-                  title="Stop generating"
+              <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                <button
+                  onClick={toggleVoiceInput}
+                  className={`p-1.5 rounded-lg transition-all ${isListening ? 'bg-red-500 text-white' : isDark ? 'hover:bg-[#40414f]' : 'hover:bg-[#e5e5e5]'}`}
                 >
-                  <Square className="h-4 w-4" />
+                  {isListening ? (
+                    <MicOff className="h-4 w-4" />
+                  ) : (
+                    <Mic className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
+                  )}
                 </button>
-              ) : (
-                <button 
-                  onClick={handleSubmit} 
-                  disabled={(!prompt.trim() && uploadedFiles.length === 0) || selectedModels.length === 0} 
-                  className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white p-2 rounded-lg disabled:opacity-50 hover:shadow-lg transition-all"
+
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" id="file-upload" />
+                <label 
+                  htmlFor="file-upload" 
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isDark ? 'hover:bg-[#40414f]' : 'hover:bg-[#e5e5e5]'}`}
                 >
-                  <Send className="h-4 w-4" />
-                </button>
-              )}
+                  <Paperclip className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
+                </label>
+                
+                {isLoading ? (
+                  <button 
+                    onClick={stopGeneration}
+                    className="bg-[#10a37f] text-white p-1.5 rounded-lg hover:bg-[#0d8b6e] transition-all"
+                  >
+                    <Square className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleSubmit} 
+                    disabled={!prompt.trim() && uploadedFiles.length === 0} 
+                    className={`p-1.5 rounded-lg transition-all ${prompt.trim() || uploadedFiles.length > 0 ? 'bg-[#10a37f] text-white hover:bg-[#0d8b6e]' : isDark ? 'bg-[#40414f] text-[#8e8ea0]' : 'bg-[#e5e5e5] text-[#8e8ea0]'}`}
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-          
-          <div className={`flex items-center flex-wrap gap-2 mt-1.5`}>
-            {selectedModels.length === 0 && (
-              <p className="text-[10px] text-amber-600">⚠️ Select a model</p>
-            )}
-            <p className={`text-[9px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              {isListening ? '🎤 Speak now...' : 'Supports: TXT, PDF, Images, DOC, CSV, JSON, XML, MD'}
-            </p>
-            {!isSpeechSupported && (
-              <p className="text-[9px] text-amber-500">⚠️ Voice not supported</p>
-            )}
+            <div className="text-center text-[10px] text-[#8e8ea0] mt-2">
+              AI may make mistakes. Verify important information.
+            </div>
           </div>
         </div>
       </div>
 
       <style>{`
-        .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: #25D366; display: inline-block; animation: typing 1.4s infinite both; margin: 0 2px; }
+        .typing-dot { 
+          width: 6px; 
+          height: 6px; 
+          border-radius: 50%; 
+          background: #10a37f; 
+          display: inline-block; 
+          animation: typing 1.4s infinite both; 
+          margin: 0 2px; 
+        }
         .typing-dot:nth-child(2) { animation-delay: 0.2s; }
         .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 30% { transform: translateY(-6px); opacity: 1; } }
-        .dark .typing-dot { background: #4a9eff; }
+        @keyframes typing { 
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.3; } 
+          30% { transform: translateY(-6px); opacity: 1; } 
+        }
+        .dark .typing-dot { background: #10a37f; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
