@@ -888,9 +888,7 @@ export default function DashboardPage() {
   return (
     <div className={`flex h-screen ${isDark ? 'dark bg-[#0B0F17]' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
       
-      {/* ==========================================
-          SIDEBAR
-          ========================================== */}
+      {/* SIDEBAR */}
       {sidebarOpen && (
         <div 
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
@@ -968,9 +966,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ==========================================
-          MAIN CHAT
-          ========================================== */}
+      {/* MAIN CHAT */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
         {/* Header */}
@@ -1002,7 +998,7 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 text-[#8e8ea0]" /> : <Moon className="h-4 w-4 text-[#8e8ea0]" />}
             </button>
 
-            {/* ✅ Three Dots - SOLID background, click outside to close */}
+            {/* Three Dots - SOLID background, click outside to close */}
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -1219,7 +1215,7 @@ export default function DashboardPage() {
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    {/* ✅ User messages: normal width, AI messages: FULL WIDTH */}
+                    {/* User messages: normal width, AI messages: FULL WIDTH */}
                     <div className={`${msg.role === 'user' ? 'max-w-[85%]' : 'w-full'} ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
