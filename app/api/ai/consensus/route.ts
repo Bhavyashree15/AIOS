@@ -8,25 +8,25 @@ const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.Gemini_API_Key
 console.log('🔍 Gemini API Key exists?', !!GEMINI_API_KEY)
 
 // ============================================
-// WORKING MODELS FROM YOUR API KEY (Verified from API response)
+// WORKING MODELS FROM YOUR API KEY
 // ============================================
 const MODELS_TO_TRY = [
-  'gemini-2.5-flash',           // ✅ Available - Stable
-  'gemini-2.5-pro',             // ✅ Available - Pro version
-  'gemini-flash-latest',        // ✅ Available - Latest Flash
-  'gemini-flash-lite-latest',   // ✅ Available - Lite version
-  'gemini-pro-latest',          // ✅ Available - Pro latest
-  'gemini-2.5-flash-lite',      // ✅ Available - Flash Lite
-  'gemini-3.5-flash',           // ✅ Available - New!
-  'gemini-3.5-flash-lite',      // ✅ Available - New!
-  'gemini-3.6-flash',           // ✅ Available - New!
-  'gemini-3.7-flash',           // ✅ Available - New!
-  'gemma-4-26b-a4b-it',         // ✅ Available - Gemma
-  'gemma-4-31b-it',             // ✅ Available - Gemma
+  'gemini-2.5-flash',
+  'gemini-2.5-pro',
+  'gemini-flash-latest',
+  'gemini-flash-lite-latest',
+  'gemini-pro-latest',
+  'gemini-2.5-flash-lite',
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.6-flash',
+  'gemini-3.7-flash',
+  'gemma-4-26b-a4b-it',
+  'gemma-4-31b-it',
 ]
 
 // ============================================
-// MODEL MAPPING - Map frontend models to working Gemini models
+// MODEL MAPPING
 // ============================================
 const MODEL_MAP: Record<string, string> = {
   'gpt-5.4-mini': 'gemini-3.5-flash',
@@ -38,10 +38,6 @@ const MODEL_MAP: Record<string, string> = {
   'gpt-4o-mini': 'gemini-3.5-flash',
   'claude-haiku-4.5': 'gemini-3.5-flash',
   'mistral-small': 'gemini-3.5-flash',
-  'seed-2.0-lite': 'gemini-3.5-flash',
-  'nova-micro': 'gemini-3.5-flash',
-  'qwen-3-coder-flash': 'gemini-3.5-flash',
-  'gpt-5-mini': 'gemini-3.5-flash',
   'gpt-4.1': 'gemini-2.5-pro',
   'claude-sonnet-4.0': 'gemini-2.5-pro',
   'gpt-5.4': 'gemini-2.5-pro',
@@ -57,7 +53,7 @@ const MODEL_MAP: Record<string, string> = {
 }
 
 // ============================================
-// POST HANDLER - With Smart Prompt
+// POST HANDLER
 // ============================================
 export async function POST(req: NextRequest) {
   try {
@@ -81,7 +77,7 @@ export async function POST(req: NextRequest) {
     if (!GEMINI_API_KEY) {
       console.error('❌ No Gemini API key found')
       return NextResponse.json({
-        consensus: '⚠️ API key not configured. Please set GOOGLE_API_KEY or Gemini_API_Key environment variable.',
+        consensus: '⚠️ API key not configured.',
         consensus_score: 0,
         confidence: 0,
         error: 'missing_api_key',
@@ -92,15 +88,13 @@ export async function POST(req: NextRequest) {
     console.log('📝 Prompt:', prompt)
 
     // ============================================
-    // SMART PROMPT: Short for casual, long for detailed
+    // SMART PROMPT
     // ============================================
     let finalPrompt: string
     
-    // If it's a short greeting (like "Hi", "Hello", "Hey")
     if (prompt.trim().length < 10) {
       finalPrompt = prompt.trim()
     } else {
-      // For longer prompts, add a simple instruction
       finalPrompt = `Provide a detailed, comprehensive response to: ${prompt}`
     }
 
@@ -108,7 +102,6 @@ export async function POST(req: NextRequest) {
 
     let lastError = null
 
-    // Try each model until one works
     for (const modelId of MODELS_TO_TRY) {
       try {
         console.log(`🔄 Trying model: ${modelId}`)
@@ -121,7 +114,7 @@ export async function POST(req: NextRequest) {
           ],
           generationConfig: {
             temperature: 0.9,
-            maxOutputTokens: 800,
+            maxOutputTokens: 400,  // ✅ Reduced for cleaner responses
             topP: 0.95,
             topK: 40,
           }
@@ -143,7 +136,18 @@ export async function POST(req: NextRequest) {
         console.log(`📊 ${modelId} status:`, response.status)
 
         if (response.ok && data.candidates && data.candidates.length > 0) {
-          const aiResponse = data.candidates[0].content.parts[0].text
+          let aiResponse = data.candidates[0].content.parts[0].text
+          
+          // ✅ Clean up - remove incomplete sentences
+          const lastPeriod = aiResponse.lastIndexOf('.')
+          const lastQuestion = aiResponse.lastIndexOf('?')
+          const lastExclamation = aiResponse.lastIndexOf('!')
+          const lastGoodEnding = Math.max(lastPeriod, lastQuestion, lastExclamation)
+          
+          if (lastGoodEnding > aiResponse.length * 0.7) {
+            aiResponse = aiResponse.substring(0, lastGoodEnding + 1)
+          }
+          
           console.log(`✅ Success with model: ${modelId}`)
           console.log(`📝 Response length: ${aiResponse.length}`)
 
@@ -161,7 +165,6 @@ export async function POST(req: NextRequest) {
           console.log(`❌ ${modelId} failed:`, errorMsg)
           lastError = errorMsg
 
-          // If it's a key error, stop trying
           if (errorMsg.includes('API key') || 
               errorMsg.includes('authentication') || 
               errorMsg.includes('permission') ||
@@ -181,7 +184,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // If all models failed
     console.error('❌ All models failed. Last error:', lastError)
     return NextResponse.json({
       consensus: `⚠️ No available models. Last error: ${lastError}`,
@@ -206,7 +208,7 @@ export async function POST(req: NextRequest) {
 }
 
 // ============================================
-// GET ENDPOINT - List available models
+// GET ENDPOINT
 // ============================================
 export async function GET() {
   const hasKey = !!process.env.GOOGLE_API_KEY || !!process.env.Gemini_API_Key
@@ -220,7 +222,6 @@ export async function GET() {
   }
 
   try {
-    // List all available models from API
     const listResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`,
       { method: 'GET' }
@@ -228,7 +229,6 @@ export async function GET() {
 
     const listData = await listResponse.json()
 
-    // Test each model to find working ones
     const results: Record<string, any> = {}
     const workingModels: string[] = []
 
@@ -244,7 +244,7 @@ export async function GET() {
             body: JSON.stringify({
               contents: [
                 {
-                  parts: [{ text: 'Say hello in one word' }]
+                  parts: [{ text: 'Say hello' }]
                 }
               ],
               generationConfig: {
@@ -287,7 +287,7 @@ export async function GET() {
       test_results: results,
       recommended_model: workingModels.length > 0 ? workingModels[0] : 'None found',
       note: workingModels.length === 0 
-        ? '❌ No working models. Check your API key.' 
+        ? '❌ No working models.' 
         : `✅ Using: ${workingModels[0]}`,
     })
   } catch (error) {
