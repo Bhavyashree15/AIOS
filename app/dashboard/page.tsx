@@ -1170,7 +1170,9 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages */}
+        {/* ==========================================
+            MESSAGES - FIXED WIDTH
+            ========================================== */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
           <div className="px-4 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
@@ -1219,6 +1221,7 @@ export default function DashboardPage() {
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
+                    {/* ✅ User messages: max-w-[85%], AI messages: w-full */}
                     <div className={`${msg.role === 'user' ? 'max-w-[85%]' : 'w-full'} ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
