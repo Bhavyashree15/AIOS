@@ -536,14 +536,10 @@ export default function DashboardPage() {
     setTimeout(() => setCopiedMessageId(null), 2000)
   }
 
-  // ============================================
-  // TYPING ANIMATION - FIXED
-  // ============================================
   const simulateTyping = (fullText: string) => {
     setIsTyping(true)
     setIsStopped(false)
     
-    // ✅ Start with the first character immediately
     if (fullText.length > 0) {
       setTypingText(fullText[0])
       let index = 1
@@ -561,7 +557,7 @@ export default function DashboardPage() {
           typingIntervalRef.current = null
           setIsTyping(false)
           setIsStopped(false)
-          setTypingText(fullText) // Ensure full text is set
+          setTypingText(fullText)
         }
       }, 20)
     } else {
@@ -889,9 +885,6 @@ export default function DashboardPage() {
     )
   }
 
-  // ============================================
-  // RENDER
-  // ============================================
   return (
     <div className={`flex h-screen ${isDark ? 'dark bg-[#343541]' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
       
@@ -912,7 +905,6 @@ export default function DashboardPage() {
         flex flex-col transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* New Chat Button */}
         <div className="p-3 border-b border-[#4a4b5a]/20 dark:border-[#4a4b5a]">
           <button 
             onClick={createNewChat} 
@@ -923,7 +915,6 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Search */}
         <div className="px-3 py-2">
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8e8ea0]" />
@@ -937,7 +928,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Chat List */}
         <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
           {filteredChats.slice(0, 50).map((chat: any) => (
             <div key={chat.id} className="group relative flex items-center">
@@ -964,7 +954,6 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* User */}
         <div className={`border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} p-3`}>
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-200/20 dark:hover:bg-white/5 cursor-pointer transition-colors">
             <div className="w-7 h-7 rounded-full bg-[#10a37f] flex items-center justify-center text-white text-xs font-bold">
@@ -983,7 +972,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header - With 3 Dots ALWAYS visible */}
+        {/* Header - 3 Dots ALWAYS Visible */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#4a4b5a] bg-[#343541]' : 'border-[#e5e5e5] bg-white'} flex-shrink-0`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1005,6 +994,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex items-center gap-1">
+            {/* Dark Mode Toggle */}
             <button
               onClick={() => setIsDark(!isDark)}
               className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
@@ -1022,40 +1012,47 @@ export default function DashboardPage() {
               </button>
               
               {showExportMenu && (
-                <div className={`absolute right-0 mt-1 w-56 ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} rounded-lg shadow-lg border overflow-hidden z-10`}>
-                  <div className={`px-4 py-2.5 border-b ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} flex items-center justify-between`}>
-                    <span className={`text-sm ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>Balance</span>
-                    <span className={`text-sm font-semibold ${isDark ? 'text-[#10a37f]' : 'text-[#10a37f]'}`}>₹{walletBalance.toFixed(2)}</span>
+                <>
+                  {/* Click outside to close */}
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setShowExportMenu(false)}
+                  />
+                  <div className={`absolute right-0 mt-1 w-56 z-20 ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} rounded-lg shadow-lg border overflow-hidden`}>
+                    <div className={`px-4 py-2.5 border-b ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} flex items-center justify-between`}>
+                      <span className={`text-sm ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>Balance</span>
+                      <span className={`text-sm font-semibold ${isDark ? 'text-[#10a37f]' : 'text-[#10a37f]'}`}>₹{walletBalance.toFixed(2)}</span>
+                    </div>
+                    <button
+                      onClick={() => { addFunds(); setShowExportMenu(false) }}
+                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2`}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Funds
+                    </button>
+                    <button
+                      onClick={() => { exportChat('txt'); setShowExportMenu(false) }}
+                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}
+                    >
+                      <Download className="h-4 w-4" />
+                      Export as TXT
+                    </button>
+                    <button
+                      onClick={() => { exportChat('md'); setShowExportMenu(false) }}
+                      className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}
+                    >
+                      <FileText className="h-4 w-4" />
+                      Export as MD
+                    </button>
+                    <button
+                      onClick={() => { handleClearChat(); setShowExportMenu(false) }}
+                      className={`w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Clear Chat
+                    </button>
                   </div>
-                  <button
-                    onClick={() => { addFunds(); setShowExportMenu(false) }}
-                    className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2`}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Funds
-                  </button>
-                  <button
-                    onClick={() => { exportChat('txt'); setShowExportMenu(false) }}
-                    className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}
-                  >
-                    <Download className="h-4 w-4" />
-                    Export as TXT
-                  </button>
-                  <button
-                    onClick={() => { exportChat('md'); setShowExportMenu(false) }}
-                    className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}
-                  >
-                    <FileText className="h-4 w-4" />
-                    Export as MD
-                  </button>
-                  <button
-                    onClick={() => { handleClearChat(); setShowExportMenu(false) }}
-                    className={`w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Clear Chat
-                  </button>
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -1063,105 +1060,111 @@ export default function DashboardPage() {
 
         {/* Model Picker - Popup */}
         {showModelPicker && (
-          <div className={`absolute right-4 top-14 z-20 p-3 rounded-xl shadow-xl border ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} max-h-[320px] overflow-y-auto w-72`}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Select Models</h3>
-              <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex gap-1 mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              {['auto', 'free', 'paid'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setModelTab(tab)}
-                  className={`flex-1 px-2 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
-                    modelTab === tab
-                      ? 'bg-[#10a37f] text-white'
-                      : isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  {tab === 'auto' ? '✨ Auto' : tab}
+          <>
+            <div 
+              className="fixed inset-0 z-10" 
+              onClick={() => setShowModelPicker(false)}
+            />
+            <div className={`absolute right-4 bottom-20 z-20 p-3 rounded-xl shadow-xl border ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} max-h-[320px] overflow-y-auto w-72`}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Select Models</h3>
+                <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-4 w-4" />
                 </button>
-              ))}
-            </div>
+              </div>
 
-            <div className="relative mb-3">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search models..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border ${
-                  isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400'
-                } outline-none focus:ring-2 focus:ring-[#10a37f]/30`}
-              />
-            </div>
-
-            {modelTab === 'auto' && (
-              <button
-                onClick={handleAutoSelect}
-                className={`w-full p-3 mb-2 rounded-lg border-2 border-[#10a37f]/30 bg-[#10a37f]/5 text-left transition-all hover:bg-[#10a37f]/10`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">✨</span>
-                  <div>
-                    <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-800'}`}>Auto Mode</div>
-                    <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Automatically picks the best model</div>
-                  </div>
-                  {selectedModels.length === 1 && (
-                    <span className="ml-auto text-[#10a37f] text-xs font-medium">✓ Active</span>
-                  )}
-                </div>
-              </button>
-            )}
-
-            <div className="grid grid-cols-2 gap-1">
-              {getCurrentModels().map((model) => {
-                const isSelected = selectedModels.includes(model.id)
-                
-                return (
+              <div className="flex gap-1 mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                {['auto', 'free', 'paid'].map((tab) => (
                   <button
-                    key={model.id}
-                    onClick={() => {
-                      if (modelTab === 'auto') {
-                        setSelectedModels([model.id])
-                      } else {
-                        toggleModel(model.id)
-                      }
-                    }}
-                    className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs transition-all ${
-                      isSelected
-                        ? isDark ? 'bg-[#10a37f]/20 border-[#10a37f]/50' : 'bg-[#10a37f]/10 border-[#10a37f]'
-                        : isDark ? 'bg-gray-700/50 hover:bg-gray-600/50 border-transparent' : 'bg-gray-50 hover:bg-gray-100 border-transparent'
-                    } border`}
+                    key={tab}
+                    onClick={() => setModelTab(tab)}
+                    className={`flex-1 px-2 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
+                      modelTab === tab
+                        ? 'bg-[#10a37f] text-white'
+                        : isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
+                    }`}
                   >
-                    <span className="text-sm">{model.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className={`truncate ${isSelected ? 'text-[#10a37f]' : isDark ? 'text-white' : 'text-gray-700'}`}>
-                        {model.name}
-                      </div>
-                      <div className={`text-[8px] ${model.tier === 'pro' ? 'text-amber-500' : 'text-[#10a37f]'}`}>
-                        {model.tier === 'pro' ? '⭐ Paid' : 'Free'}
-                      </div>
-                    </div>
-                    {isSelected && (
-                      <span className="text-[#10a37f] text-xs">✓</span>
-                    )}
+                    {tab === 'auto' ? '✨ Auto' : tab}
                   </button>
-                )
-              })}
-            </div>
+                ))}
+              </div>
 
-            <button 
-              onClick={() => setShowModelPicker(false)} 
-              className="w-full mt-3 bg-[#10a37f] text-white py-2 rounded-lg font-medium text-xs hover:bg-[#0d8b6e] transition-all"
-            >
-              Done
-            </button>
-          </div>
+              <div className="relative mb-3">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search models..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border ${
+                    isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400'
+                  } outline-none focus:ring-2 focus:ring-[#10a37f]/30`}
+                />
+              </div>
+
+              {modelTab === 'auto' && (
+                <button
+                  onClick={handleAutoSelect}
+                  className={`w-full p-3 mb-2 rounded-lg border-2 border-[#10a37f]/30 bg-[#10a37f]/5 text-left transition-all hover:bg-[#10a37f]/10`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">✨</span>
+                    <div>
+                      <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-800'}`}>Auto Mode</div>
+                      <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Automatically picks the best model</div>
+                    </div>
+                    {selectedModels.length === 1 && (
+                      <span className="ml-auto text-[#10a37f] text-xs font-medium">✓ Active</span>
+                    )}
+                  </div>
+                </button>
+              )}
+
+              <div className="grid grid-cols-2 gap-1">
+                {getCurrentModels().map((model) => {
+                  const isSelected = selectedModels.includes(model.id)
+                  
+                  return (
+                    <button
+                      key={model.id}
+                      onClick={() => {
+                        if (modelTab === 'auto') {
+                          setSelectedModels([model.id])
+                        } else {
+                          toggleModel(model.id)
+                        }
+                      }}
+                      className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs transition-all ${
+                        isSelected
+                          ? isDark ? 'bg-[#10a37f]/20 border-[#10a37f]/50' : 'bg-[#10a37f]/10 border-[#10a37f]'
+                          : isDark ? 'bg-gray-700/50 hover:bg-gray-600/50 border-transparent' : 'bg-gray-50 hover:bg-gray-100 border-transparent'
+                      } border`}
+                    >
+                      <span className="text-sm">{model.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className={`truncate ${isSelected ? 'text-[#10a37f]' : isDark ? 'text-white' : 'text-gray-700'}`}>
+                          {model.name}
+                        </div>
+                        <div className={`text-[8px] ${model.tier === 'pro' ? 'text-amber-500' : 'text-[#10a37f]'}`}>
+                          {model.tier === 'pro' ? '⭐ Paid' : 'Free'}
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <span className="text-[#10a37f] text-xs">✓</span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <button 
+                onClick={() => setShowModelPicker(false)} 
+                className="w-full mt-3 bg-[#10a37f] text-white py-2 rounded-lg font-medium text-xs hover:bg-[#0d8b6e] transition-all"
+              >
+                Done
+              </button>
+            </div>
+          </>
         )}
 
         {/* Messages */}
@@ -1250,7 +1253,6 @@ export default function DashboardPage() {
                             <div className="prose prose-sm max-w-none dark:prose-invert">
                               <MarkdownContent 
                                 content={
-                                  // ✅ Show typing text during animation, full content when done
                                   (isTyping && i === messages.length - 1 && isAI && !isStopped) 
                                     ? (typingText || msg.content) 
                                     : msg.content
