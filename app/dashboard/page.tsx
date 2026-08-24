@@ -959,9 +959,11 @@ export default function DashboardPage() {
               U
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate text-[#ececec] dark:text-white">User</div>
+              <div className={`text-sm font-medium truncate ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
+                User
+              </div>
             </div>
-            <Settings className="h-4 w-4 opacity-60" />
+            <Settings className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
           </div>
         </div>
       </div>
@@ -971,7 +973,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header - With Three Dots solid background */}
+        {/* Header */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#10B981]/10' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1000,13 +1002,10 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 text-[#8e8ea0]" /> : <Moon className="h-4 w-4 text-[#8e8ea0]" />}
             </button>
 
-            {/* ✅ Three Dots - Solid background, click outside to close */}
+            {/* ✅ THREE DOTS FIXED - Click outside to close */}
             <div className="relative">
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowExportMenu(!showExportMenu)
-                }}
+                onClick={() => setShowExportMenu(!showExportMenu)}
                 className={`p-1.5 rounded-xl transition-colors ${isDark ? 'hover:bg-[#ffffff08]' : 'hover:bg-[#f7f7f8]'}`}
               >
                 <MoreVertical className="h-4 w-4 text-[#8e8ea0]" />
@@ -1015,13 +1014,10 @@ export default function DashboardPage() {
               {showExportMenu && (
                 <>
                   <div 
-                    className="fixed inset-0 z-10" 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowExportMenu(false)
-                    }}
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowExportMenu(false)}
                   />
-                  <div className={`absolute right-0 mt-1 w-56 z-20 ${
+                  <div className={`absolute right-0 mt-1 w-56 z-50 ${
                     isDark 
                       ? 'bg-[#2a2b32] border-[#4a4b5a]' 
                       : 'bg-white border-[#e5e5e5]'
@@ -1174,7 +1170,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages - FULL WIDTH */}
+        {/* Messages */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
           <div className="px-6 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
@@ -1223,6 +1219,7 @@ export default function DashboardPage() {
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
+                    {/* ✅ User messages: max-w-[85%] (compact), AI responses: max-w-[85%] */}
                     <div className={`max-w-[85%] ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
@@ -1393,7 +1390,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Model Selector - ABOVE the text box */}
+            {/* Model Selector */}
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={() => setShowModelPicker(!showModelPicker)}
@@ -1443,8 +1440,8 @@ export default function DashboardPage() {
                   <Paperclip className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
                 </label>
                 
-                {/* ✅ STOP button - Always visible during generation */}
-                {isLoading ? (
+                {/* ✅ STOP button - Shows during loading OR typing */}
+                {(isLoading || isTyping) ? (
                   <button 
                     onClick={stopGeneration} 
                     className="bg-red-500 text-white p-1.5 rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
