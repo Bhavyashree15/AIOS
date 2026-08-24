@@ -637,10 +637,12 @@ export default function DashboardPage() {
     setTypingText('')
   }
 
+  // ✅ FIXED: Ask Another AI - Auto-generates response
   const askAnotherAI = () => {
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
     if (lastUserMsg) {
       setPrompt(lastUserMsg.content)
+      // Auto-submit after a small delay
       setTimeout(() => {
         handleSubmit()
       }, 100)
@@ -928,6 +930,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Chat List with Delete Button */}
         <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
           {filteredChats.slice(0, 50).map((chat: any) => (
             <div key={chat.id} className="group relative flex items-center">
@@ -944,6 +947,7 @@ export default function DashboardPage() {
                 <MessageSquare className="h-4 w-4 flex-shrink-0 opacity-60" />
                 <span className="truncate text-sm">{chat.title}</span>
               </button>
+              {/* ✅ Delete Button - Always visible on hover */}
               <button 
                 onClick={(e) => deleteChat(chat.id, e)}
                 className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-red-500/10 text-gray-400 hover:text-red-500"
@@ -972,7 +976,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header */}
+        {/* Header - Removed ₹100 from right side */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#4a4b5a] bg-[#0d0d0d]' : 'border-[#e5e5e5] bg-white'} flex-shrink-0`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1016,6 +1020,7 @@ export default function DashboardPage() {
                     onClick={() => setShowExportMenu(false)}
                   />
                   <div className={`absolute right-0 mt-1 w-56 z-20 ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} rounded-lg shadow-lg border overflow-hidden`}>
+                    {/* Balance only shown in dropdown */}
                     <div className={`px-4 py-2.5 border-b ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} flex items-center justify-between`}>
                       <span className={`text-sm ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>Balance</span>
                       <span className={`text-sm font-semibold ${isDark ? 'text-[#10a37f]' : 'text-[#10a37f]'}`}>₹{walletBalance.toFixed(2)}</span>
@@ -1164,7 +1169,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages - Full width */}
+        {/* Messages */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0d0d0d]' : 'bg-[#f7f7f8]'}`}>
           <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
@@ -1290,6 +1295,7 @@ export default function DashboardPage() {
                               >
                                 <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
                               </button>
+                              {/* ✅ Ask Another AI - Auto-generates on click */}
                               <button
                                 onClick={askAnotherAI}
                                 className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all bg-[#10a37f]/10 hover:bg-[#10a37f]/20 text-[#10a37f]"
@@ -1354,7 +1360,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Input - Fixed at bottom with model selector ABOVE */}
+        {/* Input - Fixed at bottom */}
         <div className={`border-t ${isDark ? 'border-[#4a4b5a] bg-[#0d0d0d]' : 'border-[#e5e5e5] bg-white'} p-3 flex-shrink-0`}>
           <div className="max-w-4xl mx-auto">
             {uploadedFiles.length > 0 && (
@@ -1376,7 +1382,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* ✅ Model Selector - ABOVE the text box */}
+            {/* Model Selector - ABOVE the text box */}
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={() => setShowModelPicker(!showModelPicker)}
@@ -1390,11 +1396,7 @@ export default function DashboardPage() {
                 <ChevronDown className={`h-3 w-3 text-[#8e8ea0] transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
               </button>
               
-              <div className="flex items-center gap-2">
-                <span className={`text-[9px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
-                  {isListening ? '🎤 Speak now...' : `₹${walletBalance.toFixed(2)}`}
-                </span>
-              </div>
+              {/* ✅ Removed ₹100 from here */}
             </div>
 
             <div className="relative flex items-end">
