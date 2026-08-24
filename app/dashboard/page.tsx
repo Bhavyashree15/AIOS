@@ -623,7 +623,10 @@ export default function DashboardPage() {
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
     if (lastUserMsg) {
       setPrompt(lastUserMsg.content)
-      setTimeout(() => handleSubmit(), 100)
+      // Auto-submit after a small delay
+      setTimeout(() => {
+        handleSubmit()
+      }, 100)
     }
   }
 
@@ -868,7 +871,7 @@ export default function DashboardPage() {
     <div className={`flex h-screen ${isDark ? 'dark bg-[#343541]' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
       
       {/* ==========================================
-          SIDEBAR - EXACTLY LIKE CHATGPT
+          SIDEBAR
           ========================================== */}
       {sidebarOpen && (
         <div 
@@ -884,7 +887,7 @@ export default function DashboardPage() {
         flex flex-col transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* New Chat Button - TOP */}
+        {/* New Chat Button */}
         <div className="p-3 border-b border-[#4a4b5a]/20 dark:border-[#4a4b5a]">
           <button 
             onClick={createNewChat} 
@@ -895,7 +898,7 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Chat History with Search */}
+        {/* Search */}
         <div className="px-3 py-2">
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8e8ea0]" />
@@ -909,7 +912,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Chat History List */}
+        {/* Chat List */}
         <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
           {filteredChats.slice(0, 50).map((chat: any) => (
             <div key={chat.id} className="group relative flex items-center">
@@ -926,7 +929,6 @@ export default function DashboardPage() {
                 <MessageSquare className="h-4 w-4 flex-shrink-0 opacity-60" />
                 <span className="truncate text-sm">{chat.title}</span>
               </button>
-              {/* Dustbin icon - ALWAYS VISIBLE on hover */}
               <button 
                 onClick={(e) => deleteChat(chat.id, e)}
                 className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-red-500/10 text-gray-400 hover:text-red-500"
@@ -937,7 +939,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Bottom - User */}
+        {/* User */}
         <div className={`border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} p-3`}>
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-200/20 dark:hover:bg-white/5 cursor-pointer transition-colors">
             <div className="w-7 h-7 rounded-full bg-[#10a37f] flex items-center justify-center text-white text-xs font-bold">
@@ -956,7 +958,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header */}
+        {/* Header - 3 dots ALWAYS visible */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#4a4b5a] bg-[#343541]' : 'border-[#e5e5e5] bg-white'} flex-shrink-0`}>
           <div className="flex items-center gap-2">
             <button 
@@ -978,6 +980,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex items-center gap-1">
+            {/* Model Selector - Restored */}
             <button
               onClick={() => setShowModelPicker(!showModelPicker)}
               className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'} text-xs flex items-center gap-1`}
@@ -993,6 +996,7 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 opacity-60" /> : <Moon className="h-4 w-4 opacity-60" />}
             </button>
 
+            {/* 3 Dots - ALWAYS VISIBLE */}
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -1241,12 +1245,10 @@ export default function DashboardPage() {
 
                       {!editingMessageIndex || editingMessageIndex !== i ? (
                         <div className={`flex items-center gap-2 mt-1.5 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
-                          {/* Timestamp */}
                           <span className="text-[10px] opacity-60">
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           
-                          {/* Copy - BOLD icon */}
                           <button
                             onClick={() => copyMessage(msg.content, msgId)}
                             className={`p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors`}
@@ -1258,25 +1260,25 @@ export default function DashboardPage() {
                             )}
                           </button>
 
-                          {/* Regenerate - BOLD icon (only for AI) */}
                           {msg.role === 'assistant' && (
-                            <button
-                              onClick={() => regenerateResponse(i)}
-                              className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                            >
-                              <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => regenerateResponse(i)}
+                                className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                              >
+                                <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                              </button>
+                              {/* Ask Another AI - Auto-generates on click */}
+                              <button
+                                onClick={askAnotherAI}
+                                className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all bg-[#10a37f]/10 hover:bg-[#10a37f]/20 text-[#10a37f]"
+                              >
+                                <RefreshCw className="h-3 w-3 stroke-[2.5]" />
+                                <span>Ask Another AI</span>
+                              </button>
+                            </>
                           )}
 
-                          {/* Reply - BOLD icon */}
-                          <button
-                            onClick={() => handleReplyClick(msg, i)}
-                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                          >
-                            <Reply className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
-                          </button>
-
-                          {/* Edit - BOLD icon (only for user) */}
                           {msg.role === 'user' && (
                             <button
                               onClick={() => startEditing(msg, i)}
@@ -1286,16 +1288,12 @@ export default function DashboardPage() {
                             </button>
                           )}
 
-                          {/* Ask Another AI - Restored! */}
-                          {msg.role === 'assistant' && (
-                            <button
-                              onClick={askAnotherAI}
-                              className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all bg-[#10a37f]/10 hover:bg-[#10a37f]/20 text-[#10a37f]"
-                            >
-                              <RefreshCw className="h-3 w-3 stroke-[2.5]" />
-                              <span>Ask Another AI</span>
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleReplyClick(msg, i)}
+                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                          >
+                            <Reply className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                          </button>
                         </div>
                       ) : null}
                     </div>
@@ -1304,12 +1302,16 @@ export default function DashboardPage() {
               })
             )}
             
+            {/* Loading - "Generating response..." restored */}
             {isLoading && (
               <div className="flex justify-start">
-                <div className={`flex items-center gap-2 px-4 py-2 ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot"></div>
+                <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'bg-[#2a2b32]' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}>
+                  <div className="flex items-center gap-2">
+                    <div className="typing-dot"></div>
+                    <div className="typing-dot"></div>
+                    <div className="typing-dot"></div>
+                  </div>
+                  <span className={`text-xs ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>Generating response...</span>
                 </div>
               </div>
             )}
