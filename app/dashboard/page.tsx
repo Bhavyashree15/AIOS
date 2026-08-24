@@ -886,7 +886,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={`flex h-screen ${isDark ? 'dark bg-black' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
+    <div className={`flex h-screen ${isDark ? 'dark bg-[#0d0d0d]' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
       
       {/* ==========================================
           SIDEBAR
@@ -973,7 +973,7 @@ export default function DashboardPage() {
       <div className="flex-1 flex flex-col h-full min-w-0">
         
         {/* Header */}
-        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#4a4b5a] bg-black' : 'border-[#e5e5e5] bg-white'} flex-shrink-0`}>
+        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#4a4b5a] bg-[#0d0d0d]' : 'border-[#e5e5e5] bg-white'} flex-shrink-0`}>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setSidebarOpen(true)} 
@@ -994,7 +994,6 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex items-center gap-1">
-            {/* Dark Mode Toggle */}
             <button
               onClick={() => setIsDark(!isDark)}
               className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
@@ -1002,7 +1001,6 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 opacity-60" /> : <Moon className="h-4 w-4 opacity-60" />}
             </button>
 
-            {/* 3 Dots - ALWAYS VISIBLE */}
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -1064,7 +1062,7 @@ export default function DashboardPage() {
               className="fixed inset-0 z-10" 
               onClick={() => setShowModelPicker(false)}
             />
-            <div className={`absolute right-4 bottom-20 z-20 p-3 rounded-xl shadow-xl border ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} max-h-[320px] overflow-y-auto w-72`}>
+            <div className={`absolute right-4 bottom-24 z-20 p-3 rounded-xl shadow-xl border ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} max-h-[320px] overflow-y-auto w-72`}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Select Models</h3>
                 <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600">
@@ -1166,12 +1164,12 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages - Scrollable area */}
-        <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-black' : 'bg-[#f7f7f8]'}`}>
-          <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        {/* Messages - Scrollable area with max-width for better readability */}
+        <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0d0d0d]' : 'bg-[#f7f7f8]'}`}>
+          <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center min-h-[60vh] text-center">
-                <h2 className={`text-3xl font-semibold ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
+                <h2 className={`text-2xl font-semibold ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
                   How can I help?
                 </h2>
                 <p className={`text-sm mt-2 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
@@ -1205,7 +1203,7 @@ export default function DashboardPage() {
                 return (
                   <div 
                     key={i} 
-                    className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
@@ -1242,7 +1240,7 @@ export default function DashboardPage() {
                         </div>
                       ) : (
                         <div className={`
-                          px-4 py-3 text-sm leading-relaxed
+                          px-4 py-3 text-[15px] leading-relaxed
                           ${msg.role === 'user' 
                             ? 'bg-[#2563EB] text-white rounded-2xl rounded-tr-sm' 
                             : isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'
@@ -1357,7 +1355,7 @@ export default function DashboardPage() {
         )}
 
         {/* Input - Fixed at bottom */}
-        <div className={`border-t ${isDark ? 'border-[#4a4b5a] bg-black' : 'border-[#e5e5e5] bg-white'} p-3 flex-shrink-0`}>
+        <div className={`border-t ${isDark ? 'border-[#4a4b5a] bg-[#0d0d0d]' : 'border-[#e5e5e5] bg-white'} p-3 flex-shrink-0`}>
           <div className="max-w-3xl mx-auto">
             {uploadedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2">
@@ -1377,6 +1375,27 @@ export default function DashboardPage() {
                 ))}
               </div>
             )}
+
+            {/* Model Selector - ABOVE text box */}
+            <div className="flex items-center justify-between mb-2">
+              <button
+                onClick={() => setShowModelPicker(!showModelPicker)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
+              >
+                {selectedModels.length === 1 ? (
+                  <span className="opacity-60">{getAllModels().find(m => m.id === selectedModels[0])?.name || 'GPT-5.4 mini'}</span>
+                ) : (
+                  <span className="opacity-60">{selectedModels.length} models</span>
+                )}
+                <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
+              </button>
+              
+              <div className="flex items-center gap-2">
+                <span className={`text-[9px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
+                  {isListening ? '🎤 Speak now...' : `₹${walletBalance.toFixed(2)}`}
+                </span>
+              </div>
+            </div>
 
             <div className="relative flex items-end">
               <textarea 
@@ -1414,7 +1433,10 @@ export default function DashboardPage() {
                 </label>
                 
                 {isLoading ? (
-                  <button onClick={stopGeneration} className="bg-[#10a37f] text-white p-1.5 rounded-lg hover:bg-[#0d8b6e] transition-all">
+                  <button 
+                    onClick={stopGeneration} 
+                    className="bg-red-500 text-white p-1.5 rounded-lg hover:bg-red-600 transition-all"
+                  >
                     <Square className="h-4 w-4" />
                   </button>
                 ) : (
@@ -1422,27 +1444,6 @@ export default function DashboardPage() {
                     <Send className="h-4 w-4" />
                   </button>
                 )}
-              </div>
-            </div>
-            
-            {/* Model Selector at Bottom */}
-            <div className="flex items-center justify-between mt-2">
-              <button
-                onClick={() => setShowModelPicker(!showModelPicker)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
-              >
-                {selectedModels.length === 1 ? (
-                  <span className="opacity-60">{getAllModels().find(m => m.id === selectedModels[0])?.name || 'GPT-5.4 mini'}</span>
-                ) : (
-                  <span className="opacity-60">{selectedModels.length} models</span>
-                )}
-                <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
-              </button>
-              
-              <div className="flex items-center gap-2">
-                <span className={`text-[9px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
-                  {isListening ? '🎤 Speak now...' : `₹${walletBalance.toFixed(2)}`}
-                </span>
               </div>
             </div>
             
