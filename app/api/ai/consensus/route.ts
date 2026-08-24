@@ -92,9 +92,23 @@ export async function POST(req: NextRequest) {
     console.log('📝 Prompt:', prompt)
 
     // ============================================
-    // SIMPLE PROMPT - Just the user request
+    // ENHANCED PROMPT - ChatGPT style with markdown
     // ============================================
-    const finalPrompt = prompt
+    let finalPrompt: string
+
+    if (prompt.trim().length < 10) {
+      finalPrompt = prompt.trim()
+    } else {
+      // ✅ Tell AI to use markdown like ChatGPT
+      finalPrompt = `Format your response like ChatGPT with:
+- Use **bold** for important names and key terms (like **Nova City**)
+- Use bullet points with emojis like 🚀, 🌆, 🤖, 💡
+- Use clear headings with #
+- Be creative and detailed
+- Give the city a creative name and highlight it in bold
+
+User request: ${prompt}`
+    }
 
     console.log('📝 Final prompt:', finalPrompt)
 
@@ -112,7 +126,7 @@ export async function POST(req: NextRequest) {
           ],
           generationConfig: {
             temperature: 0.9,
-            maxOutputTokens: 250,  // ✅ Enough for a good response
+            maxOutputTokens: 350,  // Enough for a detailed response
             topP: 0.95,
             topK: 40,
           }
@@ -135,24 +149,18 @@ export async function POST(req: NextRequest) {
 
         if (response.ok && data.candidates && data.candidates.length > 0) {
           let aiResponse = data.candidates[0].content.parts[0].text
-          
-          console.log('📝 FULL RESPONSE:')
-          console.log('--- START ---')
-          console.log(aiResponse)
-          console.log('--- END ---')
-          console.log('📊 RESPONSE LENGTH:', aiResponse.length)
-          
+
+          console.log('📝 RESPONSE LENGTH:', aiResponse.length)
+
           // ✅ Clean up - ensure complete sentences
           const lastPeriod = aiResponse.lastIndexOf('.')
           const lastQuestion = aiResponse.lastIndexOf('?')
           const lastExclamation = aiResponse.lastIndexOf('!')
           const lastGoodEnding = Math.max(lastPeriod, lastQuestion, lastExclamation)
-          
+
           if (lastGoodEnding > aiResponse.length * 0.5) {
             aiResponse = aiResponse.substring(0, lastGoodEnding + 1)
           }
-          
-          console.log('📊 CLEANED LENGTH:', aiResponse.length)
 
           return NextResponse.json({
             success: true,
@@ -168,10 +176,10 @@ export async function POST(req: NextRequest) {
           console.log(`❌ ${modelId} failed:`, errorMsg)
           lastError = errorMsg
 
-          if (errorMsg.includes('API key') || 
-              errorMsg.includes('authentication') || 
-              errorMsg.includes('permission') ||
-              errorMsg.includes('invalid')) {
+          if (errorMsg.includes('API key') ||
+            errorMsg.includes('authentication') ||
+            errorMsg.includes('permission') ||
+            errorMsg.includes('invalid')) {
             console.error('❌ API Key error, stopping attempts')
             return NextResponse.json({
               consensus: `⚠️ Invalid API key: ${errorMsg}`,
@@ -289,8 +297,8 @@ export async function GET() {
       working_models: workingModels,
       test_results: results,
       recommended_model: workingModels.length > 0 ? workingModels[0] : 'None found',
-      note: workingModels.length === 0 
-        ? '❌ No working models.' 
+      note: workingModels.length === 0
+        ? '❌ No working models.'
         : `✅ Using: ${workingModels[0]}`,
     })
   } catch (error) {
