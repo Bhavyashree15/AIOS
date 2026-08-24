@@ -959,11 +959,9 @@ export default function DashboardPage() {
               U
             </div>
             <div className="flex-1 min-w-0">
-              <div className={`text-sm font-medium truncate ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
-                User
-              </div>
+              <div className="text-sm font-medium truncate text-[#ececec] dark:text-white">User</div>
             </div>
-            <Settings className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
+            <Settings className="h-4 w-4 opacity-60" />
           </div>
         </div>
       </div>
@@ -973,7 +971,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header */}
+        {/* Header - With Three Dots solid background */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#10B981]/10' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1002,10 +1000,13 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 text-[#8e8ea0]" /> : <Moon className="h-4 w-4 text-[#8e8ea0]" />}
             </button>
 
-            {/* Three Dots - Fixed */}
+            {/* ✅ Three Dots - Solid background, click outside to close */}
             <div className="relative">
               <button
-                onClick={() => setShowExportMenu(!showExportMenu)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowExportMenu(!showExportMenu)
+                }}
                 className={`p-1.5 rounded-xl transition-colors ${isDark ? 'hover:bg-[#ffffff08]' : 'hover:bg-[#f7f7f8]'}`}
               >
                 <MoreVertical className="h-4 w-4 text-[#8e8ea0]" />
@@ -1015,7 +1016,10 @@ export default function DashboardPage() {
                 <>
                   <div 
                     className="fixed inset-0 z-10" 
-                    onClick={() => setShowExportMenu(false)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowExportMenu(false)
+                    }}
                   />
                   <div className={`absolute right-0 mt-1 w-56 z-20 ${
                     isDark 
@@ -1170,7 +1174,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages - FIXED USER MESSAGE WIDTH */}
+        {/* Messages - FULL WIDTH */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
           <div className="px-6 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
@@ -1219,8 +1223,7 @@ export default function DashboardPage() {
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    {/* ✅ FIXED: User messages take ONLY the space they need (no max-width) */}
-                    <div className={`${msg.role === 'user' ? 'ml-auto' : 'max-w-[85%]'} ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
+                    <div className={`max-w-[85%] ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -1284,7 +1287,6 @@ export default function DashboardPage() {
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           
-                          {/* BOLD ICONS */}
                           <button
                             onClick={() => copyMessage(msg.content, msgId)}
                             className={`p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors`}
@@ -1292,7 +1294,7 @@ export default function DashboardPage() {
                             {copiedMessageId === msgId ? (
                               <Check className="h-3.5 w-3.5 text-[#10B981] stroke-[2.5]" />
                             ) : (
-                              <Copy className="h-3.5 w-3.5 opacity-70 stroke-[2.5]" />
+                              <Copy className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
                             )}
                           </button>
 
@@ -1302,7 +1304,7 @@ export default function DashboardPage() {
                                 onClick={() => regenerateResponse(i)}
                                 className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                               >
-                                <RotateCw className="h-3.5 w-3.5 opacity-70 stroke-[2.5]" />
+                                <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
                               </button>
                               <button
                                 onClick={askAnotherAI}
@@ -1319,7 +1321,7 @@ export default function DashboardPage() {
                               onClick={() => startEditing(msg, i)}
                               className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                             >
-                              <Pencil className="h-3.5 w-3.5 opacity-70 stroke-[2.5]" />
+                              <Pencil className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
                             </button>
                           )}
 
@@ -1327,7 +1329,7 @@ export default function DashboardPage() {
                             onClick={() => handleReplyClick(msg, i)}
                             className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                           >
-                            <Reply className="h-3.5 w-3.5 opacity-70 stroke-[2.5]" />
+                            <Reply className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
                           </button>
                         </div>
                       ) : null}
@@ -1391,7 +1393,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Model Selector */}
+            {/* Model Selector - ABOVE the text box */}
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={() => setShowModelPicker(!showModelPicker)}
@@ -1441,8 +1443,8 @@ export default function DashboardPage() {
                   <Paperclip className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
                 </label>
                 
-                {/* ✅ STOP button - Shows during loading OR typing */}
-                {(isLoading || isTyping) ? (
+                {/* ✅ STOP button - Always visible during generation */}
+                {isLoading ? (
                   <button 
                     onClick={stopGeneration} 
                     className="bg-red-500 text-white p-1.5 rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
