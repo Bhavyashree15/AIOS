@@ -974,7 +974,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* ✅ Header - Three Dots with solid background */}
+        {/* Header - Three Dots with solid background */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#10B981]/10' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1070,7 +1070,6 @@ export default function DashboardPage() {
               onClick={() => setShowModelPicker(false)}
             />
             <div className={`absolute right-4 bottom-24 z-20 p-3 rounded-2xl shadow-2xl border ${isDark ? 'glass bg-[#0B0F17]/90 border-[#10B981]/20' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} max-h-[320px] overflow-y-auto w-72`}>
-              {/* Model picker content - keep as is */}
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Select Models</h3>
                 <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600">
@@ -1172,7 +1171,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages */}
+        {/* Messages - ChatGPT Style */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
           <div className="px-6 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
@@ -1221,8 +1220,8 @@ export default function DashboardPage() {
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    <div className={`max-w-[85%] ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
-                      {/* Message content - keep as is */}
+                    {/* ✅ FIXED: User messages compact (45%), AI messages full width (85%) */}
+                    <div className={`${msg.role === 'user' ? 'max-w-[45%] ml-auto' : 'max-w-[85%]'} ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -1286,6 +1285,7 @@ export default function DashboardPage() {
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           
+                          {/* ✅ BOLD ICONS - stroke-[2.5] */}
                           <button
                             onClick={() => copyMessage(msg.content, msgId)}
                             className={`p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors`}
@@ -1293,7 +1293,7 @@ export default function DashboardPage() {
                             {copiedMessageId === msgId ? (
                               <Check className="h-3.5 w-3.5 text-[#10B981] stroke-[2.5]" />
                             ) : (
-                              <Copy className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                              <Copy className="h-3.5 w-3.5 opacity-70 stroke-[2.5]" />
                             )}
                           </button>
 
@@ -1303,7 +1303,7 @@ export default function DashboardPage() {
                                 onClick={() => regenerateResponse(i)}
                                 className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                               >
-                                <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                                <RotateCw className="h-3.5 w-3.5 opacity-70 stroke-[2.5]" />
                               </button>
                               <button
                                 onClick={askAnotherAI}
@@ -1320,7 +1320,7 @@ export default function DashboardPage() {
                               onClick={() => startEditing(msg, i)}
                               className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                             >
-                              <Pencil className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                              <Pencil className="h-3.5 w-3.5 opacity-70 stroke-[2.5]" />
                             </button>
                           )}
 
@@ -1328,7 +1328,7 @@ export default function DashboardPage() {
                             onClick={() => handleReplyClick(msg, i)}
                             className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                           >
-                            <Reply className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                            <Reply className="h-3.5 w-3.5 opacity-70 stroke-[2.5]" />
                           </button>
                         </div>
                       ) : null}
@@ -1338,7 +1338,7 @@ export default function DashboardPage() {
               })
             )}
             
-            {/* ✅ Loading - Shows during generation */}
+            {/* Loading */}
             {isLoading && (
               <div className="flex justify-start">
                 <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'glass border-[#10B981]/20' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'}`}>
@@ -1370,7 +1370,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Input - Fixed at bottom with STOP button */}
+        {/* Input */}
         <div className={`border-t ${isDark ? 'glass border-[#10B981]/10' : 'border-[#e5e5e5] bg-white/90 backdrop-blur-xl'} p-3 flex-shrink-0`}>
           <div className="max-w-4xl mx-auto">
             {uploadedFiles.length > 0 && (
@@ -1442,7 +1442,7 @@ export default function DashboardPage() {
                   <Paperclip className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
                 </label>
                 
-                {/* ✅ STOP button - Always visible during generation */}
+                {/* ✅ STOP button - Shows during generation */}
                 {isLoading ? (
                   <button 
                     onClick={stopGeneration} 
