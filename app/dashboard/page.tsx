@@ -1171,7 +1171,7 @@ export default function DashboardPage() {
         )}
 
         {/* ==========================================
-            MESSAGES - FIXED WIDTH
+            MESSAGES - ChatGPT Style Width
             ========================================== */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
           <div className="px-4 py-6 space-y-6 w-full">
@@ -1221,8 +1221,8 @@ export default function DashboardPage() {
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    {/* ✅ User messages: max-w-[85%], AI messages: w-full */}
-                    <div className={`${msg.role === 'user' ? 'max-w-[85%]' : 'w-full'} ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
+                    {/* ✅ ChatGPT Style: Same max-width for both, user messages right-aligned */}
+                    <div className={`max-w-[768px] w-full ${msg.role === 'user' ? 'ml-auto order-2' : 'order-1'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
