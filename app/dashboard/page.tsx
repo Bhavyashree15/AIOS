@@ -886,7 +886,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className={`flex h-screen ${isDark ? 'dark bg-[#343541]' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
+    <div className={`flex h-screen ${isDark ? 'dark bg-black' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
       
       {/* ==========================================
           SIDEBAR
@@ -972,8 +972,8 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header - 3 Dots ALWAYS Visible */}
-        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#4a4b5a] bg-[#343541]' : 'border-[#e5e5e5] bg-white'} flex-shrink-0`}>
+        {/* Header */}
+        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#4a4b5a] bg-black' : 'border-[#e5e5e5] bg-white'} flex-shrink-0`}>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setSidebarOpen(true)} 
@@ -1002,7 +1002,7 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 opacity-60" /> : <Moon className="h-4 w-4 opacity-60" />}
             </button>
 
-            {/* ✅ 3 Dots - ALWAYS VISIBLE */}
+            {/* 3 Dots - ALWAYS VISIBLE */}
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -1013,7 +1013,6 @@ export default function DashboardPage() {
               
               {showExportMenu && (
                 <>
-                  {/* Click outside to close */}
                   <div 
                     className="fixed inset-0 z-10" 
                     onClick={() => setShowExportMenu(false)}
@@ -1167,8 +1166,8 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages */}
-        <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#343541]' : 'bg-[#f7f7f8]'}`}>
+        {/* Messages - Scrollable area */}
+        <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-black' : 'bg-[#f7f7f8]'}`}>
           <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -1245,7 +1244,7 @@ export default function DashboardPage() {
                         <div className={`
                           px-4 py-3 text-sm leading-relaxed
                           ${msg.role === 'user' 
-                            ? 'bg-[#10a37f] text-white rounded-2xl rounded-tr-sm' 
+                            ? 'bg-[#2563EB] text-white rounded-2xl rounded-tr-sm' 
                             : isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'
                           }
                         `}>
@@ -1357,8 +1356,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Input - With Model Selector at Bottom */}
-        <div className={`border-t ${isDark ? 'border-[#4a4b5a] bg-[#343541]' : 'border-[#e5e5e5] bg-white'} p-3 flex-shrink-0`}>
+        {/* Input - Fixed at bottom */}
+        <div className={`border-t ${isDark ? 'border-[#4a4b5a] bg-black' : 'border-[#e5e5e5] bg-white'} p-3 flex-shrink-0`}>
           <div className="max-w-3xl mx-auto">
             {uploadedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2">
@@ -1386,16 +1385,16 @@ export default function DashboardPage() {
                 onChange={(e) => setPrompt(e.target.value)} 
                 placeholder={replyToMessage ? `Reply to ${replyToMessage.role}...` : isListening ? '🎤 Listening...' : 'Send a message...'} 
                 className={`
-                  w-full min-h-[44px] max-h-[120px] 
+                  w-full min-h-[52px] max-h-[150px] 
                   ${isDark ? 'bg-[#40414f] border-[#4a4b5a] text-[#ececec] placeholder-[#8e8ea0]' : 'bg-white border-[#e5e5e5] text-[#2d2d2d] placeholder-[#8e8ea0]'} 
-                  border rounded-xl p-2.5 pr-24 outline-none focus:ring-1 focus:ring-[#10a37f] resize-none text-sm transition-all
+                  border rounded-xl p-3 pr-24 outline-none focus:ring-1 focus:ring-[#10a37f] resize-none text-sm transition-all
                 `} 
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
                 rows={1}
               />
               
               {isListening && (
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                   <span className="text-[10px] text-red-500 font-medium">REC</span>
                 </div>
@@ -1426,13 +1425,17 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            {/* ✅ Model Selector at Bottom - Like ChatGPT */}
+            {/* Model Selector at Bottom */}
             <div className="flex items-center justify-between mt-2">
               <button
                 onClick={() => setShowModelPicker(!showModelPicker)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
               >
-                <span className="opacity-60">{selectedModels.length} models</span>
+                {selectedModels.length === 1 ? (
+                  <span className="opacity-60">{getAllModels().find(m => m.id === selectedModels[0])?.name || 'GPT-5.4 mini'}</span>
+                ) : (
+                  <span className="opacity-60">{selectedModels.length} models</span>
+                )}
                 <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
               </button>
               
