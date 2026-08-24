@@ -1002,7 +1002,7 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 text-[#8e8ea0]" /> : <Moon className="h-4 w-4 text-[#8e8ea0]" />}
             </button>
 
-            {/* ✅ Three Dots - Fixed */}
+            {/* Three Dots - Fixed */}
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -1219,7 +1219,6 @@ export default function DashboardPage() {
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    {/* User messages: max-w-[85%], AI messages: w-full */}
                     <div className={`${msg.role === 'user' ? 'max-w-[85%]' : 'w-full'} ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
