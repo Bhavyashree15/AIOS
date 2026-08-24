@@ -973,7 +973,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header - With Three Dots SOLID background */}
+        {/* Header */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#10B981]/10' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1170,7 +1170,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages - FULL WIDTH like ChatGPT */}
+        {/* Messages */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
           <div className="px-4 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
@@ -1219,8 +1219,8 @@ export default function DashboardPage() {
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    {/* ✅ FULL WIDTH - removed max-w-[85%] */}
-                    <div className={`w-full ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
+                    {/* ✅ User messages: normal width, AI messages: FULL WIDTH */}
+                    <div className={`${msg.role === 'user' ? 'max-w-[85%]' : 'w-full'} ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -1336,7 +1336,6 @@ export default function DashboardPage() {
               })
             )}
             
-            {/* Loading */}
             {isLoading && (
               <div className="flex justify-start">
                 <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'glass border-[#10B981]/20' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'}`}>
@@ -1368,7 +1367,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Input - Fixed at bottom with STOP button */}
+        {/* Input */}
         <div className={`border-t ${isDark ? 'glass border-[#10B981]/10' : 'border-[#e5e5e5] bg-white/90 backdrop-blur-xl'} p-3 flex-shrink-0`}>
           <div className="max-w-4xl mx-auto">
             {uploadedFiles.length > 0 && (
@@ -1390,7 +1389,6 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Model Selector */}
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={() => setShowModelPicker(!showModelPicker)}
@@ -1440,7 +1438,6 @@ export default function DashboardPage() {
                   <Paperclip className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
                 </label>
                 
-                {/* ✅ STOP button - Shows during loading OR typing */}
                 {(isLoading || isTyping) ? (
                   <button 
                     onClick={stopGeneration} 
