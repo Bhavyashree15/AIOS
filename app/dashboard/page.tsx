@@ -58,6 +58,37 @@ const getAllModels = () => {
   )
 }
 
+// ============================================
+// WORKING GEMINI MODEL MAP (2026)
+// ============================================
+const getWorkingModel = (modelId: string): string => {
+  // Map frontend model IDs to actual working Gemini models
+  const modelMap: Record<string, string> = {
+    'gpt-5.4-mini': 'gemini-3.5-flash',
+    'qwen-3.5-flash': 'gemini-3.5-flash',
+    'ministral-3-8b': 'gemini-3.5-flash',
+    'mistral-small-4': 'gemini-3.5-flash',
+    'deepseek-chat': 'gemini-3.5-flash',
+    'gemini-3-flash': 'gemini-3.5-flash',
+    'gpt-4o-mini': 'gemini-3.5-flash',
+    'claude-haiku-4.5': 'gemini-3.5-flash',
+    'mistral-small': 'gemini-3.5-flash',
+    'gpt-4.1': 'gemini-2.5-pro',
+    'claude-sonnet-4.0': 'gemini-2.5-pro',
+    'gpt-5.4': 'gemini-2.5-pro',
+    'gemini-3-pro-preview': 'gemini-2.5-pro',
+    'grok-3-mini': 'gemini-2.5-pro',
+    'codestral': 'gemini-2.5-pro',
+    'gpt-5.6-terra': 'gemini-2.5-pro',
+    'grok-4.5': 'gemini-2.5-pro',
+    'nova-premier-1.0': 'gemini-2.5-pro',
+    'perplexity-sonar': 'gemini-2.5-pro',
+    'gpt-5.6-luna': 'gemini-2.5-pro',
+    'deepseek-reasoner': 'gemini-2.5-pro',
+  }
+  return modelMap[modelId] || 'gemini-3.5-flash'
+}
+
 const SUGGESTIONS = [
   { icon: '🎨', label: 'Create an image', prompt: 'Create a detailed description of a futuristic city' },
   { icon: '📊', label: 'Compare ideas', prompt: 'Compare these concepts:' },
@@ -623,7 +654,6 @@ export default function DashboardPage() {
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
     if (lastUserMsg) {
       setPrompt(lastUserMsg.content)
-      // Auto-submit after a small delay
       setTimeout(() => {
         handleSubmit()
       }, 100)
@@ -697,12 +727,15 @@ export default function DashboardPage() {
     abortControllerRef.current = new AbortController()
 
     try {
+      // Map selected models to working Gemini models
+      const mappedModels = selectedModels.map(id => getWorkingModel(id))
+      
       const res = await fetch('/api/ai/consensus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt: currentPrompt, 
-          models: selectedModels
+          models: mappedModels
         }),
         signal: abortControllerRef.current.signal
       })
@@ -711,13 +744,15 @@ export default function DashboardPage() {
       let assistantContent: string
       
       if (data.error === 'insufficient_credits') {
-        assistantContent = `⚠️ Insufficient credits. Please add funds at https://openrouter.ai/settings/creds`
+        assistantContent = `⚠️ Insufficient credits. Please add funds.`
       } else if (data.error === 'free_model_limit') {
         assistantContent = `⚠️ Free model daily limit reached. Try again later.`
       } else if (data.error === 'model_unavailable') {
         assistantContent = `⚠️ Model currently unavailable. Try again later.`
       } else if (data.error === 'all_models_failed') {
-        assistantContent = `⚠️ All free models are currently unavailable. Try again later or add credits.`
+        assistantContent = `⚠️ All models are currently unavailable. Try again later.`
+      } else if (data.error === 'missing_api_key') {
+        assistantContent = `⚠️ API key not configured. Please add your Gemini API key.`
       } else if (data.error) {
         assistantContent = `⚠️ ${data.error}`
       } else if (data.consensus) {
@@ -743,7 +778,12 @@ export default function DashboardPage() {
       
       const finalMessages = [...updatedMessages, assistantMsg]
       setMessages(finalMessages)
-      simulateTyping(assistantContent)
+      
+      if (!data.error && assistantContent.length > 0) {
+        simulateTyping(assistantContent)
+      } else {
+        setIsLoading(false)
+      }
       
       if (currentChatId) {
         updateChatMessages(currentChatId, finalMessages)
@@ -799,12 +839,6 @@ export default function DashboardPage() {
       handleSubmit()
     }, 100)
   }
-
-  const navItems = [
-    { id: 'image', icon: Image, label: 'Image Studio' },
-    { id: 'experts', icon: Users, label: 'Experts' },
-    { id: 'projects', icon: FolderOpen, label: 'Projects' },
-  ]
 
   const MarkdownContent = ({ content }: { content: string }) => {
     return (
@@ -958,7 +992,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header - 3 dots ALWAYS visible */}
+        {/* Header */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#4a4b5a] bg-[#343541]' : 'border-[#e5e5e5] bg-white'} flex-shrink-0`}>
           <div className="flex items-center gap-2">
             <button 
@@ -980,7 +1014,6 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex items-center gap-1">
-            {/* Model Selector - Restored */}
             <button
               onClick={() => setShowModelPicker(!showModelPicker)}
               className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'} text-xs flex items-center gap-1`}
@@ -996,7 +1029,6 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 opacity-60" /> : <Moon className="h-4 w-4 opacity-60" />}
             </button>
 
-            {/* 3 Dots - ALWAYS VISIBLE */}
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -1268,7 +1300,6 @@ export default function DashboardPage() {
                               >
                                 <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
                               </button>
-                              {/* Ask Another AI - Auto-generates on click */}
                               <button
                                 onClick={askAnotherAI}
                                 className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all bg-[#10a37f]/10 hover:bg-[#10a37f]/20 text-[#10a37f]"
@@ -1302,7 +1333,6 @@ export default function DashboardPage() {
               })
             )}
             
-            {/* Loading - "Generating response..." restored */}
             {isLoading && (
               <div className="flex justify-start">
                 <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'bg-[#2a2b32]' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}>
