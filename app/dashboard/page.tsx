@@ -953,7 +953,6 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* ✅ Avatar - Fixed for light mode */}
         <div className={`border-t ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} p-3`}>
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-[#ffffff08] cursor-pointer transition-colors">
             <div className="w-7 h-7 rounded-full bg-gradient-to-r from-[#10B981] to-[#06B6D4] flex items-center justify-center text-white text-xs font-bold">
@@ -974,7 +973,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header - Three Dots with solid background */}
+        {/* Header */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#10B981]/10' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1003,7 +1002,7 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 text-[#8e8ea0]" /> : <Moon className="h-4 w-4 text-[#8e8ea0]" />}
             </button>
 
-            {/* ✅ Three Dots - Solid background, click outside to close */}
+            {/* Three Dots - Fixed */}
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -1171,7 +1170,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages - ChatGPT Style */}
+        {/* Messages - FIXED USER MESSAGE WIDTH */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
           <div className="px-6 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
@@ -1220,8 +1219,8 @@ export default function DashboardPage() {
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    {/* ✅ FIXED: User messages compact (45%), AI messages full width (85%) */}
-                    <div className={`${msg.role === 'user' ? 'max-w-[45%] ml-auto' : 'max-w-[85%]'} ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
+                    {/* ✅ FIXED: User messages take ONLY the space they need (no max-width) */}
+                    <div className={`${msg.role === 'user' ? 'ml-auto' : 'max-w-[85%]'} ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -1285,7 +1284,7 @@ export default function DashboardPage() {
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           
-                          {/* ✅ BOLD ICONS - stroke-[2.5] */}
+                          {/* BOLD ICONS */}
                           <button
                             onClick={() => copyMessage(msg.content, msgId)}
                             className={`p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors`}
@@ -1338,7 +1337,7 @@ export default function DashboardPage() {
               })
             )}
             
-            {/* Loading */}
+            {/* Loading - Shows during generation */}
             {isLoading && (
               <div className="flex justify-start">
                 <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'glass border-[#10B981]/20' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'}`}>
@@ -1370,7 +1369,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Input */}
+        {/* Input - Fixed at bottom with STOP button */}
         <div className={`border-t ${isDark ? 'glass border-[#10B981]/10' : 'border-[#e5e5e5] bg-white/90 backdrop-blur-xl'} p-3 flex-shrink-0`}>
           <div className="max-w-4xl mx-auto">
             {uploadedFiles.length > 0 && (
@@ -1442,8 +1441,8 @@ export default function DashboardPage() {
                   <Paperclip className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
                 </label>
                 
-                {/* ✅ STOP button - Shows during generation */}
-                {isLoading ? (
+                {/* ✅ STOP button - Shows during loading OR typing */}
+                {(isLoading || isTyping) ? (
                   <button 
                     onClick={stopGeneration} 
                     className="bg-red-500 text-white p-1.5 rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
