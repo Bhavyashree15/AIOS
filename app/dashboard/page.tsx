@@ -953,15 +953,18 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* ✅ Avatar - Fixed for light mode */}
         <div className={`border-t ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} p-3`}>
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-[#ffffff08] cursor-pointer transition-colors">
             <div className="w-7 h-7 rounded-full bg-gradient-to-r from-[#10B981] to-[#06B6D4] flex items-center justify-center text-white text-xs font-bold">
               U
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate text-[#ececec] dark:text-white">User</div>
+              <div className={`text-sm font-medium truncate ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
+                User
+              </div>
             </div>
-            <Settings className="h-4 w-4 opacity-60" />
+            <Settings className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
           </div>
         </div>
       </div>
@@ -971,7 +974,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header - With Three Dots solid background */}
+        {/* ✅ Header - Three Dots with solid background */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#10B981]/10' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1003,10 +1006,7 @@ export default function DashboardPage() {
             {/* ✅ Three Dots - Solid background, click outside to close */}
             <div className="relative">
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowExportMenu(!showExportMenu)
-                }}
+                onClick={() => setShowExportMenu(!showExportMenu)}
                 className={`p-1.5 rounded-xl transition-colors ${isDark ? 'hover:bg-[#ffffff08]' : 'hover:bg-[#f7f7f8]'}`}
               >
                 <MoreVertical className="h-4 w-4 text-[#8e8ea0]" />
@@ -1016,10 +1016,7 @@ export default function DashboardPage() {
                 <>
                   <div 
                     className="fixed inset-0 z-10" 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowExportMenu(false)
-                    }}
+                    onClick={() => setShowExportMenu(false)}
                   />
                   <div className={`absolute right-0 mt-1 w-56 z-20 ${
                     isDark 
@@ -1073,6 +1070,7 @@ export default function DashboardPage() {
               onClick={() => setShowModelPicker(false)}
             />
             <div className={`absolute right-4 bottom-24 z-20 p-3 rounded-2xl shadow-2xl border ${isDark ? 'glass bg-[#0B0F17]/90 border-[#10B981]/20' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} max-h-[320px] overflow-y-auto w-72`}>
+              {/* Model picker content - keep as is */}
               <div className="flex items-center justify-between mb-3">
                 <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Select Models</h3>
                 <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600">
@@ -1174,7 +1172,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages - FULL WIDTH */}
+        {/* Messages */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
           <div className="px-6 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
@@ -1224,6 +1222,7 @@ export default function DashboardPage() {
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
                     <div className={`max-w-[85%] ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
+                      {/* Message content - keep as is */}
                       {msg.replyTo && (
                         <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
                           <Reply className="h-3 w-3" />
@@ -1339,7 +1338,7 @@ export default function DashboardPage() {
               })
             )}
             
-            {/* Loading - Shows during generation */}
+            {/* ✅ Loading - Shows during generation */}
             {isLoading && (
               <div className="flex justify-start">
                 <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'glass border-[#10B981]/20' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'}`}>
@@ -1393,7 +1392,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Model Selector - ABOVE the text box */}
+            {/* Model Selector */}
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={() => setShowModelPicker(!showModelPicker)}
