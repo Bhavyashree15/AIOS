@@ -151,6 +151,7 @@ export default function DashboardPage() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -535,21 +536,38 @@ export default function DashboardPage() {
     setTimeout(() => setCopiedMessageId(null), 2000)
   }
 
+  // ============================================
+  // TYPING ANIMATION - FIXED
+  // ============================================
   const simulateTyping = (fullText: string) => {
     setIsTyping(true)
-    let index = 0
-    setTypingText('')
-    const interval = setInterval(() => {
-      if (index < fullText.length && !isStopped) {
-        setTypingText(prev => prev + fullText[index])
-        index++
-      } else {
-        clearInterval(interval)
-        setIsTyping(false)
-        setIsStopped(false)
+    setIsStopped(false)
+    
+    // ✅ Start with the first character immediately
+    if (fullText.length > 0) {
+      setTypingText(fullText[0])
+      let index = 1
+      
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current)
       }
-    }, 15)
-    return () => clearInterval(interval)
+      
+      typingIntervalRef.current = setInterval(() => {
+        if (index < fullText.length && !isStopped) {
+          setTypingText(prev => prev + fullText[index])
+          index++
+        } else {
+          clearInterval(typingIntervalRef.current)
+          typingIntervalRef.current = null
+          setIsTyping(false)
+          setIsStopped(false)
+          setTypingText(fullText) // Ensure full text is set
+        }
+      }, 20)
+    } else {
+      setTypingText('')
+      setIsTyping(false)
+    }
   }
 
   const handleReplyClick = (message: any, index: number) => {
@@ -613,6 +631,10 @@ export default function DashboardPage() {
       abortControllerRef.current.abort()
       abortControllerRef.current = null
     }
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current)
+      typingIntervalRef.current = null
+    }
     setIsStopped(true)
     setIsTyping(false)
     setIsLoading(false)
@@ -623,7 +645,9 @@ export default function DashboardPage() {
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
     if (lastUserMsg) {
       setPrompt(lastUserMsg.content)
-      setTimeout(() => handleSubmit(), 100)
+      setTimeout(() => {
+        handleSubmit()
+      }, 100)
     }
   }
 
@@ -708,13 +732,15 @@ export default function DashboardPage() {
       let assistantContent: string
       
       if (data.error === 'insufficient_credits') {
-        assistantContent = `⚠️ Insufficient credits. Please add funds at https://openrouter.ai/settings/creds`
+        assistantContent = `⚠️ Insufficient credits. Please add funds.`
       } else if (data.error === 'free_model_limit') {
         assistantContent = `⚠️ Free model daily limit reached. Try again later.`
       } else if (data.error === 'model_unavailable') {
         assistantContent = `⚠️ Model currently unavailable. Try again later.`
       } else if (data.error === 'all_models_failed') {
-        assistantContent = `⚠️ All free models are currently unavailable. Try again later or add credits.`
+        assistantContent = `⚠️ All models are currently unavailable. Try again later.`
+      } else if (data.error === 'missing_api_key') {
+        assistantContent = `⚠️ API key not configured. Please add your Gemini API key.`
       } else if (data.error) {
         assistantContent = `⚠️ ${data.error}`
       } else if (data.consensus) {
@@ -740,7 +766,12 @@ export default function DashboardPage() {
       
       const finalMessages = [...updatedMessages, assistantMsg]
       setMessages(finalMessages)
-      simulateTyping(assistantContent)
+      
+      if (!data.error && assistantContent.length > 0) {
+        simulateTyping(assistantContent)
+      } else {
+        setIsLoading(false)
+      }
       
       if (currentChatId) {
         updateChatMessages(currentChatId, finalMessages)
@@ -796,12 +827,6 @@ export default function DashboardPage() {
       handleSubmit()
     }, 100)
   }
-
-  const navItems = [
-    { id: 'image', icon: Image, label: 'Image Studio' },
-    { id: 'experts', icon: Users, label: 'Experts' },
-    { id: 'projects', icon: FolderOpen, label: 'Projects' },
-  ]
 
   const MarkdownContent = ({ content }: { content: string }) => {
     return (
@@ -864,11 +889,14 @@ export default function DashboardPage() {
     )
   }
 
+  // ============================================
+  // RENDER
+  // ============================================
   return (
     <div className={`flex h-screen ${isDark ? 'dark bg-[#343541]' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
       
       {/* ==========================================
-          SIDEBAR - EXACTLY LIKE CHATGPT
+          SIDEBAR
           ========================================== */}
       {sidebarOpen && (
         <div 
@@ -884,7 +912,7 @@ export default function DashboardPage() {
         flex flex-col transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* New Chat Button - TOP */}
+        {/* New Chat Button */}
         <div className="p-3 border-b border-[#4a4b5a]/20 dark:border-[#4a4b5a]">
           <button 
             onClick={createNewChat} 
@@ -895,7 +923,7 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Chat History with Search */}
+        {/* Search */}
         <div className="px-3 py-2">
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8e8ea0]" />
@@ -909,7 +937,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Chat History List */}
+        {/* Chat List */}
         <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
           {filteredChats.slice(0, 50).map((chat: any) => (
             <div key={chat.id} className="group relative flex items-center">
@@ -926,7 +954,6 @@ export default function DashboardPage() {
                 <MessageSquare className="h-4 w-4 flex-shrink-0 opacity-60" />
                 <span className="truncate text-sm">{chat.title}</span>
               </button>
-              {/* Dustbin icon - ALWAYS VISIBLE on hover */}
               <button 
                 onClick={(e) => deleteChat(chat.id, e)}
                 className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-red-500/10 text-gray-400 hover:text-red-500"
@@ -937,7 +964,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Bottom - User */}
+        {/* User */}
         <div className={`border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} p-3`}>
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-200/20 dark:hover:bg-white/5 cursor-pointer transition-colors">
             <div className="w-7 h-7 rounded-full bg-[#10a37f] flex items-center justify-center text-white text-xs font-bold">
@@ -956,7 +983,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header */}
+        {/* Header - With 3 Dots ALWAYS visible */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-[#4a4b5a] bg-[#343541]' : 'border-[#e5e5e5] bg-white'} flex-shrink-0`}>
           <div className="flex items-center gap-2">
             <button 
@@ -979,20 +1006,13 @@ export default function DashboardPage() {
           
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setShowModelPicker(!showModelPicker)}
-              className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'} text-xs flex items-center gap-1`}
-            >
-              <span className="opacity-60">{selectedModels.length} models</span>
-              <ChevronDown className="h-3 w-3 opacity-60" />
-            </button>
-
-            <button
               onClick={() => setIsDark(!isDark)}
               className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
             >
               {isDark ? <Sun className="h-4 w-4 opacity-60" /> : <Moon className="h-4 w-4 opacity-60" />}
             </button>
 
+            {/* ✅ 3 Dots - ALWAYS VISIBLE */}
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -1041,7 +1061,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Model Picker */}
+        {/* Model Picker - Popup */}
         {showModelPicker && (
           <div className={`absolute right-4 top-14 z-20 p-3 rounded-xl shadow-xl border ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} max-h-[320px] overflow-y-auto w-72`}>
             <div className="flex items-center justify-between mb-3">
@@ -1228,7 +1248,14 @@ export default function DashboardPage() {
                         `}>
                           {msg.role === 'assistant' ? (
                             <div className="prose prose-sm max-w-none dark:prose-invert">
-                              <MarkdownContent content={isTyping && i === messages.length - 1 && isAI && !isStopped ? typingText : msg.content} />
+                              <MarkdownContent 
+                                content={
+                                  // ✅ Show typing text during animation, full content when done
+                                  (isTyping && i === messages.length - 1 && isAI && !isStopped) 
+                                    ? (typingText || msg.content) 
+                                    : msg.content
+                                } 
+                              />
                             </div>
                           ) : (
                             <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -1241,12 +1268,10 @@ export default function DashboardPage() {
 
                       {!editingMessageIndex || editingMessageIndex !== i ? (
                         <div className={`flex items-center gap-2 mt-1.5 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
-                          {/* Timestamp */}
                           <span className="text-[10px] opacity-60">
                             {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           
-                          {/* Copy - BOLD icon */}
                           <button
                             onClick={() => copyMessage(msg.content, msgId)}
                             className={`p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors`}
@@ -1258,25 +1283,24 @@ export default function DashboardPage() {
                             )}
                           </button>
 
-                          {/* Regenerate - BOLD icon (only for AI) */}
                           {msg.role === 'assistant' && (
-                            <button
-                              onClick={() => regenerateResponse(i)}
-                              className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                            >
-                              <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
-                            </button>
+                            <>
+                              <button
+                                onClick={() => regenerateResponse(i)}
+                                className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                              >
+                                <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                              </button>
+                              <button
+                                onClick={askAnotherAI}
+                                className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all bg-[#10a37f]/10 hover:bg-[#10a37f]/20 text-[#10a37f]"
+                              >
+                                <RefreshCw className="h-3 w-3 stroke-[2.5]" />
+                                <span>Ask Another AI</span>
+                              </button>
+                            </>
                           )}
 
-                          {/* Reply - BOLD icon */}
-                          <button
-                            onClick={() => handleReplyClick(msg, i)}
-                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                          >
-                            <Reply className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
-                          </button>
-
-                          {/* Edit - BOLD icon (only for user) */}
                           {msg.role === 'user' && (
                             <button
                               onClick={() => startEditing(msg, i)}
@@ -1286,16 +1310,12 @@ export default function DashboardPage() {
                             </button>
                           )}
 
-                          {/* Ask Another AI - Restored! */}
-                          {msg.role === 'assistant' && (
-                            <button
-                              onClick={askAnotherAI}
-                              className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all bg-[#10a37f]/10 hover:bg-[#10a37f]/20 text-[#10a37f]"
-                            >
-                              <RefreshCw className="h-3 w-3 stroke-[2.5]" />
-                              <span>Ask Another AI</span>
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleReplyClick(msg, i)}
+                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                          >
+                            <Reply className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                          </button>
                         </div>
                       ) : null}
                     </div>
@@ -1306,10 +1326,13 @@ export default function DashboardPage() {
             
             {isLoading && (
               <div className="flex justify-start">
-                <div className={`flex items-center gap-2 px-4 py-2 ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot"></div>
-                  <div className="typing-dot"></div>
+                <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'bg-[#2a2b32]' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}>
+                  <div className="flex items-center gap-2">
+                    <div className="typing-dot"></div>
+                    <div className="typing-dot"></div>
+                    <div className="typing-dot"></div>
+                  </div>
+                  <span className={`text-xs ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>Generating response...</span>
                 </div>
               </div>
             )}
@@ -1332,7 +1355,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Input */}
+        {/* Input - With Model Selector at Bottom */}
         <div className={`border-t ${isDark ? 'border-[#4a4b5a] bg-[#343541]' : 'border-[#e5e5e5] bg-white'} p-3 flex-shrink-0`}>
           <div className="max-w-3xl mx-auto">
             {uploadedFiles.length > 0 && (
@@ -1381,51 +1404,46 @@ export default function DashboardPage() {
                   onClick={toggleVoiceInput}
                   className={`p-1.5 rounded-lg transition-all ${isListening ? 'bg-red-500 text-white' : isDark ? 'hover:bg-[#40414f]' : 'hover:bg-[#e5e5e5]'}`}
                 >
-                  {isListening ? (
-                    <MicOff className="h-4 w-4" />
-                  ) : (
-                    <Mic className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
-                  )}
+                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />}
                 </button>
 
                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" id="file-upload" accept=".txt,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.webp,.csv,.json,.xml,.md" />
-                <label 
-                  htmlFor="file-upload" 
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isDark ? 'hover:bg-[#40414f]' : 'hover:bg-[#e5e5e5]'}`}
-                >
+                <label htmlFor="file-upload" className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isDark ? 'hover:bg-[#40414f]' : 'hover:bg-[#e5e5e5]'}`}>
                   <Paperclip className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
                 </label>
                 
                 {isLoading ? (
-                  <button 
-                    onClick={stopGeneration}
-                    className="bg-[#10a37f] text-white p-1.5 rounded-lg hover:bg-[#0d8b6e] transition-all"
-                  >
+                  <button onClick={stopGeneration} className="bg-[#10a37f] text-white p-1.5 rounded-lg hover:bg-[#0d8b6e] transition-all">
                     <Square className="h-4 w-4" />
                   </button>
                 ) : (
-                  <button 
-                    onClick={handleSubmit} 
-                    disabled={!prompt.trim() && uploadedFiles.length === 0} 
-                    className={`p-1.5 rounded-lg transition-all ${prompt.trim() || uploadedFiles.length > 0 ? 'bg-[#10a37f] text-white hover:bg-[#0d8b6e]' : isDark ? 'bg-[#40414f] text-[#8e8ea0]' : 'bg-[#e5e5e5] text-[#8e8ea0]'}`}
-                  >
+                  <button onClick={handleSubmit} disabled={!prompt.trim() && uploadedFiles.length === 0} className={`p-1.5 rounded-lg transition-all ${prompt.trim() || uploadedFiles.length > 0 ? 'bg-[#10a37f] text-white hover:bg-[#0d8b6e]' : isDark ? 'bg-[#40414f] text-[#8e8ea0]' : 'bg-[#e5e5e5] text-[#8e8ea0]'}`}>
                     <Send className="h-4 w-4" />
                   </button>
                 )}
               </div>
             </div>
             
-            <div className="flex items-center justify-between mt-1.5">
+            {/* ✅ Model Selector at Bottom - Like ChatGPT */}
+            <div className="flex items-center justify-between mt-2">
+              <button
+                onClick={() => setShowModelPicker(!showModelPicker)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
+              >
+                <span className="opacity-60">{selectedModels.length} models</span>
+                <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
+              </button>
+              
               <div className="flex items-center gap-2">
-                {selectedModels.length === 0 && (
-                  <p className="text-[10px] text-amber-500">⚠️ Select a model</p>
-                )}
-                <p className={`text-[9px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
-                  Supports: TXT, PDF, Images, DOC, CSV, JSON, XML, MD
-                </p>
+                <span className={`text-[9px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
+                  {isListening ? '🎤 Speak now...' : `₹${walletBalance.toFixed(2)}`}
+                </span>
               </div>
+            </div>
+            
+            <div className="flex items-center justify-between mt-1">
               <p className={`text-[9px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
-                {isListening ? '🎤 Speak now...' : `₹${walletBalance.toFixed(2)}`}
+                Supports: TXT, PDF, Images, DOC, CSV, JSON, XML, MD
               </p>
             </div>
           </div>
