@@ -8,27 +8,40 @@ const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.Gemini_API_Key
 console.log('🔍 Gemini API Key exists?', !!GEMINI_API_KEY)
 
 // ============================================
-// WORKING MODELS FROM YOUR API KEY
+// WORKING MODELS FROM YOUR API KEY (Verified from API response)
 // ============================================
 const MODELS_TO_TRY = [
-  'gemini-2.5-flash',      // ✅ Your API has this
-  'gemini-2.5-pro',        // ✅ Your API has this
-  'gemini-flash-latest',   // ✅ Your API has this
+  'gemini-2.5-flash',           // ✅ Available - Stable
+  'gemini-2.5-pro',             // ✅ Available - Pro version
+  'gemini-flash-latest',        // ✅ Available - Latest Flash
+  'gemini-flash-lite-latest',   // ✅ Available - Lite version
+  'gemini-pro-latest',          // ✅ Available - Pro latest
+  'gemini-2.5-flash-lite',      // ✅ Available - Flash Lite
+  'gemini-3.5-flash',           // ✅ Available - New!
+  'gemini-3.5-flash-lite',      // ✅ Available - New!
+  'gemini-3.6-flash',           // ✅ Available - New!
+  'gemini-3.7-flash',           // ✅ Available - New!
+  'gemma-4-26b-a4b-it',         // ✅ Available - Gemma
+  'gemma-4-31b-it',             // ✅ Available - Gemma
 ]
 
 // ============================================
-// MODEL MAPPING
+// MODEL MAPPING - Map frontend models to working Gemini models
 // ============================================
 const MODEL_MAP: Record<string, string> = {
-  'gpt-5.4-mini': 'gemini-2.5-flash',
-  'qwen-3.5-flash': 'gemini-2.5-flash',
-  'ministral-3-8b': 'gemini-2.5-flash',
-  'mistral-small-4': 'gemini-2.5-flash',
-  'deepseek-chat': 'gemini-2.5-flash',
-  'gemini-3-flash': 'gemini-2.5-flash',
-  'gpt-4o-mini': 'gemini-2.5-flash',
-  'claude-haiku-4.5': 'gemini-2.5-flash',
-  'mistral-small': 'gemini-2.5-flash',
+  'gpt-5.4-mini': 'gemini-3.5-flash',
+  'qwen-3.5-flash': 'gemini-3.5-flash',
+  'ministral-3-8b': 'gemini-3.5-flash',
+  'mistral-small-4': 'gemini-3.5-flash',
+  'deepseek-chat': 'gemini-3.5-flash',
+  'gemini-3-flash': 'gemini-3.5-flash',
+  'gpt-4o-mini': 'gemini-3.5-flash',
+  'claude-haiku-4.5': 'gemini-3.5-flash',
+  'mistral-small': 'gemini-3.5-flash',
+  'seed-2.0-lite': 'gemini-3.5-flash',
+  'nova-micro': 'gemini-3.5-flash',
+  'qwen-3-coder-flash': 'gemini-3.5-flash',
+  'gpt-5-mini': 'gemini-3.5-flash',
   'gpt-4.1': 'gemini-2.5-pro',
   'claude-sonnet-4.0': 'gemini-2.5-pro',
   'gpt-5.4': 'gemini-2.5-pro',
@@ -88,12 +101,17 @@ User request: ${prompt}`
 
     let lastError = null
 
+    // Try each model until one works
     for (const modelId of MODELS_TO_TRY) {
       try {
         console.log(`🔄 Trying model: ${modelId}`)
 
         const requestBody = {
-          contents: [{ parts: [{ text: enhancedPrompt }] }],
+          contents: [
+            {
+              parts: [{ text: enhancedPrompt }]
+            }
+          ],
           generationConfig: {
             temperature: 0.9,
             maxOutputTokens: 800,
@@ -106,7 +124,9 @@ User request: ${prompt}`
           `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+            },
             body: JSON.stringify(requestBody),
           }
         )
@@ -134,6 +154,7 @@ User request: ${prompt}`
           console.log(`❌ ${modelId} failed:`, errorMsg)
           lastError = errorMsg
 
+          // If it's a key error, stop trying
           if (errorMsg.includes('API key') || 
               errorMsg.includes('authentication') || 
               errorMsg.includes('permission') ||
@@ -153,6 +174,7 @@ User request: ${prompt}`
       }
     }
 
+    // If all models failed
     console.error('❌ All models failed. Last error:', lastError)
     return NextResponse.json({
       consensus: `⚠️ No available models. Last error: ${lastError}`,
@@ -177,7 +199,7 @@ User request: ${prompt}`
 }
 
 // ============================================
-// GET ENDPOINT
+// GET ENDPOINT - List available models
 // ============================================
 export async function GET() {
   const hasKey = !!process.env.GOOGLE_API_KEY || !!process.env.Gemini_API_Key
@@ -191,6 +213,7 @@ export async function GET() {
   }
 
   try {
+    // List all available models from API
     const listResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`,
       { method: 'GET' }
@@ -198,25 +221,28 @@ export async function GET() {
 
     const listData = await listResponse.json()
 
-    const modelsToTest = [
-      'gemini-2.5-flash',
-      'gemini-2.5-pro',
-      'gemini-flash-latest',
-    ]
-
+    // Test each model to find working ones
     const results: Record<string, any> = {}
     const workingModels: string[] = []
 
-    for (const model of modelsToTest) {
+    for (const model of MODELS_TO_TRY) {
       try {
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+            },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: 'Say hello in one word' }] }],
-              generationConfig: { maxOutputTokens: 5 },
+              contents: [
+                {
+                  parts: [{ text: 'Say hello in one word' }]
+                }
+              ],
+              generationConfig: {
+                maxOutputTokens: 5,
+              }
             }),
           }
         )
@@ -249,7 +275,7 @@ export async function GET() {
     return NextResponse.json({
       has_api_key: true,
       key_prefix: GEMINI_API_KEY.substring(0, 10) + '...',
-      all_models_from_api: listData.models?.map((m: any) => m.name) || [],
+      all_models_from_api: listData.models?.map((m: any) => m.name.replace('models/', '')) || [],
       working_models: workingModels,
       test_results: results,
       recommended_model: workingModels.length > 0 ? workingModels[0] : 'None found',
