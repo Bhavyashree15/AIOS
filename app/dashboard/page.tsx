@@ -797,6 +797,18 @@ export default function DashboardPage() {
     }, 100)
   }
 
+  const navItems = [
+    { id: 'image', icon: Image, label: 'Image Studio' },
+    { id: 'experts', icon: Users, label: 'Experts' },
+    { id: 'projects', icon: FolderOpen, label: 'Projects' },
+  ]
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-emerald-600'
+    if (score >= 60) return 'text-amber-600'
+    return 'text-red-600'
+  }
+
   const MarkdownContent = ({ content }: { content: string }) => {
     return (
       <ReactMarkdown
@@ -858,6 +870,9 @@ export default function DashboardPage() {
     )
   }
 
+  // ==========================================
+  // RENDER - EXACTLY LIKE CHATGPT
+  // ==========================================
   return (
     <div className={`flex h-screen ${isDark ? 'dark bg-[#343541]' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
       
@@ -891,6 +906,20 @@ export default function DashboardPage() {
 
         {/* Chat History */}
         <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
+          {/* Search */}
+          <div className="px-2 mb-3">
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8e8ea0]" />
+              <input
+                type="text"
+                placeholder="Search chats..."
+                value={chatSearchQuery}
+                onChange={(e) => setChatSearchQuery(e.target.value)}
+                className={`w-full pl-9 pr-3 py-1.5 rounded-lg text-sm ${isDark ? 'bg-[#2a2b32] text-[#ececec] placeholder-[#8e8ea0] border-[#4a4b5a]' : 'bg-[#f7f7f8] text-[#2d2d2d] placeholder-[#8e8ea0] border-[#e5e5e5]'} border outline-none focus:ring-1 focus:ring-[#10a37f]`}
+              />
+            </div>
+          </div>
+
           {filteredChats.slice(0, 50).map((chat: any) => (
             <div key={chat.id} className="group relative flex items-center">
               <button 
@@ -957,6 +986,15 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex items-center gap-1">
+            {/* Model Selector - Restored */}
+            <button
+              onClick={() => setShowModelPicker(!showModelPicker)}
+              className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'} text-xs flex items-center gap-1`}
+            >
+              <span className="opacity-60">{selectedModels.length} models</span>
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </button>
+
             <button
               onClick={() => setIsDark(!isDark)}
               className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
@@ -973,10 +1011,22 @@ export default function DashboardPage() {
               </button>
               
               {showExportMenu && (
-                <div className={`absolute right-0 mt-1 w-48 ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} rounded-lg shadow-lg border overflow-hidden z-10`}>
+                <div className={`absolute right-0 mt-1 w-56 ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} rounded-lg shadow-lg border overflow-hidden z-10`}>
+                  {/* Wallet - Hidden in dropdown */}
+                  <div className={`px-4 py-2.5 border-b ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'} flex items-center justify-between`}>
+                    <span className={`text-sm ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>Balance</span>
+                    <span className={`text-sm font-semibold ${isDark ? 'text-[#10a37f]' : 'text-[#10a37f]'}`}>₹{walletBalance.toFixed(2)}</span>
+                  </div>
+                  <button
+                    onClick={() => { addFunds(); setShowExportMenu(false) }}
+                    className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2`}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Funds
+                  </button>
                   <button
                     onClick={() => { exportChat('txt'); setShowExportMenu(false) }}
-                    className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2`}
+                    className={`w-full text-left px-4 py-2.5 text-sm ${isDark ? 'text-[#ececec] hover:bg-[#3a3b4a]' : 'text-[#2d2d2d] hover:bg-[#e5e5e5]'} flex items-center gap-2 border-t ${isDark ? 'border-[#4a4b5a]' : 'border-[#e5e5e5]'}`}
                   >
                     <Download className="h-4 w-4" />
                     Export as TXT
@@ -1001,6 +1051,111 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* ==========================================
+            MODEL PICKER - Restored
+            ========================================== */}
+        {showModelPicker && (
+          <div className={`absolute right-4 top-14 z-20 p-3 rounded-xl shadow-xl border ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-white border-[#e5e5e5]'} max-h-[320px] overflow-y-auto w-72`}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Select Models</h3>
+              <button onClick={() => setShowModelPicker(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex gap-1 mb-3 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+              {['auto', 'free', 'paid'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setModelTab(tab)}
+                  className={`flex-1 px-2 py-1 rounded-lg text-xs font-medium capitalize transition-all ${
+                    modelTab === tab
+                      ? 'bg-[#10a37f] text-white'
+                      : isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  {tab === 'auto' ? '✨ Auto' : tab}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative mb-3">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search models..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border ${
+                  isDark ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200 text-gray-800 placeholder-gray-400'
+                } outline-none focus:ring-2 focus:ring-[#10a37f]/30`}
+              />
+            </div>
+
+            {modelTab === 'auto' && (
+              <button
+                onClick={handleAutoSelect}
+                className={`w-full p-3 mb-2 rounded-lg border-2 border-[#10a37f]/30 bg-[#10a37f]/5 text-left transition-all hover:bg-[#10a37f]/10`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">✨</span>
+                  <div>
+                    <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-gray-800'}`}>Auto Mode</div>
+                    <div className={`text-[10px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Automatically picks the best model</div>
+                  </div>
+                  {selectedModels.length === 1 && (
+                    <span className="ml-auto text-[#10a37f] text-xs font-medium">✓ Active</span>
+                  )}
+                </div>
+              </button>
+            )}
+
+            <div className="grid grid-cols-2 gap-1">
+              {getCurrentModels().map((model) => {
+                const isSelected = selectedModels.includes(model.id)
+                
+                return (
+                  <button
+                    key={model.id}
+                    onClick={() => {
+                      if (modelTab === 'auto') {
+                        setSelectedModels([model.id])
+                      } else {
+                        toggleModel(model.id)
+                      }
+                    }}
+                    className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs transition-all ${
+                      isSelected
+                        ? isDark ? 'bg-[#10a37f]/20 border-[#10a37f]/50' : 'bg-[#10a37f]/10 border-[#10a37f]'
+                        : isDark ? 'bg-gray-700/50 hover:bg-gray-600/50 border-transparent' : 'bg-gray-50 hover:bg-gray-100 border-transparent'
+                    } border`}
+                  >
+                    <span className="text-sm">{model.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className={`truncate ${isSelected ? 'text-[#10a37f]' : isDark ? 'text-white' : 'text-gray-700'}`}>
+                        {model.name}
+                      </div>
+                      <div className={`text-[8px] ${model.tier === 'pro' ? 'text-amber-500' : 'text-[#10a37f]'}`}>
+                        {model.tier === 'pro' ? '⭐ Paid' : 'Free'}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span className="text-[#10a37f] text-xs">✓</span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            <button 
+              onClick={() => setShowModelPicker(false)} 
+              className="w-full mt-3 bg-[#10a37f] text-white py-2 rounded-lg font-medium text-xs hover:bg-[#0d8b6e] transition-all"
+            >
+              Done
+            </button>
+          </div>
+        )}
+
         {/* Messages - ChatGPT Style */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#343541]' : 'bg-[#f7f7f8]'}`}>
           <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
@@ -1012,64 +1167,165 @@ export default function DashboardPage() {
                 <p className={`text-sm mt-2 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
                   Start a conversation by typing below.
                 </p>
+                <div className="grid grid-cols-2 gap-2 mt-6 w-full max-w-2xl">
+                  {SUGGESTIONS.map((suggestion, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSuggestionClick(suggestion.prompt)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
+                        isDark 
+                          ? 'bg-[#2a2b32] hover:bg-[#3a3b4a] border border-[#4a4b5a] hover:border-[#5a5b6a]' 
+                          : 'bg-white hover:bg-gray-50 border border-[#e5e5e5] hover:border-[#d5d5d5]'
+                      } border shadow-sm hover:shadow-md`}
+                    >
+                      <span className="text-lg">{suggestion.icon}</span>
+                      <span className={`text-sm font-medium ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
+                        {suggestion.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               messages.map((msg: any, i: number) => {
                 const isAI = msg.role === 'assistant'
                 const msgId = `msg-${i}`
+                const isHovered = hoveredMessageId === msgId
                 
                 return (
-                  <div key={i} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div 
+                    key={i} 
+                    className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    onMouseEnter={() => setHoveredMessageId(msgId)}
+                    onMouseLeave={() => setHoveredMessageId(null)}
+                  >
                     <div className={`max-w-[85%] ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
-                      <div className={`
-                        px-4 py-3 text-sm leading-relaxed
-                        ${msg.role === 'user' 
-                          ? 'bg-[#10a37f] text-white rounded-2xl rounded-tr-sm' 
-                          : isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'
-                        }
-                      `}>
-                        {msg.role === 'assistant' ? (
-                          <MarkdownContent content={isTyping && i === messages.length - 1 && isAI && !isStopped ? typingText : msg.content} />
-                        ) : (
-                          <div className="whitespace-pre-wrap">{msg.content}</div>
-                        )}
-                        {isTyping && i === messages.length - 1 && isAI && !isStopped && (
-                          <span className="animate-pulse">|</span>
-                        )}
-                      </div>
-                      
-                      {/* Actions - small icons */}
-                      <div className={`flex items-center gap-1 mt-1.5 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
-                        <span className="text-[10px] opacity-60">
-                          {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        <button
-                          onClick={() => copyMessage(msg.content, msgId)}
-                          className={`p-0.5 rounded hover:bg-black/5 transition-colors`}
-                        >
-                          {copiedMessageId === msgId ? (
-                            <Check className="h-3 w-3 text-[#10a37f]" />
+                      {msg.replyTo && (
+                        <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
+                          <Reply className="h-3 w-3" />
+                          <span>Replying to {msg.replyTo.role}: "{msg.replyTo.content}"</span>
+                        </div>
+                      )}
+
+                      {editingMessageIndex === i && msg.role === 'user' ? (
+                        <div className="flex flex-col gap-2 w-full">
+                          <textarea
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className={`w-full p-3 rounded-xl text-sm ${isDark ? 'bg-[#2a2b32] text-[#ececec] border-[#4a4b5a]' : 'bg-white text-[#2d2d2d] border-[#e5e5e5]'} border focus:outline-none focus:ring-2 focus:ring-[#10a37f]/30 resize-none`}
+                            rows={3}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => saveEditing(i)}
+                              className="px-3 py-1.5 bg-[#10a37f] text-white rounded-lg text-xs font-medium hover:bg-[#0d8b6e] transition-all"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isDark ? 'bg-[#4a4b5a] text-[#ececec] hover:bg-[#5a5b6a]' : 'bg-[#e5e5e5] text-[#2d2d2d] hover:bg-[#d5d5d5]'} transition-all`}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`
+                          px-4 py-3 text-sm leading-relaxed
+                          ${msg.role === 'user' 
+                            ? 'bg-[#10a37f] text-white rounded-2xl rounded-tr-sm' 
+                            : isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'
+                          }
+                        `}>
+                          {msg.role === 'assistant' ? (
+                            <div className="prose prose-sm max-w-none dark:prose-invert">
+                              <MarkdownContent content={isTyping && i === messages.length - 1 && isAI && !isStopped ? typingText : msg.content} />
+                            </div>
                           ) : (
-                            <Copy className="h-3 w-3 opacity-50" />
+                            <div className="whitespace-pre-wrap">{msg.content}</div>
                           )}
-                        </button>
-                        {msg.role === 'assistant' && (
-                          <>
+                          {isTyping && i === messages.length - 1 && isAI && !isStopped && (
+                            <span className="animate-pulse">|</span>
+                          )}
+                        </div>
+                      )}
+
+                      {!editingMessageIndex || editingMessageIndex !== i ? (
+                        <div className={`flex items-center gap-1 mt-1.5 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
+                          <span className="text-[10px] opacity-60">
+                            {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          
+                          <button
+                            onClick={() => copyMessage(msg.content, msgId)}
+                            className={`p-0.5 rounded hover:bg-black/5 transition-colors`}
+                          >
+                            {copiedMessageId === msgId ? (
+                              <Check className="h-3 w-3 text-[#10a37f]" />
+                            ) : (
+                              <Copy className="h-3 w-3 opacity-50" />
+                            )}
+                          </button>
+
+                          {msg.role === 'assistant' && (
+                            <>
+                              <button
+                                onClick={() => regenerateResponse(i)}
+                                className="p-0.5 rounded hover:bg-black/5 transition-colors"
+                              >
+                                <RotateCw className="h-3 w-3 opacity-50" />
+                              </button>
+                              <button
+                                onClick={askAnotherAI}
+                                className="p-0.5 rounded hover:bg-black/5 transition-colors"
+                              >
+                                <RefreshCw className="h-3 w-3 opacity-50" />
+                              </button>
+                            </>
+                          )}
+
+                          {msg.role === 'user' && (
                             <button
-                              onClick={() => regenerateResponse(i)}
+                              onClick={() => startEditing(msg, i)}
                               className="p-0.5 rounded hover:bg-black/5 transition-colors"
                             >
-                              <RotateCw className="h-3 w-3 opacity-50" />
+                              <Pencil className="h-3 w-3 opacity-50" />
                             </button>
-                            <button
-                              onClick={askAnotherAI}
-                              className="p-0.5 rounded hover:bg-black/5 transition-colors"
-                            >
-                              <RefreshCw className="h-3 w-3 opacity-50" />
-                            </button>
-                          </>
-                        )}
-                      </div>
+                          )}
+
+                          <button
+                            onClick={() => handleReplyClick(msg, i)}
+                            className="p-0.5 rounded hover:bg-black/5 transition-colors"
+                          >
+                            <Reply className="h-3 w-3 opacity-50" />
+                          </button>
+
+                          <button
+                            onClick={() => addReaction(i, 'like')}
+                            className="p-0.5 rounded hover:bg-black/5 transition-colors flex items-center gap-0.5"
+                          >
+                            <ThumbsUp className="h-3 w-3 opacity-50" />
+                            <span className="text-[9px]">{msg.reactions?.like || 0}</span>
+                          </button>
+
+                          <button
+                            onClick={() => addReaction(i, 'dislike')}
+                            className="p-0.5 rounded hover:bg-black/5 transition-colors flex items-center gap-0.5"
+                          >
+                            <ThumbsDown className="h-3 w-3 opacity-50" />
+                            <span className="text-[9px]">{msg.reactions?.dislike || 0}</span>
+                          </button>
+
+                          <button
+                            onClick={() => addReaction(i, 'heart')}
+                            className="p-0.5 rounded hover:bg-black/5 transition-colors flex items-center gap-0.5"
+                          >
+                            <Heart className="h-3 w-3 opacity-50" />
+                            <span className="text-[9px]">{msg.reactions?.heart || 0}</span>
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 )
@@ -1089,24 +1345,66 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Reply To Indicator */}
+        {replyToMessage && (
+          <div className={`flex items-center justify-between px-4 py-2 ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a]' : 'bg-[#f0f0f0] border-[#e5e5e5]'} border-t`}>
+            <div className="flex items-center gap-2">
+              <Reply className="h-4 w-4 text-[#10a37f]" />
+              <span className={`text-xs ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
+                Replying to {replyToMessage.role}: "{replyToMessage.content.slice(0, 50)}..."
+              </span>
+            </div>
+            <button onClick={cancelReply} className="text-gray-400 hover:text-red-500">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* Input - ChatGPT Style */}
         <div className={`border-t ${isDark ? 'border-[#4a4b5a] bg-[#343541]' : 'border-[#e5e5e5] bg-white'} p-3 flex-shrink-0`}>
           <div className="max-w-3xl mx-auto">
+            {/* Uploaded Files */}
+            {uploadedFiles.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className={`flex items-center gap-2 ${isDark ? 'bg-[#2a2b32] border-[#4a4b5a] text-[#ececec]' : 'bg-[#f7f7f8] border-[#e5e5e5] text-[#2d2d2d]'} border rounded-lg px-3 py-1.5 text-sm`}>
+                    {file.type.startsWith('image/') && file.preview ? (
+                      <img src={file.preview} alt={file.name} className="w-8 h-8 rounded object-cover" />
+                    ) : (
+                      <File className="h-4 w-4 opacity-60" />
+                    )}
+                    <span className="truncate max-w-[120px]">{file.name}</span>
+                    <span className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>{formatFileSize(file.size)}</span>
+                    <button onClick={() => removeFile(index)} className="text-gray-400 hover:text-red-500">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="relative flex items-end">
               <textarea 
                 id="message-input"
                 value={prompt} 
                 onChange={(e) => setPrompt(e.target.value)} 
-                placeholder="Send a message..." 
+                placeholder={replyToMessage ? `Reply to ${replyToMessage.role}...` : isListening ? '🎤 Listening...' : 'Send a message...'} 
                 className={`
                   w-full min-h-[44px] max-h-[120px] 
                   ${isDark ? 'bg-[#40414f] border-[#4a4b5a] text-[#ececec] placeholder-[#8e8ea0]' : 'bg-white border-[#e5e5e5] text-[#2d2d2d] placeholder-[#8e8ea0]'} 
-                  border rounded-xl p-2.5 pr-20 outline-none focus:ring-1 focus:ring-[#10a37f] resize-none text-sm transition-all
+                  border rounded-xl p-2.5 pr-24 outline-none focus:ring-1 focus:ring-[#10a37f] resize-none text-sm transition-all
                 `} 
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }} 
                 rows={1}
               />
               
+              {isListening && (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-[10px] text-red-500 font-medium">REC</span>
+                </div>
+              )}
+
               <div className="absolute right-2 bottom-2 flex items-center gap-1">
                 <button
                   onClick={toggleVoiceInput}
@@ -1119,7 +1417,7 @@ export default function DashboardPage() {
                   )}
                 </button>
 
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" id="file-upload" />
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" id="file-upload" accept=".txt,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.webp,.csv,.json,.xml,.md" />
                 <label 
                   htmlFor="file-upload" 
                   className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isDark ? 'hover:bg-[#40414f]' : 'hover:bg-[#e5e5e5]'}`}
@@ -1145,8 +1443,19 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-            <div className="text-center text-[10px] text-[#8e8ea0] mt-2">
-              AI may make mistakes. Verify important information.
+            
+            <div className="flex items-center justify-between mt-1.5">
+              <div className="flex items-center gap-2">
+                {selectedModels.length === 0 && (
+                  <p className="text-[10px] text-amber-500">⚠️ Select a model</p>
+                )}
+                <p className={`text-[9px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
+                  Supports: TXT, PDF, Images, DOC, CSV, JSON, XML, MD
+                </p>
+              </div>
+              <p className={`text-[9px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
+                {isListening ? '🎤 Speak now...' : `₹${walletBalance.toFixed(2)}`}
+              </p>
             </div>
           </div>
         </div>
