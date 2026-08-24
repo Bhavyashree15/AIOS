@@ -979,7 +979,7 @@ export default function DashboardPage() {
               onClick={() => setSidebarOpen(true)} 
               className={`p-1.5 rounded-lg transition-colors lg:hidden ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
             >
-              <Menu className="h-5 w-5 opacity-60" />
+              <Menu className="h-5 w-5 text-[#8e8ea0]" />
             </button>
             <h1 className={`text-sm font-medium truncate ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
               {currentChatId ? chats.find(c => c.id === currentChatId)?.title || 'New Chat' : 'New Chat'}
@@ -989,7 +989,7 @@ export default function DashboardPage() {
               className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
               title="New Chat"
             >
-              <Pencil className="h-3.5 w-3.5 opacity-60" />
+              <Pencil className="h-3.5 w-3.5 text-[#8e8ea0]" />
             </button>
           </div>
           
@@ -998,7 +998,7 @@ export default function DashboardPage() {
               onClick={() => setIsDark(!isDark)}
               className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
             >
-              {isDark ? <Sun className="h-4 w-4 opacity-60" /> : <Moon className="h-4 w-4 opacity-60" />}
+              {isDark ? <Sun className="h-4 w-4 text-[#8e8ea0]" /> : <Moon className="h-4 w-4 text-[#8e8ea0]" />}
             </button>
 
             <div className="relative">
@@ -1006,7 +1006,7 @@ export default function DashboardPage() {
                 onClick={() => setShowExportMenu(!showExportMenu)}
                 className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
               >
-                <MoreVertical className="h-4 w-4 opacity-60" />
+                <MoreVertical className="h-4 w-4 text-[#8e8ea0]" />
               </button>
               
               {showExportMenu && (
@@ -1164,9 +1164,9 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages - Scrollable area with max-width for better readability */}
+        {/* Messages - Full width */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0d0d0d]' : 'bg-[#f7f7f8]'}`}>
-          <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 w-full">
+          <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center min-h-[60vh] text-center">
                 <h2 className={`text-2xl font-semibold ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
@@ -1354,9 +1354,9 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Input - Fixed at bottom */}
+        {/* Input - Fixed at bottom with model selector ABOVE */}
         <div className={`border-t ${isDark ? 'border-[#4a4b5a] bg-[#0d0d0d]' : 'border-[#e5e5e5] bg-white'} p-3 flex-shrink-0`}>
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             {uploadedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2">
                 {uploadedFiles.map((file, index) => (
@@ -1376,18 +1376,18 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Model Selector - ABOVE text box */}
+            {/* ✅ Model Selector - ABOVE the text box */}
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={() => setShowModelPicker(!showModelPicker)}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all ${isDark ? 'hover:bg-[#2a2b32]' : 'hover:bg-[#e5e5e5]'}`}
               >
                 {selectedModels.length === 1 ? (
-                  <span className="opacity-60">{getAllModels().find(m => m.id === selectedModels[0])?.name || 'GPT-5.4 mini'}</span>
+                  <span className="text-[#8e8ea0]">{getAllModels().find(m => m.id === selectedModels[0])?.name || 'GPT-5.4 mini'}</span>
                 ) : (
-                  <span className="opacity-60">{selectedModels.length} models</span>
+                  <span className="text-[#8e8ea0]">{selectedModels.length} models</span>
                 )}
-                <ChevronDown className={`h-3 w-3 opacity-60 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-3 w-3 text-[#8e8ea0] transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
               </button>
               
               <div className="flex items-center gap-2">
