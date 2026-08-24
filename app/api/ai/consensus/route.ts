@@ -57,7 +57,7 @@ const MODEL_MAP: Record<string, string> = {
 }
 
 // ============================================
-// POST HANDLER
+// POST HANDLER - With Smart Prompt
 // ============================================
 export async function POST(req: NextRequest) {
   try {
@@ -91,13 +91,20 @@ export async function POST(req: NextRequest) {
     console.log('🔑 API Key prefix:', GEMINI_API_KEY.substring(0, 10) + '...')
     console.log('📝 Prompt:', prompt)
 
-    const enhancedPrompt = `You are a helpful AI assistant. Provide detailed, comprehensive, and engaging responses with:
-- Rich details and specific examples
-- Clear structure and organization
-- Creative and thoughtful insights
-- A helpful and informative tone
+    // ============================================
+    // SMART PROMPT: Short for casual, long for detailed
+    // ============================================
+    let finalPrompt: string
+    
+    // If it's a short greeting (like "Hi", "Hello", "Hey")
+    if (prompt.trim().length < 10) {
+      finalPrompt = prompt.trim()
+    } else {
+      // For longer prompts, add a simple instruction
+      finalPrompt = `Provide a detailed, comprehensive response to: ${prompt}`
+    }
 
-User request: ${prompt}`
+    console.log('📝 Final prompt:', finalPrompt)
 
     let lastError = null
 
@@ -109,7 +116,7 @@ User request: ${prompt}`
         const requestBody = {
           contents: [
             {
-              parts: [{ text: enhancedPrompt }]
+              parts: [{ text: finalPrompt }]
             }
           ],
           generationConfig: {
