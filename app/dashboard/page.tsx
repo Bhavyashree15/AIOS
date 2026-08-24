@@ -889,7 +889,7 @@ export default function DashboardPage() {
     <div className={`flex h-screen ${isDark ? 'dark bg-[#0B0F17]' : 'bg-[#f7f7f8]'} overflow-hidden font-sans`}>
       
       {/* ==========================================
-          SIDEBAR - With Glass Effect
+          SIDEBAR
           ========================================== */}
       {sidebarOpen && (
         <div 
@@ -971,7 +971,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header - With Glass Effect */}
+        {/* Header */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#10B981]/10' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1000,6 +1000,7 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 text-[#8e8ea0]" /> : <Moon className="h-4 w-4 text-[#8e8ea0]" />}
             </button>
 
+            {/* Three Dots with proper click outside */}
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -1012,7 +1013,9 @@ export default function DashboardPage() {
                 <>
                   <div 
                     className="fixed inset-0 z-10" 
-                    onClick={() => setShowExportMenu(false)}
+                    onClick={() => {
+                      setShowExportMenu(false)
+                    }}
                   />
                   <div className={`absolute right-0 mt-1 w-56 z-20 ${isDark ? 'glass bg-[#0B0F17]/90 border-[#10B981]/20' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} rounded-2xl shadow-2xl border overflow-hidden`}>
                     <div className={`px-4 py-2.5 border-b ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} flex items-center justify-between`}>
@@ -1054,7 +1057,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Model Picker - Popup */}
+        {/* Model Picker */}
         {showModelPicker && (
           <>
             <div 
@@ -1359,7 +1362,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Input - Fixed at bottom */}
+        {/* Input - Fixed at bottom with STOP button */}
         <div className={`border-t ${isDark ? 'glass border-[#10B981]/10' : 'border-[#e5e5e5] bg-white/90 backdrop-blur-xl'} p-3 flex-shrink-0`}>
           <div className="max-w-4xl mx-auto">
             {uploadedFiles.length > 0 && (
@@ -1431,10 +1434,12 @@ export default function DashboardPage() {
                   <Paperclip className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
                 </label>
                 
+                {/* ✅ STOP button - Shows during generation */}
                 {isLoading ? (
                   <button 
                     onClick={stopGeneration} 
-                    className="bg-red-500 text-white p-1.5 rounded-xl hover:bg-red-600 transition-all"
+                    className="bg-red-500 text-white p-1.5 rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+                    title="Stop generating"
                   >
                     <Square className="h-4 w-4" />
                   </button>
