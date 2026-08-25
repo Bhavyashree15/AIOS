@@ -155,6 +155,7 @@ export default function DashboardPage() {
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null)
   const [modelUsed, setModelUsed] = useState<string | null>(null)
   
+  const exportMenuRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -205,6 +206,25 @@ export default function DashboardPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    if (!showExportMenu) return
+
+    const handleOutsideClick = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node
+      if (exportMenuRef.current && !exportMenuRef.current.contains(target)) {
+        setShowExportMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick)
+    document.addEventListener('touchstart', handleOutsideClick)
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+      document.removeEventListener('touchstart', handleOutsideClick)
+    }
+  }, [showExportMenu])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -1166,7 +1186,7 @@ export default function DashboardPage() {
               )}
             </button>
 
-            <div className="relative">
+            <div ref={exportMenuRef} className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
                 className={`p-1.5 rounded-xl transition-colors ${
@@ -1511,9 +1531,9 @@ export default function DashboardPage() {
                     transition={{ duration: 0.3, ease: 'easeOut' }}
                     className={`flex ${
                       msg.role === 'user'
-                        ? 'justify-end'
-                        : 'justify-start'
-                    } w-full`}
+                        ? 'justify-end w-fit ml-auto'
+                        : 'justify-start w-full'
+                    }`}
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
@@ -1524,7 +1544,7 @@ export default function DashboardPage() {
                     <div
                       className={
                         msg.role === 'user'
-                          ? 'w-fit max-w-[85%] sm:max-w-[70%] ml-auto order-2'
+                          ? 'w-fit max-w-[85%] sm:max-w-[70%] order-2'
                           : 'w-full max-w-4xl order-1'
                       }
                     >
