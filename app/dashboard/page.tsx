@@ -953,15 +953,18 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* ✅ Avatar - Fixed for light mode */}
         <div className={`border-t ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'} p-3`}>
           <div className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-[#ffffff08] cursor-pointer transition-colors">
             <div className="w-7 h-7 rounded-full bg-gradient-to-r from-[#10B981] to-[#06B6D4] flex items-center justify-center text-white text-xs font-bold">
               U
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium truncate text-[#ececec] dark:text-white">User</div>
+              <div className={`text-sm font-medium truncate ${isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'}`}>
+                User
+              </div>
             </div>
-            <Settings className="h-4 w-4 opacity-60" />
+            <Settings className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
           </div>
         </div>
       </div>
@@ -971,7 +974,7 @@ export default function DashboardPage() {
           ========================================== */}
       <div className="flex-1 flex flex-col h-full min-w-0">
         
-        {/* Header - With Three Dots solid background */}
+        {/* Header */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'glass border-[#10B981]/10' : 'bg-white/90 backdrop-blur-xl border-[#e5e5e5]'} flex-shrink-0 sticky top-0 z-10`}>
           <div className="flex items-center gap-2">
             <button 
@@ -1000,13 +1003,10 @@ export default function DashboardPage() {
               {isDark ? <Sun className="h-4 w-4 text-[#8e8ea0]" /> : <Moon className="h-4 w-4 text-[#8e8ea0]" />}
             </button>
 
-            {/* ✅ Three Dots - Solid background, click outside to close */}
+            {/* ✅ Three Dots - Fixed */}
             <div className="relative">
               <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowExportMenu(!showExportMenu)
-                }}
+                onClick={() => setShowExportMenu(!showExportMenu)}
                 className={`p-1.5 rounded-xl transition-colors ${isDark ? 'hover:bg-[#ffffff08]' : 'hover:bg-[#f7f7f8]'}`}
               >
                 <MoreVertical className="h-4 w-4 text-[#8e8ea0]" />
@@ -1015,13 +1015,10 @@ export default function DashboardPage() {
               {showExportMenu && (
                 <>
                   <div 
-                    className="fixed inset-0 z-10" 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowExportMenu(false)
-                    }}
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowExportMenu(false)}
                   />
-                  <div className={`absolute right-0 mt-1 w-56 z-20 ${
+                  <div className={`absolute right-0 mt-1 w-56 z-50 ${
                     isDark 
                       ? 'bg-[#2a2b32] border-[#4a4b5a]' 
                       : 'bg-white border-[#e5e5e5]'
@@ -1174,7 +1171,9 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Messages - FULL WIDTH */}
+        {/* ==========================================
+            MESSAGES - FIXED: User messages compact
+            ========================================== */}
         <div className={`flex-1 overflow-y-auto ${isDark ? 'bg-[#0B0F17]' : 'bg-[#f7f7f8]'}`}>
           <div className="px-6 py-6 space-y-6 w-full">
             {messages.length === 0 ? (
@@ -1219,127 +1218,131 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 10, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
-                    className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}
                     onMouseEnter={() => setHoveredMessageId(msgId)}
                     onMouseLeave={() => setHoveredMessageId(null)}
                   >
-                    <div className={`max-w-[85%] ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
-                      {msg.replyTo && (
-                        <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
-                          <Reply className="h-3 w-3" />
-                          <span>Replying to {msg.replyTo.role}: "{msg.replyTo.content}"</span>
-                        </div>
-                      )}
-
-                      {editingMessageIndex === i && msg.role === 'user' ? (
-                        <div className="flex flex-col gap-2 w-full">
-                          <textarea
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            className={`w-full p-3 rounded-xl text-sm ${isDark ? 'bg-[#ffffff08] text-[#ececec] border-[#ffffff0a]' : 'bg-white text-[#2d2d2d] border-[#e5e5e5]'} border focus:outline-none focus:ring-2 focus:ring-[#10B981]/50 resize-none`}
-                            rows={3}
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => saveEditing(i)}
-                              className="px-3 py-1.5 bg-gradient-to-r from-[#10B981] to-[#06B6D4] text-white rounded-lg text-xs font-medium hover:shadow-lg hover:shadow-[#10B981]/30 transition-all"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={cancelEditing}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isDark ? 'bg-[#ffffff08] text-[#ececec] hover:bg-[#ffffff12]' : 'bg-[#e5e5e5] text-[#2d2d2d] hover:bg-[#d5d5d5]'} transition-all`}
-                            >
-                              Cancel
-                            </button>
+                    {/* ✅ FIXED: Parent div takes only needed space, message content controls width */}
+                    <div className={`${msg.role === 'user' ? 'max-w-[85%]' : 'max-w-[85%]'} ${msg.role === 'user' ? 'order-2' : 'order-1'}`}>
+                      {/* Message Bubble */}
+                      <div className={`${msg.role === 'user' ? 'ml-auto' : ''}`}>
+                        {msg.replyTo && (
+                          <div className={`text-[10px] ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'} mb-1 flex items-center gap-1`}>
+                            <Reply className="h-3 w-3" />
+                            <span>Replying to {msg.replyTo.role}: "{msg.replyTo.content}"</span>
                           </div>
-                        </div>
-                      ) : (
-                        <div className={`
-                          px-4 py-3 text-[15px] leading-relaxed
-                          ${msg.role === 'user' 
-                            ? 'bg-gradient-to-r from-[#2563EB] to-[#7C3AED] text-white rounded-2xl rounded-tr-sm shadow-lg shadow-[#2563EB]/20' 
-                            : isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'
-                          }
-                        `}>
-                          {msg.role === 'assistant' ? (
-                            <div className="prose prose-sm max-w-none dark:prose-invert">
-                              <MarkdownContent 
-                                content={
-                                  (isTyping && i === messages.length - 1 && isAI && !isStopped) 
-                                    ? (typingText || msg.content) 
-                                    : msg.content
-                                } 
-                              />
-                            </div>
-                          ) : (
-                            <div className="whitespace-pre-wrap">{msg.content}</div>
-                          )}
-                          {isTyping && i === messages.length - 1 && isAI && !isStopped && (
-                            <span className="animate-pulse">|</span>
-                          )}
-                        </div>
-                      )}
+                        )}
 
-                      {!editingMessageIndex || editingMessageIndex !== i ? (
-                        <div className={`flex items-center gap-2 mt-1.5 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
-                          <span className="text-[10px] opacity-60">
-                            {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          
-                          <button
-                            onClick={() => copyMessage(msg.content, msgId)}
-                            className={`p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors`}
-                          >
-                            {copiedMessageId === msgId ? (
-                              <Check className="h-3.5 w-3.5 text-[#10B981] stroke-[2.5]" />
-                            ) : (
-                              <Copy className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
-                            )}
-                          </button>
-
-                          {msg.role === 'assistant' && (
-                            <>
+                        {editingMessageIndex === i && msg.role === 'user' ? (
+                          <div className="flex flex-col gap-2 w-full">
+                            <textarea
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              className={`w-full p-3 rounded-xl text-sm ${isDark ? 'bg-[#ffffff08] text-[#ececec] border-[#ffffff0a]' : 'bg-white text-[#2d2d2d] border-[#e5e5e5]'} border focus:outline-none focus:ring-2 focus:ring-[#10B981]/50 resize-none`}
+                              rows={3}
+                            />
+                            <div className="flex gap-2">
                               <button
-                                onClick={() => regenerateResponse(i)}
+                                onClick={() => saveEditing(i)}
+                                className="px-3 py-1.5 bg-gradient-to-r from-[#10B981] to-[#06B6D4] text-white rounded-lg text-xs font-medium hover:shadow-lg hover:shadow-[#10B981]/30 transition-all"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={cancelEditing}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isDark ? 'bg-[#ffffff08] text-[#ececec] hover:bg-[#ffffff12]' : 'bg-[#e5e5e5] text-[#2d2d2d] hover:bg-[#d5d5d5]'} transition-all`}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className={`
+                            px-4 py-3 text-[15px] leading-relaxed w-auto
+                            ${msg.role === 'user' 
+                              ? 'bg-gradient-to-r from-[#2563EB] to-[#7C3AED] text-white rounded-2xl rounded-tr-sm shadow-lg shadow-[#2563EB]/20' 
+                              : isDark ? 'text-[#ececec]' : 'text-[#2d2d2d]'
+                            }
+                          `}>
+                            {msg.role === 'assistant' ? (
+                              <div className="prose prose-sm max-w-none dark:prose-invert">
+                                <MarkdownContent 
+                                  content={
+                                    (isTyping && i === messages.length - 1 && isAI && !isStopped) 
+                                      ? (typingText || msg.content) 
+                                      : msg.content
+                                  } 
+                                />
+                              </div>
+                            ) : (
+                              <div className="whitespace-pre-wrap">{msg.content}</div>
+                            )}
+                            {isTyping && i === messages.length - 1 && isAI && !isStopped && (
+                              <span className="animate-pulse">|</span>
+                            )}
+                          </div>
+                        )}
+
+                        {!editingMessageIndex || editingMessageIndex !== i ? (
+                          <div className={`flex items-center gap-2 mt-1.5 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`}>
+                            <span className="text-[10px] opacity-60">
+                              {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            
+                            <button
+                              onClick={() => copyMessage(msg.content, msgId)}
+                              className={`p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors`}
+                            >
+                              {copiedMessageId === msgId ? (
+                                <Check className="h-3.5 w-3.5 text-[#10B981] stroke-[2.5]" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                              )}
+                            </button>
+
+                            {msg.role === 'assistant' && (
+                              <>
+                                <button
+                                  onClick={() => regenerateResponse(i)}
+                                  className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                                >
+                                  <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                                </button>
+                                <button
+                                  onClick={askAnotherAI}
+                                  className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all bg-[#10B981]/10 hover:bg-[#10B981]/20 text-[#10B981]"
+                                >
+                                  <RefreshCw className="h-3 w-3 stroke-[2.5]" />
+                                  <span>Ask Another AI</span>
+                                </button>
+                              </>
+                            )}
+
+                            {msg.role === 'user' && (
+                              <button
+                                onClick={() => startEditing(msg, i)}
                                 className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                               >
-                                <RotateCw className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                                <Pencil className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
                               </button>
-                              <button
-                                onClick={askAnotherAI}
-                                className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium transition-all bg-[#10B981]/10 hover:bg-[#10B981]/20 text-[#10B981]"
-                              >
-                                <RefreshCw className="h-3 w-3 stroke-[2.5]" />
-                                <span>Ask Another AI</span>
-                              </button>
-                            </>
-                          )}
+                            )}
 
-                          {msg.role === 'user' && (
                             <button
-                              onClick={() => startEditing(msg, i)}
+                              onClick={() => handleReplyClick(msg, i)}
                               className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                             >
-                              <Pencil className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
+                              <Reply className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
                             </button>
-                          )}
-
-                          <button
-                            onClick={() => handleReplyClick(msg, i)}
-                            className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                          >
-                            <Reply className="h-3.5 w-3.5 opacity-60 stroke-[2.5]" />
-                          </button>
-                        </div>
-                      ) : null}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </motion.div>
                 )
               })
             )}
             
-            {/* Loading - Shows during generation */}
+            {/* Loading */}
             {isLoading && (
               <div className="flex justify-start">
                 <div className={`flex items-center gap-3 px-4 py-3 ${isDark ? 'glass border-[#10B981]/20' : 'bg-white'} rounded-2xl shadow-sm border ${isDark ? 'border-[#10B981]/10' : 'border-[#e5e5e5]'}`}>
@@ -1371,7 +1374,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Input - Fixed at bottom with STOP button */}
+        {/* Input */}
         <div className={`border-t ${isDark ? 'glass border-[#10B981]/10' : 'border-[#e5e5e5] bg-white/90 backdrop-blur-xl'} p-3 flex-shrink-0`}>
           <div className="max-w-4xl mx-auto">
             {uploadedFiles.length > 0 && (
@@ -1393,7 +1396,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Model Selector - ABOVE the text box */}
+            {/* Model Selector */}
             <div className="flex items-center justify-between mb-2">
               <button
                 onClick={() => setShowModelPicker(!showModelPicker)}
@@ -1443,8 +1446,8 @@ export default function DashboardPage() {
                   <Paperclip className={`h-4 w-4 ${isDark ? 'text-[#8e8ea0]' : 'text-[#8e8ea0]'}`} />
                 </label>
                 
-                {/* ✅ STOP button - Always visible during generation */}
-                {isLoading ? (
+                {/* ✅ STOP button - Shows during loading OR typing */}
+                {(isLoading || isTyping) ? (
                   <button 
                     onClick={stopGeneration} 
                     className="bg-red-500 text-white p-1.5 rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
