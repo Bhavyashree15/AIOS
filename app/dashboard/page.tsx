@@ -19,6 +19,41 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
+
+function AIOSLogo({ size = 28, wordmark = false }: { size?: number; wordmark?: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-2 shrink-0">
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 48 48"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        {/* AIOS Infinite Orbit — custom continuous orbital mark */}
+        <path
+          d="M11.2 17.1C14.1 11.6 20 8 26.8 8c5.8 0 10.7 2.3 13.6 6.1 2.5 3.3 2.7 7.5.5 10.7-2.3 3.3-6.7 5-11.1 4.2l-8.1-1.5c-4.5-.8-8.9.9-11.1 4.2-2.2 3.2-2 7.4.5 10.7C13.9 46.3 18.8 48 24.6 48"
+          transform="translate(0 -4)"
+          stroke="currentColor"
+          strokeWidth="4.2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M36.8 30.9C33.9 36.4 28 40 21.2 40c-5.8 0-10.7-2.3-13.6-6.1-2.5-3.3-2.7-7.5-.5-10.7 2.3-3.3 6.7-5 11.1-4.2l8.1 1.5c4.5.8 8.9-.9 11.1-4.2 2.2-3.2 2-7.4-.5-10.7C34.1 1.7 29.2 0 23.4 0"
+          transform="translate(0 4)"
+          stroke="currentColor"
+          strokeWidth="4.2"
+          strokeLinecap="round"
+        />
+        <circle cx="10.5" cy="24" r="2.4" fill="currentColor" />
+        <circle cx="37.5" cy="24" r="2.4" fill="currentColor" />
+      </svg>
+      {wordmark && <span className="text-[1.05em] font-semibold tracking-[-0.03em]">AIOS</span>}
+    </span>
+  )
+}
+
 const ALL_MODELS = {
   free: [
     { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', icon: '🤖', tier: 'free', cost: 0.0005 },
