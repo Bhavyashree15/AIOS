@@ -1060,7 +1060,7 @@ export default function DashboardPage() {
           LEFT SIDEBAR — AIOS
           ============================================================ */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[300px] shrink-0 flex-col border-r transition-transform duration-300 lg:relative lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[292px] shrink-0 flex-col border-r transition-transform duration-300 lg:relative lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } ${
           isDark
@@ -1263,8 +1263,8 @@ export default function DashboardPage() {
                 {messages.length === 0 ? (
                   <div className="flex min-h-[60vh] flex-col items-center justify-center px-3 text-center">
                     <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-500/20 to-blue-500/10 text-violet-400 shadow-[0_0_60px_rgba(124,58,237,.14)]"><AIOSLogo size={45} /></div>
-                    <h2 className="text-2xl font-semibold tracking-tight">How can I help?</h2>
-                    <p className={`mt-2 text-sm ${isDark ? 'text-white/40' : 'text-black/45'}`}>Ask anything, analyze files, or explore ideas.</p>
+                    <h2 className="text-[28px] font-semibold tracking-[-0.03em]">How can I help?</h2>
+                    <p className={`mt-2 text-[13px] ${isDark ? 'text-white/40' : 'text-black/45'}`}>Ask anything, analyze files, or explore ideas.</p>
                     <div className="mt-7 grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
                       {SUGGESTIONS.map((suggestion, i) => (
                         <button key={i} onClick={() => handleSuggestionClick(suggestion.prompt)} className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 ${isDark ? 'border-white/[0.08] bg-white/[0.025] hover:border-violet-400/25 hover:bg-white/[0.045]' : 'border-black/[0.08] bg-white hover:border-violet-300 hover:bg-violet-50/50'}`}>
@@ -1410,7 +1410,7 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                <div className={`relative rounded-2xl border p-2 shadow-[0_10px_35px_rgba(0,0,0,.12)] transition focus-within:border-violet-500/60 focus-within:ring-1 focus-within:ring-violet-500/20 ${isDark ? 'border-violet-400/35 bg-[#11151d]' : 'border-violet-300 bg-white'}`}>
+                <div className={`relative rounded-[24px] border p-2 shadow-[0_12px_45px_rgba(0,0,0,.10)] transition duration-200 focus-within:border-violet-500/45 focus-within:ring-4 focus-within:ring-violet-500/[0.06] ${isDark ? 'border-violet-400/35 bg-[#11151d]' : 'border-violet-300 bg-white'}`}>
                   <textarea
                     ref={messageInputRef}
                     id="message-input"
@@ -1419,7 +1419,7 @@ export default function DashboardPage() {
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
                     placeholder={replyToMessage ? `Reply to ${replyToMessage.role}...` : isListening ? 'Listening...' : 'Ask anything...'}
                     rows={1}
-                    className={`min-h-[52px] max-h-[220px] w-full resize-none overflow-y-auto bg-transparent px-2 pb-14 pt-2 text-[15px] leading-6 outline-none ${isDark ? 'text-white placeholder:text-white/35' : 'text-black placeholder:text-black/35'}`}
+                    className={`min-h-[58px] max-h-[220px] w-full resize-none overflow-y-auto bg-transparent px-2 pb-14 pt-2 text-[15px] leading-6 outline-none ${isDark ? 'text-white placeholder:text-white/35' : 'text-black placeholder:text-black/35'}`}
                   />
 
                   {isListening && <div className="absolute left-4 top-4 flex items-center gap-1.5 text-[10px] font-semibold text-red-400"><span className="h-2 w-2 animate-pulse rounded-full bg-red-500" /> REC</div>}
@@ -1456,7 +1456,7 @@ export default function DashboardPage() {
           {showModelPicker && (
             <aside className={`hidden w-[318px] shrink-0 border-l xl:flex xl:flex-col ${isDark ? 'border-white/[0.08] bg-[#0b0e15]' : 'border-black/[0.08] bg-white'}`}>
               <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
-                <h2 className="text-[17px] font-medium">Models</h2>
+                <h2 className="text-[17px] font-semibold tracking-tight">Choose a model</h2>
                 <button onClick={() => setShowModelPicker(false)} className="rounded-lg p-1.5 text-white/55 hover:bg-white/[0.05]"><X className="h-5 w-5" /></button>
               </div>
 
@@ -1515,7 +1515,7 @@ export default function DashboardPage() {
                 <div className="mb-4 text-xs font-medium">Current Model</div>
                 <div className="flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400"><AIOSLogo size={27} /></span>
-                  <div className="min-w-0 flex-1"><div className="truncate text-sm font-medium">{isAutoMode ? 'Auto' : (getAllModels().find(m => m.id === selectedModels[0])?.name || 'Choose model')}</div><div className="text-[10px] opacity-40">{isAutoMode ? 'AIOS chooses for you' : 'Selected model'}</div></div>
+                  <div className="min-w-0 flex-1"><div className="truncate text-sm font-medium">{isAutoMode ? 'Auto' : (getAllModels().find(m => m.id === selectedModels[0])?.name || 'Choose model')}</div><div className="text-[10px] opacity-40">{isAutoMode ? 'Automatic' : 'Selected model'}</div></div>
                   <button onClick={() => setShowModelPicker(false)} className="rounded-xl border border-white/[0.08] px-3 py-2 text-xs">Change</button>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/[0.07] pt-3">
@@ -1533,7 +1533,7 @@ export default function DashboardPage() {
       {showModelPicker && (
         <div className="fixed inset-0 z-[60] flex items-end bg-black/60 backdrop-blur-sm xl:hidden" onClick={() => setShowModelPicker(false)}>
           <div onClick={(e) => e.stopPropagation()} className={`max-h-[82dvh] w-full overflow-hidden rounded-t-3xl border-t p-4 shadow-2xl ${isDark ? 'border-white/[0.10] bg-[#10141c]' : 'border-black/[0.08] bg-white'}`}>
-            <div className="mb-3 flex items-center justify-between"><div><h2 className="text-base font-semibold">Choose a model</h2><p className={`mt-0.5 text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>Auto is recommended for most requests</p></div><button onClick={() => setShowModelPicker(false)} className={`rounded-xl p-2 ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.05]'}`}><X className="h-5 w-5 opacity-60" /></button></div>
+            <div className="mb-3 flex items-center justify-between"><div><h2 className="text-base font-semibold">Choose a model</h2></div><button onClick={() => setShowModelPicker(false)} className={`rounded-xl p-2 ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.05]'}`}><X className="h-5 w-5 opacity-60" /></button></div>
             <div className="mb-3 flex gap-1 overflow-x-auto">
               {['auto', 'free', 'paid'].map(tab => <button key={tab} onClick={() => setModelTab(tab)} className={`rounded-xl px-4 py-2 text-xs font-medium capitalize transition ${modelTab === tab ? 'bg-violet-600 text-white shadow-sm' : isDark ? 'text-white/50 hover:bg-white/[0.05] hover:text-white/80' : 'text-black/50 hover:bg-black/[0.04] hover:text-black/80'}`}>{tab === 'auto' ? 'Auto' : tab === 'free' ? 'Free' : 'Pro'}</button>)}
             </div>
@@ -1541,7 +1541,7 @@ export default function DashboardPage() {
               {modelTab === 'auto' ? (
                 <button onClick={handleAutoSelect} className={`mb-2 flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition ${isAutoMode ? (isDark ? 'border-violet-400/30 bg-violet-500/[0.10]' : 'border-violet-300 bg-violet-50') : (isDark ? 'border-white/[0.08] bg-white/[0.025]' : 'border-black/[0.08] bg-white')}`}>
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400"><AIOSLogo size={25} /></span>
-                  <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Auto</span><span className={`block text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>AIOS picks the best available model</span></span>
+                  <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Auto</span></span>
                   {isAutoMode && <Check className="h-4 w-4 text-violet-400" />}
                 </button>
               ) : null}
