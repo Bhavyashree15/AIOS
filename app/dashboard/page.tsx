@@ -13,7 +13,7 @@ import {
   Clock, Moon, Sun, Download, Search as SearchIcon,
   Reply, Pencil, Square, RotateCw,
   Sparkles as SparklesIcon, RefreshCw, PanelLeftClose,
-  MoreVertical, PanelLeftOpen
+  MoreVertical, MoreHorizontal, PanelLeftOpen
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -94,6 +94,7 @@ type ChatType = {
     timestamp?: string,
     reactions?: { like: number, dislike: number, heart: number },
     model_used?: string
+    auto_mode?: boolean
   }[]
   timestamp: string
   model?: string
@@ -881,7 +882,8 @@ export default function DashboardPage() {
         content: assistantContent, 
         timestamp: new Date().toISOString(),
         reactions: { like: 0, dislike: 0, heart: 0 },
-        model_used: data.model_used || modelUsed || 'AI Assistant'
+        model_used: isAutoMode ? undefined : (data.model_used || modelUsed || 'AI Assistant'),
+        auto_mode: isAutoMode
       }
       
       const finalMessages = [...updatedMessages, assistantMsg]
@@ -1179,7 +1181,7 @@ export default function DashboardPage() {
           ============================================================ */}
       <main className="relative flex min-w-0 flex-1 flex-col">
         {/* Top header */}
-        <header className={`z-20 flex min-h-[70px] shrink-0 items-center gap-2 border-b px-3 sm:px-5 ${isDark ? 'border-white/[0.07] bg-[#090c13]/95' : 'border-black/[0.07] bg-white/95'} backdrop-blur-xl`}>
+        <header className={`z-20 flex min-h-[76px] shrink-0 items-center gap-2 border-b px-3 sm:px-5 ${isDark ? 'border-white/[0.07] bg-[#090c13]/95' : 'border-black/[0.07] bg-white/95'} backdrop-blur-xl`}>
           <button
             onClick={() => setSidebarOpen(true)}
             className={`rounded-xl p-2 transition lg:hidden ${isDark ? 'text-white/70 hover:bg-white/[0.06]' : 'text-black/65 hover:bg-black/[0.05]'}`}
@@ -1215,22 +1217,35 @@ export default function DashboardPage() {
 
             <div className="hidden h-8 w-px bg-white/[0.08] sm:block" />
 
-            <div className={`flex items-center rounded-xl border p-0.5 ${isDark ? 'border-white/[0.09] bg-white/[0.025]' : 'border-black/[0.08] bg-black/[0.015]'}`}>
-              <button onClick={createNewChat} title="New chat" aria-label="New chat" className={`flex h-9 w-9 items-center justify-center rounded-lg transition ${isDark ? 'text-white/65 hover:bg-white/[0.07] hover:text-white' : 'text-black/60 hover:bg-black/[0.05] hover:text-black'}`}>
-                <Pencil className="h-[17px] w-[17px]" />
-              </button>
-              <div className={`mx-0.5 h-5 w-px ${isDark ? 'bg-white/[0.08]' : 'bg-black/[0.08]'}`} />
-            </div>
             <div ref={exportMenuRef} className="relative">
-              <button onClick={() => setShowExportMenu(!showExportMenu)} title="More" className={`rounded-xl p-2.5 ${isDark ? 'text-white/55 hover:bg-white/[0.05]' : 'text-black/50 hover:bg-black/[0.04]'}`}>
-                <MoreVertical className="h-4 w-4" />
-              </button>
+              <div className={`flex items-center rounded-full border p-1 shadow-sm ${isDark ? 'border-white/[0.10] bg-white/[0.035]' : 'border-black/[0.08] bg-white'}`}>
+                <button
+                  onClick={createNewChat}
+                  title="New chat"
+                  aria-label="New chat"
+                  className={`flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 ${isDark ? 'text-white/70 hover:bg-white/[0.08] hover:text-white' : 'text-black/60 hover:bg-black/[0.05] hover:text-black'}`}
+                >
+                  <Pencil className="h-[17px] w-[17px]" strokeWidth={2} />
+                </button>
+                <button
+                  onClick={() => setShowExportMenu(prev => !prev)}
+                  title="More"
+                  aria-label="More options"
+                  aria-expanded={showExportMenu}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 ${isDark ? 'text-white/70 hover:bg-white/[0.08] hover:text-white' : 'text-black/60 hover:bg-black/[0.05] hover:text-black'}`}
+                >
+                  <MoreHorizontal className="h-[18px] w-[18px]" strokeWidth={2.1} />
+                </button>
+              </div>
               {showExportMenu && (
-                <div className={`absolute right-0 top-12 z-[70] w-56 overflow-hidden rounded-2xl border p-1.5 shadow-2xl ${isDark ? 'border-white/[0.10] bg-[#171a22]' : 'border-black/[0.08] bg-white'}`}>
-                  <div className={`px-3 py-2 text-xs ${isDark ? 'text-white/45' : 'text-black/45'}`}>Wallet balance <span className="float-right font-semibold text-emerald-500">₹{walletBalance.toFixed(2)}</span></div>
-                  <button onClick={() => { addFunds(); setShowExportMenu(false) }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-white/[0.06]"><Plus className="h-4 w-4" /> Add Funds</button>
-                  <button onClick={() => exportChat('txt')} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-white/[0.06]"><Download className="h-4 w-4" /> Export as TXT</button>
-                  <button onClick={() => exportChat('md')} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-white/[0.06]"><FileText className="h-4 w-4" /> Export as MD</button>
+                <div className={`absolute right-0 top-12 z-[70] w-56 overflow-hidden rounded-2xl border p-1.5 shadow-2xl backdrop-blur-xl ${isDark ? 'border-white/[0.10] bg-[#171a22]/98' : 'border-black/[0.08] bg-white/98'}`}>
+                  <div className={`px-3 py-2 text-xs ${isDark ? 'text-white/45' : 'text-black/45'}`}>
+                    Wallet balance <span className="float-right font-semibold text-emerald-500">₹{walletBalance.toFixed(2)}</span>
+                  </div>
+                  <button onClick={() => { addFunds(); setShowExportMenu(false) }} className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.04]'}`}><Plus className="h-4 w-4 opacity-70" /> Add Funds</button>
+                  <button onClick={() => exportChat('txt')} className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.04]'}`}><Download className="h-4 w-4 opacity-70" /> Export as TXT</button>
+                  <button onClick={() => exportChat('md')} className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.04]'}`}><FileText className="h-4 w-4 opacity-70" /> Export as MD</button>
+                  <div className={`my-1 border-t ${isDark ? 'border-white/[0.07]' : 'border-black/[0.07]'}`} />
                   <button onClick={() => { handleClearChat(); setShowExportMenu(false) }} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10"><Trash2 className="h-4 w-4" /> Clear Chat</button>
                 </div>
               )}
@@ -1244,7 +1259,7 @@ export default function DashboardPage() {
         <div className="flex min-h-0 flex-1">
           <section className="relative flex min-w-0 flex-1 flex-col">
             <div className={`min-h-0 flex-1 overflow-y-auto ${isDark ? 'bg-[#090c13]' : 'bg-[#f7f8fb]'}`}>
-              <div className="mx-auto w-full max-w-[820px] px-3 py-5 sm:px-6 sm:py-7">
+              <div className="mx-auto w-full max-w-[900px] px-3 py-5 sm:px-6 sm:py-7">
                 {messages.length === 0 ? (
                   <div className="flex min-h-[60vh] flex-col items-center justify-center px-3 text-center">
                     <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-500/20 to-blue-500/10 text-violet-400 shadow-[0_0_60px_rgba(124,58,237,.14)]"><AIOSLogo size={45} /></div>
@@ -1296,7 +1311,7 @@ export default function DashboardPage() {
                                 <div className={`rounded-2xl border p-4 sm:p-5 ${isDark ? 'border-white/[0.11] bg-gradient-to-br from-[#151a22] to-[#11161e] shadow-[0_16px_45px_rgba(0,0,0,.16)]' : 'border-black/[0.08] bg-white shadow-[0_12px_35px_rgba(15,23,42,.06)]'}`}>
                                   <div className="mb-3 flex items-center gap-2.5">
                                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400"><AIOSLogo size={23} /></div>
-                                    <span className="text-sm font-semibold">{isAutoMode ? 'AIOS · Auto' : (msg.model_used || 'AIOS Assistant')}</span>
+                                    <span className="text-sm font-semibold">{msg.auto_mode ? 'AIOS · Auto' : (msg.model_used || 'AIOS Assistant')}</span>
                                     <span className={`text-[10px] ${isDark ? 'text-white/35' : 'text-black/35'}`}>{new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                   </div>
                                   <div className={`prose prose-sm max-w-none leading-7 ${isDark ? 'prose-invert' : ''}`}>
@@ -1354,7 +1369,7 @@ export default function DashboardPage() {
             {/* Reply bar */}
             {replyToMessage && (
               <div className={`border-t px-4 py-2.5 ${isDark ? 'border-white/[0.07] bg-[#0d1119]' : 'border-black/[0.07] bg-white'}`}>
-                <div className="mx-auto flex max-w-[820px] items-center justify-between">
+                <div className="mx-auto flex max-w-[900px] items-center justify-between">
                   <div className="flex min-w-0 items-center gap-2 text-xs"><Reply className="h-4 w-4 shrink-0 text-violet-400" /><span className="truncate">Replying to {replyToMessage.role}: “{replyToMessage.content.slice(0, 70)}...”</span></div>
                   <button onClick={cancelReply} className="rounded-lg p-1 text-white/45 hover:bg-white/[0.05] hover:text-red-400"><X className="h-4 w-4" /></button>
                 </div>
@@ -1363,24 +1378,23 @@ export default function DashboardPage() {
 
             {/* Composer */}
             <div className={`shrink-0 border-t px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pt-4 ${isDark ? 'border-white/[0.07] bg-[#090c13]/96' : 'border-black/[0.07] bg-white/96'} backdrop-blur-xl`}>
-              <div className="mx-auto w-full max-w-[820px]">
+              <div className="mx-auto w-full max-w-[900px]">
                 {/* Model selector — kept directly above the composer for a natural chat workflow */}
-                <div className="relative mb-2.5 flex items-center justify-between">
+                <div className="relative mb-2.5 flex items-center">
                   <button
-                    onClick={() => setShowModelPicker(!showModelPicker)}
-                    aria-label="Choose AI model"
-                    className={`group flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium shadow-sm transition ${
+                    onClick={() => setShowModelPicker(prev => !prev)}
+                    aria-label="Choose model"
+                    aria-expanded={showModelPicker}
+                    className={`group flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm transition active:scale-[0.98] ${
                       showModelPicker
                         ? (isDark ? 'border-violet-400/35 bg-violet-500/[0.10] text-white' : 'border-violet-300 bg-violet-50 text-black')
-                        : (isDark ? 'border-white/[0.09] bg-white/[0.025] text-white/75 hover:border-white/[0.16] hover:bg-white/[0.045]' : 'border-black/[0.08] bg-white text-black/70 hover:border-violet-200 hover:bg-violet-50/60')
+                        : (isDark ? 'border-white/[0.09] bg-white/[0.025] text-white/80 hover:border-white/[0.16] hover:bg-white/[0.045]' : 'border-black/[0.08] bg-white text-black/70 hover:border-violet-200 hover:bg-violet-50/60')
                     }`}
                   >
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500/25 to-blue-500/15 text-sm">✦</span>
+                    <AIOSLogo size={21} />
                     <span>{isAutoMode ? 'Auto' : (getAllModels().find(m => m.id === selectedModels[0])?.name || 'Choose model')}</span>
-                    {isAutoMode && <span className={`hidden text-[10px] font-normal sm:inline ${isDark ? 'text-white/35' : 'text-black/35'}`}>Best model automatically</span>}
                     <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showModelPicker ? 'rotate-180' : ''} ${isDark ? 'text-white/45' : 'text-black/40'}`} />
                   </button>
-                  <span className={`hidden text-[10px] sm:block ${isDark ? 'text-white/25' : 'text-black/25'}`}>Choose a model for this chat</span>
                 </div>
 
                 {uploadedFiles.length > 0 && (
@@ -1461,15 +1475,15 @@ export default function DashboardPage() {
 
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
                 <div className={`mb-2 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/35' : 'text-black/35'}`}>Auto</div>
-                <button onClick={handleAutoSelect} className={`mb-4 flex w-full items-center gap-3 rounded-xl border p-3 text-left transition ${isAutoMode ? isDark ? 'border-violet-400/20 bg-violet-500/[0.08]' : 'border-violet-300 bg-violet-50' : isDark ? 'border-white/[0.07] bg-white/[0.025] hover:bg-white/[0.045]' : 'border-black/[0.07] bg-white hover:bg-black/[0.025]'}`}>
-                  <span className="text-violet-400"><AIOSLogo size={25} /></span>
-                  <div className="min-w-0 flex-1"><div className="text-sm font-medium">Auto (Best)</div><div className="text-[10px] opacity-40">Automatically selects the best model</div></div>
+                <button onClick={handleAutoSelect} className={`mb-4 flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition ${isAutoMode ? isDark ? 'border-violet-400/30 bg-violet-500/[0.10]' : 'border-violet-300 bg-violet-50' : isDark ? 'border-white/[0.07] bg-white/[0.025] hover:bg-white/[0.045]' : 'border-black/[0.07] bg-white hover:bg-black/[0.025]'}`}>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400"><AIOSLogo size={24} /></span>
+                  <div className="min-w-0 flex-1"><div className="text-sm font-semibold">Auto</div><div className={`text-[10px] ${isDark ? 'text-white/35' : 'text-black/40'}`}>AIOS chooses the model</div></div>
                   {isAutoMode && <Check className="h-4 w-4 text-violet-400" />}
                 </button>
 
                 <div className={`mb-2 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/35' : 'text-black/35'}`}>Free Models</div>
                 <div className="space-y-1.5">
-                  {getCurrentModels().filter(m => m.tier === 'free').map(model => {
+                  {(modelTab === 'free' ? ALL_MODELS.free : searchQuery ? getCurrentModels().filter(m => m.tier === 'free') : ALL_MODELS.free).filter(m => !searchQuery || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(model => {
                     const selected = selectedModels.includes(model.id)
                     return (
                       <button key={model.id} onClick={() => { setIsAutoMode(false); setSelectedModels([model.id]); setModelTab('free'); setShowModelPicker(false) }} className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition ${selected ? isDark ? 'bg-white/[0.06]' : 'bg-black/[0.035]' : 'hover:bg-white/[0.04]'}`}>
@@ -1483,7 +1497,7 @@ export default function DashboardPage() {
 
                 <div className={`mb-2 mt-5 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-white/35' : 'text-black/35'}`}>Pro Models</div>
                 <div className="space-y-1.5">
-                  {getCurrentModels().filter(m => m.tier === 'pro').map(model => {
+                  {(modelTab === 'paid' ? ALL_MODELS.paid : searchQuery ? getCurrentModels().filter(m => m.tier === 'pro') : ALL_MODELS.paid).filter(m => !searchQuery || m.name.toLowerCase().includes(searchQuery.toLowerCase())).map(model => {
                     const selected = selectedModels.includes(model.id)
                     return (
                       <button key={model.id} onClick={() => { setIsAutoMode(false); toggleModel(model.id) }} className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition ${selected ? isDark ? 'bg-white/[0.06]' : 'bg-black/[0.035]' : 'hover:bg-white/[0.04]'}`}>
@@ -1531,7 +1545,18 @@ export default function DashboardPage() {
                   {isAutoMode && <Check className="h-4 w-4 text-violet-400" />}
                 </button>
               ) : null}
-              {getCurrentModels().filter(model => modelTab === 'auto' ? model.tier === 'free' : true).map(model => <button key={model.id} onClick={() => { setIsAutoMode(false); setSelectedModels([model.id]); setShowModelPicker(false) }} className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${selectedModels.includes(model.id) && !isAutoMode ? (isDark ? 'bg-white/[0.06]' : 'bg-black/[0.035]') : isDark ? 'hover:bg-white/[0.05]' : 'hover:bg-black/[0.035]'}`}><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 text-lg">{model.icon}</span><span className="flex-1 truncate text-sm">{model.name}</span>{model.tier === 'pro' && <span className="rounded-md border border-violet-400/25 px-1.5 py-0.5 text-[9px] text-violet-400">Pro</span>}{selectedModels.includes(model.id) && !isAutoMode && <Check className="h-4 w-4 text-violet-400" />}</button>)}
+              {modelTab === 'auto' ? null : (
+                (modelTab === 'free' ? ALL_MODELS.free : ALL_MODELS.paid)
+                  .filter(model => !searchQuery || model.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map(model => (
+                    <button key={model.id} onClick={() => { setIsAutoMode(false); setSelectedModels([model.id]); setShowModelPicker(false) }} className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${selectedModels.includes(model.id) && !isAutoMode ? (isDark ? 'bg-white/[0.06]' : 'bg-black/[0.035]') : isDark ? 'hover:bg-white/[0.05]' : 'hover:bg-black/[0.035]'}`}>
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 text-lg">{model.icon}</span>
+                      <span className="flex-1 truncate text-sm">{model.name}</span>
+                      {model.tier === 'pro' && <span className="rounded-md border border-violet-400/25 px-1.5 py-0.5 text-[9px] text-violet-400">Pro</span>}
+                      {selectedModels.includes(model.id) && !isAutoMode && <Check className="h-4 w-4 text-violet-400" />}
+                    </button>
+                  ))
+              )}
             </div>
           </div>
         </div>
