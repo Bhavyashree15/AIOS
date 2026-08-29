@@ -115,6 +115,7 @@ export default function DashboardPage() {
   const [response, setResponse] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedModels, setSelectedModels] = useState(['gpt-5.4-mini'])
+  const [isAutoMode, setIsAutoMode] = useState(true)
   const [showModelPicker, setShowModelPicker] = useState(false)
   const [modelTab, setModelTab] = useState('auto')
   const [searchQuery, setSearchQuery] = useState('')
@@ -552,6 +553,7 @@ export default function DashboardPage() {
   }
 
   const handleAutoSelect = () => {
+    setIsAutoMode(true)
     setSelectedModels(['gpt-5.4-mini'])
     setShowModelPicker(false)
   }
@@ -1049,7 +1051,7 @@ export default function DashboardPage() {
             : 'border-black/[0.08] bg-white'
         }`}
       >
-        <div className="flex h-[70px] items-center justify-between border-b border-white/[0.07] px-4">
+        <div className={`flex h-[70px] items-center justify-between border-b px-4 ${isDark ? 'border-white/[0.07]' : 'border-black/[0.07]'}`}>
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-violet-400/25 bg-gradient-to-br from-violet-500/25 via-blue-500/15 to-cyan-400/10 text-xl shadow-[0_0_24px_rgba(124,58,237,.18)]">
               ✦
@@ -1058,7 +1060,7 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="hidden rounded-lg p-2 text-white/50 transition hover:bg-white/[0.06] hover:text-white lg:block"
+            className={`hidden rounded-lg p-2 transition lg:block ${isDark ? 'text-white/50 hover:bg-white/[0.06] hover:text-white' : 'text-black/50 hover:bg-black/[0.05] hover:text-black'}`}
             title="Collapse sidebar"
           >
             <PanelLeftClose className="h-4 w-4" />
@@ -1078,7 +1080,7 @@ export default function DashboardPage() {
 
         <div className="px-3 pb-3">
           <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+            <SearchIcon className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${isDark ? 'text-white/40' : 'text-black/40'}`} />
             <input
               value={chatSearchQuery}
               onChange={(e) => setChatSearchQuery(e.target.value)}
@@ -1168,32 +1170,21 @@ export default function DashboardPage() {
         <header className={`z-20 flex min-h-[70px] shrink-0 items-center gap-2 border-b px-3 sm:px-5 ${isDark ? 'border-white/[0.07] bg-[#090c13]/95' : 'border-black/[0.07] bg-white/95'} backdrop-blur-xl`}>
           <button
             onClick={() => setSidebarOpen(true)}
-            className="rounded-xl p-2 text-white/55 transition hover:bg-white/[0.06] lg:hidden"
+            className={`rounded-xl p-2 transition lg:hidden ${isDark ? 'text-white/70 hover:bg-white/[0.06]' : 'text-black/65 hover:bg-black/[0.05]'}`}
           >
             <Menu className="h-5 w-5" />
           </button>
 
-          <div className="flex min-w-0 items-center gap-2">
-            <button
-              onClick={() => setShowModelPicker(!showModelPicker)}
-              className={`flex h-11 items-center gap-2 rounded-xl border px-3 text-sm transition hover:bg-white/[0.04] ${isDark ? 'border-white/[0.10] bg-white/[0.025]' : 'border-black/[0.09] bg-white'}`}
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500/20 text-sm">✦</span>
-              <span className="hidden font-medium sm:inline">{selectedModels.length === 1 ? (getAllModels().find(m => m.id === selectedModels[0])?.name || 'GPT-5.4 mini') : `${selectedModels.length} models`}</span>
-              <ChevronDown className={`h-4 w-4 text-white/45 transition-transform ${showModelPicker ? 'rotate-180' : ''}`} />
-            </button>
-
-            <button
-              onClick={() => {
-                setModelTab('auto')
-                handleAutoSelect()
-              }}
-              className={`hidden h-11 items-center gap-2 rounded-xl border px-3 text-sm sm:flex ${isDark ? 'border-white/[0.10] bg-white/[0.025] text-white/80' : 'border-black/[0.09] bg-white text-black/70'}`}
-            >
-              <Sparkles className="h-4 w-4 text-fuchsia-400" />
-              Auto (Best)
-              <ChevronDown className="h-3.5 w-3.5 rotate-[-90deg] text-white/40" />
-            </button>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className={`flex items-center gap-2.5 ${isDark ? 'text-white' : 'text-black'}`}>
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/25 to-blue-500/15 text-base">✦</div>
+              <span className="text-sm font-semibold tracking-tight sm:text-[15px]">AIOS</span>
+            </div>
+            {currentChatId && (
+              <div className={`hidden max-w-[280px] truncate border-l pl-3 text-sm sm:block ${isDark ? 'border-white/[0.10] text-white/45' : 'border-black/[0.09] text-black/45'}`}>
+                {chats.find(c => c.id === currentChatId)?.title || 'New Chat'}
+              </div>
+            )}
           </div>
 
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
@@ -1288,7 +1279,7 @@ export default function DashboardPage() {
                                 <div className={`rounded-2xl border p-4 sm:p-5 ${isDark ? 'border-white/[0.11] bg-gradient-to-br from-[#151a22] to-[#11161e] shadow-[0_16px_45px_rgba(0,0,0,.16)]' : 'border-black/[0.08] bg-white shadow-[0_12px_35px_rgba(15,23,42,.06)]'}`}>
                                   <div className="mb-3 flex items-center gap-2.5">
                                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/30 to-blue-500/20 text-sm">✦</div>
-                                    <span className="text-sm font-semibold">{msg.model_used || 'AIOS Assistant'}</span>
+                                    <span className="text-sm font-semibold">{isAutoMode ? 'AIOS · Auto' : (msg.model_used || 'AIOS Assistant')}</span>
                                     <span className={`text-[10px] ${isDark ? 'text-white/35' : 'text-black/35'}`}>{new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                   </div>
                                   <div className={`prose prose-sm max-w-none leading-7 ${isDark ? 'prose-invert' : ''}`}>
@@ -1356,6 +1347,25 @@ export default function DashboardPage() {
             {/* Composer */}
             <div className={`shrink-0 border-t px-3 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pt-4 ${isDark ? 'border-white/[0.07] bg-[#090c13]/96' : 'border-black/[0.07] bg-white/96'} backdrop-blur-xl`}>
               <div className="mx-auto w-full max-w-[820px]">
+                {/* Model selector — kept directly above the composer for a natural chat workflow */}
+                <div className="relative mb-2.5 flex items-center justify-between">
+                  <button
+                    onClick={() => setShowModelPicker(!showModelPicker)}
+                    aria-label="Choose AI model"
+                    className={`group flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium shadow-sm transition ${
+                      showModelPicker
+                        ? (isDark ? 'border-violet-400/35 bg-violet-500/[0.10] text-white' : 'border-violet-300 bg-violet-50 text-black')
+                        : (isDark ? 'border-white/[0.09] bg-white/[0.025] text-white/75 hover:border-white/[0.16] hover:bg-white/[0.045]' : 'border-black/[0.08] bg-white text-black/70 hover:border-violet-200 hover:bg-violet-50/60')
+                    }`}
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500/25 to-blue-500/15 text-sm">✦</span>
+                    <span>{isAutoMode ? 'Auto' : (getAllModels().find(m => m.id === selectedModels[0])?.name || 'Choose model')}</span>
+                    {isAutoMode && <span className={`hidden text-[10px] font-normal sm:inline ${isDark ? 'text-white/35' : 'text-black/35'}`}>Best model automatically</span>}
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showModelPicker ? 'rotate-180' : ''} ${isDark ? 'text-white/45' : 'text-black/40'}`} />
+                  </button>
+                  <span className={`hidden text-[10px] sm:block ${isDark ? 'text-white/25' : 'text-black/25'}`}>Choose a model for this chat</span>
+                </div>
+
                 {uploadedFiles.length > 0 && (
                   <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
                     {uploadedFiles.map((file, index) => (
@@ -1445,7 +1455,7 @@ export default function DashboardPage() {
                   {getCurrentModels().filter(m => m.tier === 'free').map(model => {
                     const selected = selectedModels.includes(model.id)
                     return (
-                      <button key={model.id} onClick={() => { setSelectedModels([model.id]); setModelTab('free') }} className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition ${selected ? isDark ? 'bg-white/[0.06]' : 'bg-black/[0.035]' : 'hover:bg-white/[0.04]'}`}>
+                      <button key={model.id} onClick={() => { setIsAutoMode(false); setSelectedModels([model.id]); setModelTab('free'); setShowModelPicker(false) }} className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition ${selected ? isDark ? 'bg-white/[0.06]' : 'bg-black/[0.035]' : 'hover:bg-white/[0.04]'}`}>
                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/20 to-violet-500/10 text-sm">{model.icon}</span>
                         <div className="min-w-0 flex-1"><div className="truncate text-sm font-medium">{model.name}</div><div className="truncate text-[10px] opacity-40">{model.id.includes('qwen') ? 'Very fast responses' : model.id.includes('ministral') ? 'Good for most tasks' : model.id.includes('mistral') ? 'Balanced performance' : model.id.includes('deepseek') ? 'Advanced reasoning' : 'Fast & smart'}</div></div>
                         {selected && <Check className="h-4 w-4 text-violet-400" />}
@@ -1459,7 +1469,7 @@ export default function DashboardPage() {
                   {getCurrentModels().filter(m => m.tier === 'pro').map(model => {
                     const selected = selectedModels.includes(model.id)
                     return (
-                      <button key={model.id} onClick={() => toggleModel(model.id)} className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition ${selected ? isDark ? 'bg-white/[0.06]' : 'bg-black/[0.035]' : 'hover:bg-white/[0.04]'}`}>
+                      <button key={model.id} onClick={() => { setIsAutoMode(false); toggleModel(model.id) }} className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition ${selected ? isDark ? 'bg-white/[0.06]' : 'bg-black/[0.035]' : 'hover:bg-white/[0.04]'}`}>
                         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500/15 to-violet-500/10 text-sm">{model.icon}</span>
                         <div className="min-w-0 flex-1"><div className="truncate text-sm font-medium">{model.name}</div><div className="truncate text-[10px] opacity-40">Most powerful AI model</div></div>
                         <span className="rounded-md border border-violet-400/25 px-1.5 py-0.5 text-[9px] text-violet-300">Pro</span>
@@ -1492,12 +1502,19 @@ export default function DashboardPage() {
       {showModelPicker && (
         <div className="fixed inset-0 z-[60] flex items-end bg-black/60 backdrop-blur-sm xl:hidden" onClick={() => setShowModelPicker(false)}>
           <div onClick={(e) => e.stopPropagation()} className={`max-h-[82dvh] w-full overflow-hidden rounded-t-3xl border-t p-4 shadow-2xl ${isDark ? 'border-white/[0.10] bg-[#10141c]' : 'border-black/[0.08] bg-white'}`}>
-            <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold">Models</h2><button onClick={() => setShowModelPicker(false)}><X className="h-5 w-5 opacity-60" /></button></div>
+            <div className="mb-3 flex items-center justify-between"><div><h2 className="text-base font-semibold">Choose a model</h2><p className={`mt-0.5 text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>Auto is recommended for most requests</p></div><button onClick={() => setShowModelPicker(false)} className={`rounded-xl p-2 ${isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.05]'}`}><X className="h-5 w-5 opacity-60" /></button></div>
             <div className="mb-3 flex gap-1 overflow-x-auto">
-              {['auto', 'free', 'paid'].map(tab => <button key={tab} onClick={() => setModelTab(tab)} className={`rounded-xl px-4 py-2 text-xs capitalize ${modelTab === tab ? 'bg-violet-600 text-white' : 'bg-white/[0.05]'}`}>{tab}</button>)}
+              {['auto', 'free', 'paid'].map(tab => <button key={tab} onClick={() => setModelTab(tab)} className={`rounded-xl px-4 py-2 text-xs font-medium capitalize transition ${modelTab === tab ? 'bg-violet-600 text-white shadow-sm' : isDark ? 'text-white/50 hover:bg-white/[0.05] hover:text-white/80' : 'text-black/50 hover:bg-black/[0.04] hover:text-black/80'}`}>{tab === 'auto' ? 'Auto' : tab === 'free' ? 'Free' : 'Pro'}</button>)}
             </div>
             <div className="max-h-[60dvh] overflow-y-auto space-y-1.5">
-              {getCurrentModels().map(model => <button key={model.id} onClick={() => { setSelectedModels([model.id]); setShowModelPicker(false) }} className="flex w-full items-center gap-3 rounded-xl p-3 text-left hover:bg-white/[0.05]"><span className="text-lg">{model.icon}</span><span className="flex-1 text-sm">{model.name}</span>{selectedModels.includes(model.id) && <Check className="h-4 w-4 text-violet-400" />}</button>)}
+              {modelTab === 'auto' ? (
+                <button onClick={handleAutoSelect} className={`mb-2 flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition ${isAutoMode ? (isDark ? 'border-violet-400/30 bg-violet-500/[0.10]' : 'border-violet-300 bg-violet-50') : (isDark ? 'border-white/[0.08] bg-white/[0.025]' : 'border-black/[0.08] bg-white')}`}>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/15 text-lg">✦</span>
+                  <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">Auto</span><span className={`block text-[10px] ${isDark ? 'text-white/40' : 'text-black/40'}`}>AIOS picks the best available model</span></span>
+                  {isAutoMode && <Check className="h-4 w-4 text-violet-400" />}
+                </button>
+              ) : null}
+              {getCurrentModels().filter(model => modelTab === 'auto' ? model.tier === 'free' : true).map(model => <button key={model.id} onClick={() => { setIsAutoMode(false); setSelectedModels([model.id]); setShowModelPicker(false) }} className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${selectedModels.includes(model.id) && !isAutoMode ? (isDark ? 'bg-white/[0.06]' : 'bg-black/[0.035]') : isDark ? 'hover:bg-white/[0.05]' : 'hover:bg-black/[0.035]'}`}><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 text-lg">{model.icon}</span><span className="flex-1 truncate text-sm">{model.name}</span>{model.tier === 'pro' && <span className="rounded-md border border-violet-400/25 px-1.5 py-0.5 text-[9px] text-violet-400">Pro</span>}{selectedModels.includes(model.id) && !isAutoMode && <Check className="h-4 w-4 text-violet-400" />}</button>)}
             </div>
           </div>
         </div>
