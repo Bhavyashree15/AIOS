@@ -116,9 +116,16 @@ function AIOSLogo({ size = 30, wordmark = false }: { size?: number; wordmark?: b
   return (
     <div className="flex items-center gap-2.5">
       <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
-        <path d="M8 13.5C8 9.9 10.9 7 14.5 7c2.1 0 3.8.9 5.5 2.6L32 21.6c2.8 2.8 2.8 7.3 0 10.1-2.8 2.8-7.3 2.8-10.1 0L8 17.8c-2.8-2.8-2.8-4.3 0-4.3Z" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/>
-        <path d="M32 13.5C32 9.9 29.1 7 25.5 7c-2.1 0-3.8.9-5.5 2.6L8 21.6c-2.8 2.8-2.8 7.3 0 10.1 2.8 2.8 7.3 2.8 10.1 0L32 17.8c2.8-2.8 2.8-4.3 0-4.3Z" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/>
-        <circle cx="20" cy="20" r="3" fill="currentColor"/>
+        <defs>
+          <linearGradient id="aios-logo-gradient" x1="7" y1="7" x2="33" y2="33" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="#7C3AED" />
+            <stop offset="0.52" stopColor="#8B5CF6" />
+            <stop offset="1" stopColor="#6366F1" />
+          </linearGradient>
+        </defs>
+        <ellipse cx="20" cy="20" rx="7.5" ry="17" transform="rotate(45 20 20)" stroke="url(#aios-logo-gradient)" strokeWidth="2.7" />
+        <ellipse cx="20" cy="20" rx="7.5" ry="17" transform="rotate(-45 20 20)" stroke="url(#aios-logo-gradient)" strokeWidth="2.7" />
+        <circle cx="20" cy="20" r="3.1" fill="url(#aios-logo-gradient)" />
       </svg>
       {wordmark && <span className="text-[17px] font-semibold tracking-[-0.035em]">AIOS</span>}
     </div>
@@ -1238,7 +1245,7 @@ export default function DashboardPage() {
                 </button>
               </div>
               {showExportMenu && (
-                <div className={`absolute right-0 top-12 z-[70] w-56 overflow-hidden rounded-2xl border p-1.5 shadow-2xl backdrop-blur-xl ${isDark ? 'border-white/[0.10] bg-[#171a22]/98' : 'border-black/[0.08] bg-white/98'}`}>
+                <div className={`absolute right-0 top-12 z-[70] w-56 overflow-hidden rounded-2xl border p-1.5 shadow-2xl backdrop-blur-none ${isDark ? 'border-white/[0.10] bg-[#171a22]' : 'border-black/[0.08] bg-white'}`}>
                   <div className={`px-3 py-2 text-xs ${isDark ? 'text-white/45' : 'text-black/45'}`}>
                     Wallet balance <span className="float-right font-semibold text-emerald-500">₹{walletBalance.toFixed(2)}</span>
                   </div>
