@@ -56,18 +56,60 @@ const MODEL_MAP: Record<string, string> = {
   'deepseek-reasoner': 'gemini-2.5-pro',
 }
 
+type WebSource = {
+  title: string
+  uri: string
+}
+
+type GroundingMetadata = {
+  webSearchQueries?: string[]
+  groundingChunks?: Array<{
+    web?: {
+      uri?: string
+      title?: string
+    }
+  }>
+}
+
+function extractWebSources(metadata: GroundingMetadata | undefined): WebSource[] {
+  if (!metadata?.groundingChunks) return []
+
+  const sources: WebSource[] = []
+
+  for (const chunk of metadata.groundingChunks) {
+    const web = chunk.web
+    if (!web?.uri) continue
+
+    if (!sources.some(source => source.uri === web.uri)) {
+      sources.push({
+        title: web.title || web.uri,
+        uri: web.uri,
+      })
+    }
+  }
+
+  return sources
+}
+
 // ============================================
 // POST HANDLER
 // ============================================
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, models } = await req.json()
+    const {
+      prompt,
+      models,
+      webSearch = false,
+      history = [],
+    } = await req.json()
 
     if (!prompt) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         consensus: 'Please enter a prompt.',
         consensus_score: 0,
         confidence: 0,
+        web_search: Boolean(webSearch),
+        sources: [],
       })
     }
 
@@ -85,21 +127,33 @@ export async function POST(req: NextRequest) {
         consensus_score: 0,
         confidence: 0,
         error: 'missing_api_key',
+        web_search: Boolean(webSearch),
+        sources: [],
       })
     }
 
     console.log('🔑 API Key prefix:', GEMINI_API_KEY.substring(0, 10) + '...')
     console.log('📝 Prompt:', prompt)
+    console.log('🌐 Web Search:', Boolean(webSearch))
 
     // ============================================
-    // ENHANCED PROMPT - ChatGPT style with markdown
+    // PROMPT
     // ============================================
     let finalPrompt: string
 
-    if (prompt.trim().length < 10) {
+    if (webSearch) {
+      finalPrompt = `Use Google Search grounding when current or web-based information is useful.
+
+- Answer the user's request directly.
+- Prefer current, reliable information.
+- Do not invent facts or sources.
+- If sources disagree or information is uncertain, say so.
+- Use clear Markdown formatting.
+
+User request: ${prompt}`
+    } else if (prompt.trim().length < 10) {
       finalPrompt = prompt.trim()
     } else {
-      // ✅ Tell AI to use markdown like ChatGPT
       finalPrompt = `Format your response like ChatGPT with:
 - Use **bold** for important names and key terms (like **Nova City**)
 - Use bullet points with emojis like 🚀, 🌆, 🤖, 💡
@@ -112,24 +166,52 @@ User request: ${prompt}`
 
     console.log('📝 Final prompt:', finalPrompt)
 
-    let lastError = null
+    // ============================================
+    // CONVERSATION HISTORY
+    // ============================================
+    const contents = [
+      ...(Array.isArray(history)
+        ? history
+            .slice(-20)
+            .filter((message: any) => message?.content?.trim())
+            .map((message: any) => ({
+              role: message.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: String(message.content) }],
+            }))
+        : []),
+      {
+        role: 'user',
+        parts: [{ text: finalPrompt }],
+      },
+    ]
 
+    let lastError: string | null = null
+
+    // ============================================
+    // TRY MODELS
+    // ============================================
     for (const modelId of MODELS_TO_TRY) {
       try {
         console.log(`🔄 Trying model: ${modelId}`)
 
-        const requestBody = {
-          contents: [
-            {
-              parts: [{ text: finalPrompt }]
-            }
-          ],
+        const requestBody: any = {
+          contents,
           generationConfig: {
-            temperature: 0.9,
-            maxOutputTokens: 350,  // Enough for a detailed response
+            temperature: webSearch ? 0.4 : 0.9,
+            maxOutputTokens: 350,
             topP: 0.95,
             topK: 40,
-          }
+          },
+        }
+
+        // Google Search grounding is only enabled when
+        // the user explicitly turns Web Search ON.
+        if (webSearch) {
+          requestBody.tools = [
+            {
+              google_search: {},
+            },
+          ]
         }
 
         const response = await fetch(
@@ -148,46 +230,88 @@ User request: ${prompt}`
         console.log(`📊 ${modelId} status:`, response.status)
 
         if (response.ok && data.candidates && data.candidates.length > 0) {
-          let aiResponse = data.candidates[0].content.parts[0].text
+          let aiResponse =
+            data.candidates[0]?.content?.parts
+              ?.map((part: any) => part.text || '')
+              .join('') || ''
+
+          if (!aiResponse) {
+            throw new Error('Gemini returned an empty response.')
+          }
 
           console.log('📝 RESPONSE LENGTH:', aiResponse.length)
 
-          // ✅ Clean up - ensure complete sentences
+          // ============================================
+          // CLEAN UP - ENSURE COMPLETE SENTENCE
+          // ============================================
           const lastPeriod = aiResponse.lastIndexOf('.')
           const lastQuestion = aiResponse.lastIndexOf('?')
           const lastExclamation = aiResponse.lastIndexOf('!')
-          const lastGoodEnding = Math.max(lastPeriod, lastQuestion, lastExclamation)
+          const lastGoodEnding = Math.max(
+            lastPeriod,
+            lastQuestion,
+            lastExclamation
+          )
 
           if (lastGoodEnding > aiResponse.length * 0.5) {
             aiResponse = aiResponse.substring(0, lastGoodEnding + 1)
           }
 
+          // ============================================
+          // GROUNDING / SOURCES
+          // ============================================
+          const groundingMetadata =
+            data.candidates[0]?.groundingMetadata as
+              | GroundingMetadata
+              | undefined
+
+          const sources = webSearch
+            ? extractWebSources(groundingMetadata)
+            : []
+
+          const searchQueries = webSearch
+            ? groundingMetadata?.webSearchQueries || []
+            : []
+
+          console.log('🌐 Sources found:', sources.length)
+
+          // ============================================
+          // RETURN SUCCESS
+          // ============================================
           return NextResponse.json({
             success: true,
             consensus: aiResponse,
-            consensus_score: 85,
-            confidence: 80,
+            consensus_score: webSearch ? 95 : 85,
+            confidence: webSearch ? 90 : 80,
             model_used: modelId,
             tokens_used: data.usageMetadata?.totalTokenCount || 0,
             is_free: true,
+            web_search: Boolean(webSearch),
+            sources,
+            search_queries: searchQueries,
           })
-        } else {
-          const errorMsg = data.error?.message || 'Unknown error'
-          console.log(`❌ ${modelId} failed:`, errorMsg)
-          lastError = errorMsg
+        }
 
-          if (errorMsg.includes('API key') ||
-            errorMsg.includes('authentication') ||
-            errorMsg.includes('permission') ||
-            errorMsg.includes('invalid')) {
-            console.error('❌ API Key error, stopping attempts')
-            return NextResponse.json({
-              consensus: `⚠️ Invalid API key: ${errorMsg}`,
-              consensus_score: 0,
-              confidence: 0,
-              error: 'invalid_key',
-            })
-          }
+        const errorMsg = data.error?.message || 'Unknown error'
+        console.log(`❌ ${modelId} failed:`, errorMsg)
+        lastError = errorMsg
+
+        if (
+          errorMsg.includes('API key') ||
+          errorMsg.includes('authentication') ||
+          errorMsg.includes('permission') ||
+          errorMsg.includes('invalid')
+        ) {
+          console.error('❌ API Key error, stopping attempts')
+
+          return NextResponse.json({
+            consensus: `⚠️ Invalid API key: ${errorMsg}`,
+            consensus_score: 0,
+            confidence: 0,
+            error: 'invalid_key',
+            web_search: Boolean(webSearch),
+            sources: [],
+          })
         }
       } catch (error) {
         console.log(`❌ ${modelId} error:`, error)
@@ -195,25 +319,32 @@ User request: ${prompt}`
       }
     }
 
+    // ============================================
+    // ALL MODELS FAILED
+    // ============================================
     console.error('❌ All models failed. Last error:', lastError)
+
     return NextResponse.json({
       consensus: `⚠️ No available models. Last error: ${lastError}`,
       consensus_score: 0,
       confidence: 0,
       error: 'model_not_found',
+      web_search: Boolean(webSearch),
+      sources: [],
       debug: {
         models_tried: MODELS_TO_TRY,
         last_error: lastError,
-      }
+      },
     })
-
   } catch (error) {
     console.error('❌ API Error:', error)
+
     return NextResponse.json({
       consensus: `⚠️ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       consensus_score: 0,
       confidence: 0,
       error: 'api_error',
+      sources: [],
     })
   }
 }
@@ -255,12 +386,12 @@ export async function GET() {
             body: JSON.stringify({
               contents: [
                 {
-                  parts: [{ text: 'Say hello' }]
-                }
+                  parts: [{ text: 'Say hello' }],
+                },
               ],
               generationConfig: {
                 maxOutputTokens: 5,
-              }
+              },
             }),
           }
         )
@@ -292,19 +423,21 @@ export async function GET() {
 
     return NextResponse.json({
       has_api_key: true,
-      key_prefix: GEMINI_API_KEY.substring(0, 10) + '...',
-      all_models_from_api: listData.models?.map((m: any) => m.name.replace('models/', '')) || [],
+      key_prefix: GEMINI_API_KEY!.substring(0, 10) + '...',
+      all_models_from_api:
+        listData.models?.map((m: any) => m.name.replace('models/', '')) || [],
       working_models: workingModels,
       test_results: results,
       recommended_model: workingModels.length > 0 ? workingModels[0] : 'None found',
-      note: workingModels.length === 0
-        ? '❌ No working models.'
-        : `✅ Using: ${workingModels[0]}`,
+      note:
+        workingModels.length === 0
+          ? '❌ No working models.'
+          : `✅ Using: ${workingModels[0]}`,
     })
   } catch (error) {
     return NextResponse.json({
       has_api_key: true,
-      key_prefix: GEMINI_API_KEY.substring(0, 10) + '...',
+      key_prefix: GEMINI_API_KEY!.substring(0, 10) + '...',
       error: error instanceof Error ? error.message : 'Unknown error',
       note: 'Failed to connect to Gemini API.',
     })
