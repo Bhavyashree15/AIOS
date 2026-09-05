@@ -157,6 +157,10 @@ export default function DashboardPage() {
   const [isListening, setIsListening] = useState(false)
   const [isSpeechSupported, setIsSpeechSupported] = useState(true)
   const recognitionRef = useRef<any>(null)
+  const handleSubmitRef = useRef<(promptOverride?: string) => void>(() => {})
+  const voiceTranscriptRef = useRef('')
+  const voiceBasePromptRef = useRef('')
+  const voiceSubmitRef = useRef(false)
   
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [onlineStatus, setOnlineStatus] = useState(true)
@@ -301,36 +305,48 @@ export default function DashboardPage() {
     }
 
     const recognition = new SpeechRecognition()
-    recognition.continuous = false
+    recognition.continuous = true
     recognition.interimResults = true
     recognition.lang = 'en-US'
 
     recognition.onresult = (event: any) => {
       let interimTranscript = ''
-      let finalTranscript = ''
+      let newFinalTranscript = ''
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript
+        const transcript = event.results[i][0]?.transcript || ''
         if (event.results[i].isFinal) {
-          finalTranscript += transcript
+          newFinalTranscript += transcript
         } else {
           interimTranscript += transcript
         }
       }
 
-      const fullText = finalTranscript || interimTranscript
-      
-      if (finalTranscript) {
-        setPrompt(prev => prev ? prev + ' ' + finalTranscript : finalTranscript)
+      if (newFinalTranscript.trim()) {
+        const cleanedFinal = newFinalTranscript.trim()
+        const existing = voiceTranscriptRef.current.trim()
 
-        setTimeout(() => {
-          if (finalTranscript.trim()) {
-            handleSubmit()
-          }
-        }, 500)
-      } else if (interimTranscript) {
-        setPrompt(interimTranscript)
+        // SpeechRecognition can report overlapping final results on mobile.
+        // Only append genuinely new text.
+        if (!existing) {
+          voiceTranscriptRef.current = cleanedFinal
+        } else if (cleanedFinal === existing || existing.endsWith(cleanedFinal)) {
+          // Duplicate final result from the browser: ignore it.
+        } else if (cleanedFinal.startsWith(existing)) {
+          // Some mobile implementations return the cumulative final phrase.
+          voiceTranscriptRef.current = cleanedFinal
+        } else {
+          voiceTranscriptRef.current = `${existing} ${cleanedFinal}`
+        }
+      }
 
+      const transcript = voiceTranscriptRef.current.trim()
+      const displayText = [voiceBasePromptRef.current.trim(), transcript, interimTranscript.trim()]
+        .filter(Boolean)
+        .join(' ')
+
+      if (displayText) {
+        setPrompt(displayText)
         if (messageInputRef.current) {
           autoResizeTextarea(messageInputRef.current)
         }
@@ -340,39 +356,86 @@ export default function DashboardPage() {
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error)
       setIsListening(false)
-      if (event.error === 'not-allowed') {
-        alert('Please allow microphone access to use voice input.')
+
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        alert('Microphone access is required for voice input. Please allow microphone access for AIOS and try again.')
+      } else if (event.error === 'audio-capture') {
+        alert('AIOS could not access your microphone. Please check your microphone permission and try again.')
       }
     }
 
     recognition.onend = () => {
       setIsListening(false)
+
+      const transcript = voiceTranscriptRef.current.trim()
+      const finalPrompt = [voiceBasePromptRef.current.trim(), transcript]
+        .filter(Boolean)
+        .join(' ')
+        .trim()
+
+      // Submit exactly once for each recording session.
+      if (finalPrompt && !voiceSubmitRef.current) {
+        voiceSubmitRef.current = true
+        setPrompt(finalPrompt)
+        window.setTimeout(() => {
+          handleSubmitRef.current(finalPrompt)
+        }, 0)
+      }
     }
 
     recognitionRef.current = recognition
 
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort()
-      }
+      recognition.onresult = null
+      recognition.onerror = null
+      recognition.onend = null
+      recognition.abort()
     }
   }, [])
 
-  const toggleVoiceInput = () => {
-    if (!isSpeechSupported) {
-      alert('Voice input is not supported in this browser. Please use Chrome or Edge.')
+  const toggleVoiceInput = async () => {
+    if (!isSpeechSupported || !recognitionRef.current) {
+      alert('Voice input is not supported in this browser. Please use a browser with speech recognition support.')
       return
     }
 
     if (isListening) {
-      recognitionRef.current?.stop()
+      recognitionRef.current.stop()
       setIsListening(false)
-    } else {
-      try {
-        recognitionRef.current?.start()
-        setIsListening(true)
-      } catch (error) {
-        console.error('Error starting speech recognition:', error)
+      return
+    }
+
+    try {
+      // Explicitly request microphone permission first. This lets the browser
+      // show its native Allow Microphone prompt when permission has not been decided.
+      if (!window.isSecureContext) {
+        alert('Voice input requires a secure HTTPS connection.')
+        return
+      }
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        alert('Microphone access is not available in this browser.')
+        return
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach(track => track.stop())
+
+      voiceTranscriptRef.current = ''
+      voiceBasePromptRef.current = prompt.trim()
+      voiceSubmitRef.current = false
+
+      recognitionRef.current.start()
+      setIsListening(true)
+    } catch (error: any) {
+      console.error('Error starting speech recognition:', error)
+      setIsListening(false)
+
+      if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+        alert('Microphone access is required for voice input. Please allow microphone access for AIOS and try again.')
+      } else if (error?.name === 'NotFoundError') {
+        alert('No microphone was found on this device.')
+      } else {
         alert('Could not start voice input. Please try again.')
       }
     }
@@ -805,8 +868,10 @@ export default function DashboardPage() {
     }
   }
 
-  const handleSubmit = async () => {
-    if (!prompt.trim() && uploadedFiles.length === 0) {
+  const handleSubmit = async (promptOverride?: string) => {
+    const submitPrompt = promptOverride ?? prompt
+
+    if (!submitPrompt.trim() && uploadedFiles.length === 0) {
       return
     }
     
@@ -834,7 +899,7 @@ export default function DashboardPage() {
     
     const userMsg = { 
       role: 'user', 
-      content: prompt, 
+      content: submitPrompt, 
       timestamp,
       replyTo: replyToMessage ? { 
         content: replyToMessage.content.slice(0, 50) + (replyToMessage.content.length > 50 ? '...' : ''),
@@ -851,7 +916,7 @@ export default function DashboardPage() {
     
     setIsLoading(true)
     setIsStopped(false)
-    const currentPrompt = prompt
+    const currentPrompt = submitPrompt
 
     setPrompt('')
 
@@ -978,6 +1043,10 @@ export default function DashboardPage() {
       }
     }
   }
+
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit
+  })
 
   const handleSuggestionClick = (promptText: string) => {
     setPrompt(promptText)
