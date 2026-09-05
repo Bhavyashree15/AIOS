@@ -1588,7 +1588,7 @@ export default function DashboardPage() {
                       {(isLoading || isTyping) ? (
                         <button onClick={stopGeneration} title="Stop generating" className="rounded-xl bg-red-500 p-2.5 text-white shadow-lg shadow-red-500/20 transition hover:bg-red-600"><Square className="h-4 w-4" /></button>
                       ) : (
-                        <button onClick={handleSubmit} disabled={!prompt.trim() && uploadedFiles.length === 0} title="Send" className={`rounded-xl p-2.5 text-white transition ${prompt.trim() || uploadedFiles.length > 0 ? 'bg-gradient-to-r from-[#4d62ff] to-[#7a4de8] shadow-lg shadow-violet-500/20 hover:scale-[1.03]' : isDark ? 'bg-white/[0.07] text-white/30' : 'bg-black/[0.06] text-black/25'}`}><Send className="h-4 w-4" /></button>
+                        <button onClick={() => handleSubmit()} disabled={!prompt.trim() && uploadedFiles.length === 0} title="Send" className={`rounded-xl p-2.5 text-white transition ${prompt.trim() || uploadedFiles.length > 0 ? 'bg-gradient-to-r from-[#4d62ff] to-[#7a4de8] shadow-lg shadow-violet-500/20 hover:scale-[1.03]' : isDark ? 'bg-white/[0.07] text-white/30' : 'bg-black/[0.06] text-black/25'}`}><Send className="h-4 w-4" /></button>
                       )}
                     </div>
                   </div>
